@@ -16,7 +16,7 @@ type LottoLine = {
 interface NumberPickerProps {
   onCheckAllResults: (allLines: number[][]) => void;
   onClearAll: () => void; // New prop
-  resultsRef: React.RefObject<HTMLDivElement>; // Ref for scrolling
+  resultsRef: React.RefObject<HTMLDivElement | null>; // Ref for scrolling
 }
 
 export default function NumberPicker({ onCheckAllResults, onClearAll, resultsRef }: NumberPickerProps) {
