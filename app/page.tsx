@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import NumberPicker from '@/components/NumberPicker';
-import { compareNumbers, ComparisonResult } from '@/lib/lotto-utils';
+import NumberPicker from '../components/NumberPicker';
+import { compareNumbers, ComparisonResult } from '../lib/lotto-utils';
 import Confetti from 'react-confetti';
 
 export default function Home() {
