@@ -23,6 +23,14 @@ export default function NumberPicker({ onCheckAllResults, onClearAll, resultsRef
   const [lines, setLines] = useState<LottoLine[]>([]);
   const [quickPickQuantity, setQuickPickQuantity] = useState<number>(1);
   const nextLineIdCounter = useRef(0); // Renamed to avoid confusion with `line.id`
+    const handleAddLine = (initialNumbers: number[] = []) => {
+    if (lines.length >= MAX_TOTAL_LINES) {
+      alert(`Cannot add more than ${MAX_TOTAL_LINES} sets.`);
+      return;
+    }
+    const newId = (nextLineIdCounter.current++).toString(); // Simple unique ID
+    setLines(prevLines => [...prevLines, { id: newId, numbers: initialNumbers }]);
+  };
 
   // Add an initial empty line when the component mounts
   useEffect(() => {
@@ -32,7 +40,7 @@ export default function NumberPicker({ onCheckAllResults, onClearAll, resultsRef
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const generateUniqueQuickPickLine = (existingLines: LottoLine[]): number[] => {
-    let newPick: number[];
+    let newPick: number[] = [];
     let isUnique = false;
     const existingPicksSets = existingLines.map(line => new Set(line.numbers));
 
@@ -60,14 +68,6 @@ export default function NumberPicker({ onCheckAllResults, onClearAll, resultsRef
     return newPick;
   };
 
-  const handleAddLine = (initialNumbers: number[] = []) => {
-    if (lines.length >= MAX_TOTAL_LINES) {
-      alert(`Cannot add more than ${MAX_TOTAL_LINES} sets.`);
-      return;
-    }
-    const newId = (nextLineIdCounter.current++).toString(); // Simple unique ID
-    setLines(prevLines => [...prevLines, { id: newId, numbers: initialNumbers }]);
-  };
 
   const handleDeleteLine = (idToDelete: string) => {
     setLines(prevLines => {
@@ -133,7 +133,7 @@ export default function NumberPicker({ onCheckAllResults, onClearAll, resultsRef
       <div className="mb-6">
         <h3 className="text-xl font-semibold text-gray-700 mb-3">Your Sets ({lines.length}/{MAX_TOTAL_LINES})</h3>
         {lines.length === 0 && (
-          <p className="text-gray-500 italic text-center">Click "Add Set" or "Quick Pick" to start.</p>
+          <p className="text-gray-500 italic text-center">Click Add Set or Quick Pick to start.</p>
         )}
         <div className="space-y-4">
           {lines.map((line, index) => (
