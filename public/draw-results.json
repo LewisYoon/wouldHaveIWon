@@ -1,0 +1,34 @@
+[
+  {
+    "game": "Oz Lotto",
+    "drawDate": "2026-03-10",
+    "numbers": [1, 5, 10, 22, 33, 40, 44],
+    "bonus": [3, 8, 42],
+    "prizes": {
+      "Division 1": 10000000,
+      "Division 2": 35000,
+      "Division 3": 4500,
+      "Division 4": 350,
+      "Division 5": 45,
+      "Division 6": 22,
+      "Division 7": 12,
+      "No Prize": 0
+    }
+  },
+  {
+    "game": "Oz Lotto",
+    "drawDate": "2026-03-17",
+    "numbers": [2, 6, 12, 15, 20, 31, 29],
+    "bonus": [7, 9, 45],
+    "prizes": {
+      "Division 1": 20000000,
+      "Division 2": 45000,
+      "Division 3": 5000,
+      "Division 4": 400,
+      "Division 5": 50,
+      "Division 6": 25,
+      "Division 7": 15,
+      "No Prize": 0
+    }
+  }
+]
