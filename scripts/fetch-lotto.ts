@@ -10,8 +10,10 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 if (!supabaseUrl || !serviceRoleKey) {
-  console.error('ERROR: Supabase URL or Service Role Key is missing!');
-  console.log('Ensure NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are set in environment or .env.local');
+  console.error('ERROR: Missing required environment variables!');
+  if (!supabaseUrl) console.error('- NEXT_PUBLIC_SUPABASE_URL is missing');
+  if (!serviceRoleKey) console.error('- SUPABASE_SERVICE_ROLE_KEY is missing');
+  console.log('Available environment variables:', Object.keys(process.env).filter(k => k.includes('SUPABASE') || k.includes('NEXT_PUBLIC')));
   process.exit(1);
 }
 
@@ -26,7 +28,10 @@ async function fetchLatestResults() {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        'Accept': 'application/json, text/plain, */*',
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Origin': 'https://www.thelott.com',
+        'Referer': 'https://www.thelott.com/'
       },
       body: JSON.stringify({
         CompanyId: 'GoldenCasket',
