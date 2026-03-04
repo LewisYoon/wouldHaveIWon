@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { generateQuickPick } from '../lib/lotto-utils'; // Use relative import
 
 const NUMBER_RANGE_START = 1;
-const NUMBER_RANGE_END = 45;
+const NUMBER_RANGE_END = 47
 const MAX_SELECTIONS = 7;
 
 interface LottoLinePickerProps {
