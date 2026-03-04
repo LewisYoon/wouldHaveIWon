@@ -26,54 +26,74 @@ async function sendReminders() {
   }
 
   // Get current date in Sydney time (YYYY-MM-DD)
-  const sydneyDate = new Intl.DateTimeFormat('en-AU', {
+  const now = new Date();
+  const formatter = new Intl.DateTimeFormat('en-AU', {
     timeZone: 'Australia/Sydney',
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
-  }).format(new Date()).split('/').reverse().join('-');
+  });
+  
+  const parts = formatter.formatToParts(now);
+  const day = parts.find(p => p.type === 'day')?.value;
+  const month = parts.find(p => p.type === 'month')?.value;
+  const year = parts.find(p => p.type === 'year')?.value;
+  const sydneyDate = `${year}-${month}-${day}`;
 
-  console.log(`Checking for tickets on draw date: ${sydneyDate}...`);
+  console.log(`--- Draw Day Reminder for ${sydneyDate} ---`);
 
-  // 1. Get all unique users who have tickets for today
-  const { data: tickets, error: ticketError } = await supabase
+  // 1. Get all registered users
+  const { data: { users }, error: authError } = await supabase.auth.admin.listUsers();
+  
+  if (authError) {
+    console.error('Error fetching users:', authError);
+    return;
+  }
+
+  if (!users || users.length === 0) {
+    console.log('No registered users found.');
+    return;
+  }
+
+  // 2. Get users who ALREADY have tickets for today
+  const { data: ticketsToday, error: ticketError } = await supabase
     .from('tickets')
     .select('user_id')
     .eq('draw_date', sydneyDate);
 
   if (ticketError) {
-    console.error('Error fetching tickets:', ticketError);
+    console.error('Error checking today\'s tickets:', ticketError);
     return;
   }
 
-  if (!tickets || tickets.length === 0) {
-    console.log('No user tickets found for today.');
-    return;
-  }
+  const usersWithTickets = new Set(ticketsToday?.map(t => t.user_id) || []);
 
-  const userIds = Array.from(new Set(tickets.map(t => t.user_id)));
-  console.log(`Found ${userIds.length} users to remind.`);
+  // 3. Remind users who haven't "secured" their luck yet
+  for (const user of users) {
+    if (!user.email) continue;
 
-  // 2. Send reminders
-  for (const userId of userIds) {
+    if (usersWithTickets.has(user.id)) {
+      console.log(`Skipping ${user.email} - Already has tickets for today.`);
+      continue;
+    }
+
     try {
-      const { data: { user }, error: userError } = await supabase.auth.admin.getUserById(userId);
-      
-      if (userError || !user?.email) {
-        console.error(`Could not get email for user ${userId}:`, userError);
-        continue;
-      }
+      console.log(`Sending reminder to: ${user.email}...`);
 
-      await resend.emails.send({
-        from: 'WhatIFLotto <onboarding@resend.dev>',
+      const result = await resend.emails.send({
+        from: 'WouldHaveIWon <onboarding@resend.dev>',
         to: user.email,
-        subject: "🎫 Secure your tickets to try your luck - Today is Draw Day!",
-        text: `Today is the draw day for Oz Lotto (${sydneyDate})! Don't forget to secure your tickets at https://wouldhaveiwon.pages.dev to test your luck!`,
+        subject: "🎰 Today is Draw Day! Pick your lucky numbers",
+        text: `Today is Oz Lotto day (${sydneyDate})! Don't forget to secure your free (fake) tickets on WouldHaveIWon before the results are announced tonight. Will today be the day you 'would have' won millions? Test your luck now!`,
       });
 
-      console.log(`Reminder sent to ${user.email}`);
+      if (result.error) {
+        console.error(`Resend error for ${user.email}:`, result.error);
+      } else {
+        console.log(`Successfully sent reminder to ${user.email}`);
+      }
     } catch (e) {
-      console.error(`Failed to remind user ${userId}:`, e);
+      console.error(`Failed to remind user ${user.id}:`, e);
     }
   }
 }
