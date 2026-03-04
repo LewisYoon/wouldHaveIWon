@@ -9,7 +9,7 @@
     "start": "next start",
     "lint": "eslint",
     "test": "ts-node lotto-utils.test.ts",
-    "fetch-lotto": "ts-node scripts/fetch-lotto.ts"
+    "fetch-lotto": "tsx scripts/fetch-lotto.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.98.0",
@@ -28,6 +28,7 @@
     "eslint-config-next": "16.1.6",
     "tailwindcss": "^4",
     "ts-node": "^10.9.2",
+    "tsx": "^4.21.0",
     "typescript": "^5"
   }
 }
