@@ -9,7 +9,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "ts-node lotto-utils.test.ts",
-    "fetch-lotto": "tsx scripts/fetch-lotto.ts"
+    "fetch-lotto": "tsx scripts/fetch-lotto.ts",
+    "remind-draw": "tsx scripts/remind-draw.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.98.0",
@@ -17,7 +18,8 @@
     "next": "16.1.6",
     "react": "19.2.3",
     "react-confetti": "^6.4.0",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "resend": "^6.9.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

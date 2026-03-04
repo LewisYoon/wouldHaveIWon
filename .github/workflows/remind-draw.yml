@@ -1,11 +1,12 @@
-name: Fetch Latest Lotto Results
+name: Send Draw Day Reminders
 on:
   schedule:
-    # 6:05 AM UTC is 5:05 PM Sydney time (AEDT)
-    - cron: '30 17 * * 3'
+    # 10:00 PM UTC Monday is 9:00 AM Tuesday Sydney time (AEDT)
+    - cron: '0 22 * * 1'
+  workflow_dispatch:
 
 jobs:
-  fetch:
+  remind:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -13,9 +14,9 @@ jobs:
         with:
           node-version: '20'
       - run: npm install
-      - name: Run Fetcher
+      - name: Run Reminder
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
-        run: npx tsx scripts/fetch-lotto.ts
+        run: npm run remind-draw
