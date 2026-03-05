@@ -3,6 +3,7 @@ on:
   schedule:
     # 10:00 PM UTC Monday is 9:00 AM Tuesday Sydney time (AEDT)
     - cron: '0 23 * * 3'
+    workflow_dispatch:
 
 jobs:
   remind:
