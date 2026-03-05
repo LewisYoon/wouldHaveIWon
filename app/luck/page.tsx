@@ -37,6 +37,7 @@ export default function LuckPage() {
   const [expandedDates, setExpandedDates] = useState<Set<string>>(new Set());
   const [isDataLoading, setIsDataLoading] = useState(true);
   const [isRulesModalOpen, setIsRulesModalOpen] = useState(false);
+  const [selectedJackpot, setSelectedJackpot] = useState<number | null>(null);
 
   const stats = useMemo(() => {
     let totalMissedPrize = 0;
@@ -68,6 +69,40 @@ export default function LuckPage() {
     setSelectedDate(upcomingDates[0]);
     setCurrentNumbers([]);
   }, [game, upcomingDates]);
+
+  // Fetch jackpot for selected date
+  useEffect(() => {
+    const fetchJackpot = async () => {
+      setSelectedJackpot(null);
+      
+      // 1. Check upcoming_draws first
+      const { data: upcoming } = await supabase
+        .from('upcoming_draws')
+        .select('jackpot')
+        .eq('game', game)
+        .eq('draw_date', selectedDate)
+        .maybeSingle();
+      
+      if (upcoming) {
+        setSelectedJackpot(upcoming.jackpot);
+        return;
+      }
+
+      // 2. Check draw_results for past prizes
+      const { data: past } = await supabase
+        .from('draw_results')
+        .select('prizes')
+        .eq('game', game)
+        .eq('draw_date', selectedDate)
+        .maybeSingle();
+      
+      if (past && past.prizes && past.prizes['Division 1']) {
+        setSelectedJackpot(past.prizes['Division 1']);
+      }
+    };
+
+    fetchJackpot();
+  }, [game, selectedDate]);
 
   useEffect(() => {
     const loadTickets = async () => {
@@ -140,6 +175,11 @@ export default function LuckPage() {
   };
 
   const formatCurrency = (val: number) => new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(val);
+  
+  const formatJackpot = (val: number) => {
+    if (val >= 1000000) return `$${(val / 1000000).toFixed(0)} Million`;
+    return formatCurrency(val);
+  };
 
   if (isAuthLoading) return <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-950 font-black text-indigo-600 animate-pulse uppercase tracking-widest">Loading...</div>;
 
@@ -167,7 +207,7 @@ export default function LuckPage() {
                 {g}
               </button>
             ))}
-            <button onClick={() => setIsRulesModalOpen(true)} className="ml-auto bg-gray-100 dark:bg-white/5 text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors w-12 h-12 rounded-full flex items-center justify-center font-black text-lg">?</button>
+            <button onClick={() => setIsRulesModalOpen(true)} className="ml-auto bg-gray-100 dark:bg-white/5 text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors w-12 h-12 rounded-full flex items-center justify-center font-black text-lg shadow-sm border border-gray-200 dark:border-white/10">?</button>
           </div>
         </div>
       </header>
@@ -177,7 +217,16 @@ export default function LuckPage() {
         {/* Left Column */}
         <div className="lg:col-span-5 space-y-10 animate-in fade-in slide-in-from-bottom-8 duration-1000 text-left">
           <div className="bg-white dark:bg-gray-900 p-10 rounded-[3rem] border border-gray-100 dark:border-white/5 shadow-xl transition-all duration-500">
-            <label className="block text-[11px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em] mb-6 ml-2">1. Pick Draw Date</label>
+            <div className="flex justify-between items-end mb-6 ml-2">
+              <label className="block text-[11px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em]">1. Pick Draw Date</label>
+              {selectedJackpot !== null && (
+                <div className="text-right animate-in fade-in slide-in-from-right-4">
+                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Div 1 Prize</p>
+                  <p className="text-lg font-black text-emerald-600 dark:text-emerald-400 tracking-tighter leading-none">{formatJackpot(selectedJackpot)}</p>
+                </div>
+              )}
+            </div>
+            
             <div className="relative group mb-10">
               <select 
                 value={selectedDate} 
@@ -266,7 +315,7 @@ export default function LuckPage() {
                           <div className="text-right mr-6 text-gray-300 dark:text-gray-700 italic font-black text-xs uppercase animate-pulse tracking-widest">Checking...</div>
                         )}
                       </button>
-                      <button onClick={() => handleDeleteDateGroup(date)} className="text-gray-300 dark:text-gray-700 hover:text-red-500 p-3 transition-colors transform hover:scale-125 duration-300">🗑️</button>
+                      <button onClick={() => handleDeleteDateGroup(date)} className="text-gray-300 dark:text-gray-600 hover:text-red-500 p-3 transition-colors transform hover:scale-125 duration-300">🗑️</button>
                     </div>
 
                     {isExpanded && (

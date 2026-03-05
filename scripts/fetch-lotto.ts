@@ -23,7 +23,8 @@ const resend = resendApiKey ? new Resend(resendApiKey) : null;
 
 function getEmailTemplate(game: string, drawDate: string, status: { won: boolean }) {
   const isOz = game === 'Oz Lotto';
-  const brandColor = isOz ? '#10b981' : '#4f46e5';
+  const isTatts = game === 'Tatts Lotto';
+  const brandColor = isOz ? '#10b981' : isTatts ? '#ef4444' : '#4f46e5'; 
   
   const title = status.won ? `You've got a match!` : `The results are in`;
   const heroText = status.won 
@@ -120,8 +121,58 @@ async function notifyUsers(game: string, drawDate: string, winningNumbers: numbe
   }
 }
 
-async function fetchGame(game: 'OzLotto' | 'Powerball') {
-  const displayName = game === 'OzLotto' ? 'Oz Lotto' : 'Powerball';
+async function fetchUpcomingDraws() {
+  console.log('Fetching upcoming draws...');
+  try {
+    const response = await fetch('https://data.api.thelott.com/sales/vmax/web/data/lotto/opendraws', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        'Accept': 'application/json',
+        'Origin': 'https://www.thelott.com',
+        'Referer': 'https://www.thelott.com/'
+      },
+      body: JSON.stringify({ CompanyId: 'GoldenCasket', OptionalProductFilter: ['OzLotto', 'Powerball', 'TattsLotto'] }),
+    });
+
+    const data: any = await response.json();
+    if (!data.Success || !data.Draws?.length) return;
+
+    // Filter for only the next immediate draw for each game
+    const games = ['OzLotto', 'Powerball', 'TattsLotto'];
+    const upcoming = games.map(g => {
+      const draw = data.Draws.find((d: any) => d.ProductId === g);
+      if (!draw) return null;
+      
+      const displayName = g === 'OzLotto' ? 'Oz Lotto' : g === 'Powerball' ? 'Powerball' : 'Tatts Lotto';
+      return {
+        game: displayName,
+        draw_number: draw.DrawNumber,
+        draw_date: draw.DrawDate.split('T')[0],
+        jackpot: draw.Div1Amount,
+        is_estimated: draw.IsDiv1Estimated
+      };
+    }).filter(Boolean);
+
+    // Upsert upcoming draws
+    for (const draw of upcoming) {
+      const { error } = await supabase
+        .from('upcoming_draws')
+        .upsert(draw, { onConflict: 'game' });
+      
+      if (error) console.error(`Error upserting upcoming draw for ${draw?.game}:`, error.message);
+    }
+    console.log('Synchronized upcoming draw info.');
+
+  } catch (error: any) {
+    console.error('Upcoming Draw Sync Error:', error.message);
+  }
+}
+
+async function fetchGame(game: 'OzLotto' | 'Powerball' | 'TattsLotto') {
+  const displayName = game === 'OzLotto' ? 'Oz Lotto' : game === 'Powerball' ? 'Powerball' : 'Tatts Lotto';
+  console.log(`Checking ${displayName} results...`);
   
   try {
     const response = await fetch('https://data.api.thelott.com/sales/vmax/web/data/lotto/latestresults', {
@@ -152,7 +203,10 @@ async function fetchGame(game: 'OzLotto' | 'Powerball') {
     const drawDate = latest.DrawDate.split('T')[0];
 
     const { data: existing } = await supabase.from('draw_results').select('id').eq('draw_number', drawNumber).eq('game', displayName).maybeSingle();
-    if (existing) return;
+    if (existing) {
+      console.log(`${displayName} Block #${drawNumber} already in sync.`);
+      return;
+    }
 
     const prizes: Record<string, number> = {};
     latest.Dividends.forEach((div: any) => prizes[`Division ${div.Division}`] = div.BlocDividend);
@@ -176,8 +230,10 @@ async function fetchGame(game: 'OzLotto' | 'Powerball') {
 }
 
 async function run() {
+  await fetchUpcomingDraws();
   await fetchGame('OzLotto');
   await fetchGame('Powerball');
+  await fetchGame('TattsLotto');
 }
 
 run();

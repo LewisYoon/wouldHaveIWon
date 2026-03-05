@@ -13,12 +13,14 @@ export default function Home() {
   });
 
   const [latestResults, setLatestResults] = useState<any[]>([]);
+  const [upcomingDraws, setUpcomingDraws] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
+        // Fetch stats
         const { count: ticketCount } = await supabase
           .from('tickets')
           .select('*', { count: 'exact', head: true });
@@ -29,27 +31,21 @@ export default function Home() {
         
         const uniqueUsers = new Set(users?.map(u => u.user_id)).size;
 
-        const { data: ozResult } = await supabase
+        // Fetch latest results
+        const { data: resultsData } = await supabase
           .from('draw_results')
           .select('*')
-          .eq('game', 'Oz Lotto')
           .order('draw_date', { ascending: false })
-          .limit(1)
-          .maybeSingle();
+          .limit(6);
 
-        const { data: pbResult } = await supabase
-          .from('draw_results')
+        // Fetch upcoming draws
+        const { data: upcomingData } = await supabase
+          .from('upcoming_draws')
           .select('*')
-          .eq('game', 'Powerball')
-          .order('draw_date', { ascending: false })
-          .limit(1)
-          .maybeSingle();
+          .order('draw_date', { ascending: true });
 
-        const results = [];
-        if (ozResult) results.push(ozResult);
-        if (pbResult) results.push(pbResult);
-
-        setLatestResults(results);
+        setLatestResults(resultsData || []);
+        setUpcomingDraws(upcomingData || []);
         setLiveStats({
           totalTickets: ticketCount || 0,
           activeTrackers: uniqueUsers || 0,
@@ -63,6 +59,11 @@ export default function Home() {
 
     fetchData();
   }, []);
+
+  const formatAmount = (amount: number) => {
+    if (amount >= 1000000) return `$${(amount / 1000000).toFixed(0)} Million`;
+    return new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', maximumFractionDigits: 0 }).format(amount);
+  };
 
   return (
     <div className="flex flex-col min-h-screen selection:bg-indigo-500 selection:text-white overflow-x-hidden">
@@ -83,7 +84,7 @@ export default function Home() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
             </span>
-            Official Live Results
+            Official Live Data
           </div>
 
           <div className="mb-12 flex justify-center transform hover:scale-105 transition-transform duration-500">
@@ -124,43 +125,88 @@ export default function Home() {
 
       <main className="max-w-6xl mx-auto px-6 -mt-20 relative z-20 flex-grow pb-40">
         
-        {/* Results Section */}
-        <section className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-36">
-          {latestResults.length > 0 ? latestResults.map((res, i) => {
-            const isOz = res.game === 'Oz Lotto';
-            const ballBg = isOz ? 'bg-emerald-600' : 'bg-indigo-600';
-            const gameTextColor = isOz ? 'text-emerald-600' : 'text-indigo-600';
-
-            return (
-              <div key={i} className="bg-white/95 dark:bg-gray-900/95 p-8 rounded-[2.5rem] shadow-xl border border-gray-100 dark:border-white/5 backdrop-blur-2xl transition-all duration-500 hover:-translate-y-1.5 group overflow-hidden text-left">
-                <div className="flex justify-between items-center mb-10 relative z-10">
-                  <div className="flex flex-col">
-                    <span className={`text-[11px] font-black ${gameTextColor} uppercase tracking-[0.2em]`}>{res.game}</span>
-                    <p className="text-2xl font-black text-gray-900 dark:text-white mt-1 tracking-tighter">Latest Draw</p>
-                  </div>
-                  <span className="text-[10px] font-black text-gray-400 bg-gray-100 dark:bg-white/5 px-4 py-1.5 rounded-full uppercase tracking-widest">{res.draw_date}</span>
-                </div>
-
-                <div className="flex flex-wrap gap-2.5 justify-center md:justify-start relative z-10">
-                  {res.numbers.map((n: number) => (
-                    <span key={n} className={`w-11 h-11 rounded-full ${ballBg} text-white flex items-center justify-center font-black shadow-md border-b-4 border-black/20 text-lg group-hover:scale-105 transition-transform`}>
-                      {n}
-                    </span>
-                  ))}
-                  <div className="w-px h-11 bg-gray-200 dark:bg-white/10 mx-1 hidden md:block" />
-                  {res.bonus && res.bonus.map((n: number) => (
-                    <span key={`b-${n}`} className="w-11 h-11 rounded-full bg-amber-400 text-amber-950 flex items-center justify-center font-black shadow-md border-b-4 border-amber-600/50 text-lg group-hover:scale-105 transition-transform">
-                      {n}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            );
-          }) : !loading && (
-            <div className="col-span-full bg-white dark:bg-gray-900 p-16 rounded-[3rem] shadow-lg text-center border border-gray-100 dark:border-white/5 text-gray-400 font-bold italic uppercase tracking-widest text-sm">
-              Updating draw results...
+        {/* Upcoming Jackpots */}
+        {upcomingDraws.length > 0 && (
+          <section className="mb-24 animate-in fade-in slide-in-from-bottom-12 duration-1000">
+            <div className="text-left mb-8 px-4">
+              <h2 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter italic">Next Big Wins</h2>
+              <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Upcoming Estimated Jackpots</p>
             </div>
-          )}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+              {upcomingDraws.map((draw, i) => {
+                const isOz = draw.game === 'Oz Lotto';
+                const isTatts = draw.game === 'Tatts Lotto';
+                const brandColor = isOz ? 'text-emerald-600' : isTatts ? 'text-red-600' : 'text-indigo-600';
+                const brandBg = isOz ? 'bg-emerald-50 dark:bg-emerald-500/10' : isTatts ? 'bg-red-50 dark:bg-red-500/10' : 'bg-indigo-50 dark:bg-indigo-500/10';
+                
+                return (
+                  <div key={i} className={`p-8 rounded-[2.5rem] border border-gray-100 dark:border-white/5 shadow-xl transition-all duration-500 hover:-translate-y-1 group bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl`}>
+                    <div className="flex flex-col h-full">
+                      <div className="flex justify-between items-start mb-6">
+                        <span className={`text-[10px] font-black uppercase tracking-widest ${brandColor}`}>{draw.game}</span>
+                        <span className="text-[9px] font-black text-gray-400 uppercase bg-gray-100 dark:bg-white/5 px-2.5 py-1 rounded-full">{draw.draw_date}</span>
+                      </div>
+                      <div className="flex-grow">
+                        <p className="text-3xl font-black text-gray-900 dark:text-white tracking-tighter mb-1">
+                          {formatAmount(draw.jackpot)}
+                        </p>
+                        <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase">Estimated Div 1</p>
+                      </div>
+                      <Link href="/luck" className={`mt-8 text-[10px] font-black uppercase tracking-[0.2em] py-3 rounded-xl text-center transition-all ${brandBg} ${brandColor} hover:brightness-95`}>
+                        Track This Draw
+                      </Link>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {/* Latest Results Section */}
+        <section className="mb-36">
+          <div className="text-left mb-8 px-4">
+            <h2 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter italic">Latest Results</h2>
+            <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Verified Official Draw History</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {latestResults.length > 0 ? latestResults.map((res, i) => {
+              const isOz = res.game === 'Oz Lotto';
+              const isTatts = res.game === 'Tatts Lotto';
+              const ballBg = isOz ? 'bg-emerald-600' : isTatts ? 'bg-red-600' : 'bg-indigo-600';
+              const gameTextColor = isOz ? 'text-emerald-600' : isTatts ? 'text-red-600' : 'text-indigo-600';
+
+              return (
+                <div key={i} className="bg-white/95 dark:bg-gray-900/95 p-8 rounded-[2.5rem] shadow-xl border border-gray-100 dark:border-white/5 backdrop-blur-2xl transition-all duration-500 hover:-translate-y-1.5 group overflow-hidden text-left">
+                  <div className="flex justify-between items-center mb-10 relative z-10">
+                    <div className="flex flex-col">
+                      <span className={`text-[11px] font-black ${gameTextColor} uppercase tracking-[0.2em]`}>{res.game}</span>
+                      <p className="text-2xl font-black text-gray-900 dark:text-white mt-1 tracking-tighter">Results</p>
+                    </div>
+                    <span className="text-[10px] font-black text-gray-400 bg-gray-100 dark:bg-white/5 px-4 py-1.5 rounded-full uppercase tracking-widest">{res.draw_date}</span>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2.5 justify-center md:justify-start relative z-10">
+                    {res.numbers.map((n: number) => (
+                      <span key={n} className={`w-11 h-11 rounded-full ${ballBg} text-white flex items-center justify-center font-black shadow-md border-b-4 border-black/20 text-lg group-hover:scale-105 transition-transform`}>
+                        {n}
+                      </span>
+                    ))}
+                    <div className="w-px h-11 bg-gray-200 dark:bg-white/10 mx-1 hidden md:block" />
+                    {res.bonus && res.bonus.map((n: number) => (
+                      <span key={`b-${n}`} className="w-11 h-11 rounded-full bg-amber-400 text-amber-950 flex items-center justify-center font-black shadow-md border-b-4 border-amber-600/50 text-lg group-hover:scale-105 transition-transform">
+                        {n}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              );
+            }) : !loading && (
+              <div className="col-span-full bg-white dark:bg-gray-900 p-16 rounded-[3rem] shadow-lg text-center border border-gray-100 dark:border-white/5 text-gray-400 font-bold italic uppercase tracking-widest text-sm">
+                Updating draw results...
+              </div>
+            )}
+          </div>
         </section>
 
         {/* Feature Grid */}
