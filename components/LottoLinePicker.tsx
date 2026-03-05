@@ -34,9 +34,9 @@ export default function LottoLinePicker({
   }, [selectedNumbers, game]);
 
   const handleMainClick = (num: number) => {
-    let newSelection = [...internalSelectedNumbers];
+    let newSelection: number[] = [...internalSelectedNumbers];
     const mainNumbers = isOz ? internalSelectedNumbers : internalSelectedNumbers.slice(0, 7);
-    const powerball = isOz ? null : internalSelectedNumbers[7];
+    const powerball = isOz ? undefined : internalSelectedNumbers[7];
 
     if (mainNumbers.includes(num)) {
       newSelection = newSelection.filter((n, i) => isOz ? n !== num : (i < 7 ? n !== num : true));
