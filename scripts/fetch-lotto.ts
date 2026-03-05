@@ -80,7 +80,9 @@ async function notifyUsers(game: string, drawDate: string, winningNumbers: numbe
   for (let i = 0; i < emailBatch.length; i += 100) {
     const batch = emailBatch.slice(i, i + 100);
     try {
-      await resend.batch.send(batch);
+      console.log(`Sending batch to: ${batch.map(b => b.to).join(', ')}`);
+      const response = await resend.batch.send(batch);
+      console.log(`Resend API Response:`, JSON.stringify(response, null, 2));
       console.log(`Successfully sent batch of ${batch.length} ${game} notifications.`);
     } catch (e) {
       console.error(`Failed to send email batch:`, e);
