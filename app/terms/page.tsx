@@ -11,7 +11,7 @@ export default function TermsPage() {
         <div className="space-y-8">
           <section>
             <h2 className="text-2xl font-bold mb-4">1. Acceptable Use</h2>
-            <p>Would Have I Won? is a simulation platform intended for entertainment and educational purposes only. You agree not to use the site for any illegal activities.</p>
+            <p><strong>WhatIFLotto</strong> is a simulation platform intended for entertainment and educational purposes only. You agree not to use the site for any illegal activities.</p>
           </section>
 
           <section>

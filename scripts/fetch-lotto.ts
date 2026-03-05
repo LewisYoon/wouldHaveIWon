@@ -75,11 +75,11 @@ async function notifyUsers(drawDate: string, winningNumbers: number[], bonusNumb
 
       const subject = status.won ? "🎉 You are a winner!" : "Lotto Results are Out!";
       const message = status.won 
-        ? `Great news! One of your tickets for the ${drawDate} Oz Lotto draw has won a prize. Visit WouldHaveIWon to check your division!`
-        : `The Oz Lotto results for ${drawDate} are now available. Visit WouldHaveIWon to see how your tickets performed.`;
+        ? `Great news! One of your tickets for the ${drawDate} Oz Lotto draw has won a prize. Visit WhatIFLotto to check your division!`
+        : `The Oz Lotto results for ${drawDate} are now available. Visit WhatIFLotto to see how your tickets performed.`;
 
       await resend.emails.send({
-        from: 'WouldHaveIWon <onboarding@resend.dev>', // Update this after verifying your domain in Resend
+        from: 'WhatIFLotto <onboarding@resend.dev>', // Update this after verifying your domain in Resend
         to: user.email,
         subject: subject,
         text: message,

@@ -1,4 +1,4 @@
-// lotto-project/components/NumberPicker.tsx (Multi-Line Manager with Supabase Support)
+// lotto-project/components/NumberPicker.tsx (Optimized for high-volume tickets)
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
@@ -7,7 +7,7 @@ import LottoLinePicker from './LottoLinePicker';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 
-const MAX_TOTAL_LINES = 100;
+const MAX_TOTAL_LINES = 1000; // Increased limit
 const MAX_SELECTIONS_PER_LINE = 7;
 const LOCAL_STORAGE_CURRENT_LINES_KEY = 'lottoCurrentLines';
 const LOCAL_STORAGE_WINNING_HISTORY_KEY = 'lottoWinningHistory';
@@ -46,15 +46,16 @@ export default function NumberPicker({ onCheckAllResults, onClearAll, resultsRef
   const { user, isLoading: isAuthLoading } = useAuth();
   const [lines, setLines] = useState<LottoLine[]>([]);
   const [winningHistory, setWinningHistory] = useState<WinningResult[]>([]);
-  const [quickPickQuantity, setQuickPickQuantity] = useState<number>(1);
+  const [quickPickQuantity, setQuickPickQuantity] = useState<number>(10);
   const [showHistory, setShowHistory] = useState(false);
   const [isDataLoading, setIsDataLoading] = useState(true);
+  const [showAllDetails, setShowAllDetails] = useState(false); // Toggle for long lists
   const uniqueIdCounter = useRef(0);
 
   const handleAddLine = useCallback((initialNumbers: number[] = []) => {
     setLines(prevLines => {
       if (prevLines.length >= MAX_TOTAL_LINES) {
-        alert(`Cannot add more than ${MAX_TOTAL_LINES} sets.`);
+        alert(`Limit reached (${MAX_TOTAL_LINES} sets).`);
         return prevLines;
       }
       const newId = (uniqueIdCounter.current++).toString();
@@ -62,64 +63,41 @@ export default function NumberPicker({ onCheckAllResults, onClearAll, resultsRef
     });
   }, []);
 
-  // Load data from Supabase or LocalStorage
   useEffect(() => {
     const loadData = async () => {
       setIsDataLoading(true);
       if (user) {
-        // Load winning history from Supabase
         const { data, error } = await supabase
           .from('simulator_history')
           .select('*')
           .order('created_at', { ascending: false });
         
-        if (error) {
-          console.error("Error fetching winning history:", error);
-        } else if (data) {
-          const history = data.flatMap(item => Array.isArray(item.lines) ? item.lines : [item.lines]);
-          setWinningHistory(history);
-        }
-        
-        const storedCurrentLines = localStorage.getItem(LOCAL_STORAGE_CURRENT_LINES_KEY);
-        if (storedCurrentLines) {
-          try {
-            const loadedLines: LottoLine[] = JSON.parse(storedCurrentLines);
-            setLines(loadedLines.map(l => ({ ...l, id: (uniqueIdCounter.current++).toString() })));
-          } catch (e) {
-            handleAddLine();
-          }
-        } else {
-          handleAddLine();
+        if (error) console.error("Error fetching history:", error);
+        else if (data) {
+          setWinningHistory(data.flatMap(item => Array.isArray(item.lines) ? item.lines : [item.lines]));
         }
       } else {
-        const storedCurrentLines = localStorage.getItem(LOCAL_STORAGE_CURRENT_LINES_KEY);
-        if (storedCurrentLines) {
-          try {
-            const loadedLines: LottoLine[] = JSON.parse(storedCurrentLines);
-            setLines(loadedLines.map(l => ({ ...l, id: (uniqueIdCounter.current++).toString() })));
-          } catch (e) {
-            handleAddLine();
-          }
-        } else {
-          handleAddLine();
-        }
-
         const storedWinningHistory = localStorage.getItem(LOCAL_STORAGE_WINNING_HISTORY_KEY);
         if (storedWinningHistory) {
-          try {
-            setWinningHistory(JSON.parse(storedWinningHistory));
-          } catch (e) {}
+          try { setWinningHistory(JSON.parse(storedWinningHistory)); } catch (e) {}
         }
+      }
+
+      const storedCurrentLines = localStorage.getItem(LOCAL_STORAGE_CURRENT_LINES_KEY);
+      if (storedCurrentLines) {
+        try {
+          const loadedLines: LottoLine[] = JSON.parse(storedCurrentLines);
+          setLines(loadedLines.map(l => ({ ...l, id: (uniqueIdCounter.current++).toString() })));
+        } catch (e) { handleAddLine(); }
+      } else {
+        handleAddLine();
       }
       setIsDataLoading(false);
     };
 
-    if (!isAuthLoading) {
-      loadData();
-    }
+    if (!isAuthLoading) loadData();
   }, [user, isAuthLoading, handleAddLine]);
 
-  // Persist current lines to LocalStorage
   useEffect(() => {
     if (lines.length > 0) {
       localStorage.setItem(LOCAL_STORAGE_CURRENT_LINES_KEY, JSON.stringify(lines));
@@ -153,7 +131,7 @@ export default function NumberPicker({ onCheckAllResults, onClearAll, resultsRef
   const handleMultiQuickPick = () => {
     setLines(prevLines => {
       if (prevLines.length + quickPickQuantity > MAX_TOTAL_LINES) {
-        alert(`Adding ${quickPickQuantity} Quick Picks would exceed the maximum of ${MAX_TOTAL_LINES} sets.`);
+        alert(`Limit reached. Maximum ${MAX_TOTAL_LINES} sets.`);
         return prevLines;
       }
 
@@ -163,18 +141,20 @@ export default function NumberPicker({ onCheckAllResults, onClearAll, resultsRef
         const newId = (uniqueIdCounter.current++).toString();
         newQuickPicks.push({ id: newId, numbers: uniquePick });
       }
-      return [...prevLines, ...newQuickPicks];
+      const updated = [...prevLines, ...newQuickPicks];
+      // Automatically hide details if we have a lot of lines to keep UI clean
+      if (updated.length > 10) setShowAllDetails(false);
+      return updated;
     });
   };
 
   const handleCheckAllResultsClick = async () => {
     const completeLines = lines.filter(line => line.numbers.length === MAX_SELECTIONS_PER_LINE);
     if (completeLines.length === 0) {
-      alert("Please complete at least one set to check results.");
+      alert("Please complete at least one set.");
       return;
     }
 
-    // Automatically find and save winners
     if (drawResult) {
       const currentWinners: WinningResult[] = [];
       completeLines.forEach(line => {
@@ -210,71 +190,85 @@ export default function NumberPicker({ onCheckAllResults, onClearAll, resultsRef
   const handleDeleteHistoryItem = async (idToDelete: string) => {
     const updated = winningHistory.filter(item => item.id !== idToDelete);
     setWinningHistory(updated);
-    if (!user) {
-      localStorage.setItem(LOCAL_STORAGE_WINNING_HISTORY_KEY, JSON.stringify(updated));
-    }
+    if (!user) localStorage.setItem(LOCAL_STORAGE_WINNING_HISTORY_KEY, JSON.stringify(updated));
   };
 
   const handleClearAllHistory = async () => {
-    if (!window.confirm("Are you sure you want to clear all winning history? This cannot be undone.")) return;
-
-    if (user) {
-      await supabase.from('simulator_history').delete().eq('user_id', user.id);
-    }
-
+    if (!window.confirm("Clear all history?")) return;
+    if (user) await supabase.from('simulator_history').delete().eq('user_id', user.id);
     setWinningHistory([]);
     localStorage.removeItem(LOCAL_STORAGE_WINNING_HISTORY_KEY);
     setShowHistory(false);
   };
 
-  return (
-    <div className="p-4 bg-gray-50 shadow-lg rounded-lg max-w-2xl mx-auto my-8 pb-24">
-      <h2 className="text-3xl font-bold text-center mb-6 text-gray-800">Your Lotto Ticket</h2>
+  const displayLines = showAllDetails ? lines : lines.slice(0, 5);
+  const hiddenCount = lines.length - displayLines.length;
 
-      <div className="mb-6">
-        <h3 className="text-xl font-semibold text-gray-700 mb-3">Your Sets ({lines.length}/{MAX_TOTAL_LINES})</h3>
-        {isDataLoading ? (
-          <p className="text-center text-gray-400 py-4">Loading sets...</p>
-        ) : lines.length === 0 && (
-          <p className="text-gray-500 italic text-center">Click &quot;Add Set&quot; or &quot;Quick Pick&quot; to start.</p>
-        )}
-        <div className="space-y-4">
-          {lines.map((line, index) => (
-            <LottoLinePicker
-              key={line.id}
-              lineId={line.id}
-              displayIndex={index + 1}
-              selectedNumbers={line.numbers}
-              onNumbersChange={handleNumbersChange}
-              onDeleteLine={handleDeleteLine}
-            />
-          ))}
+  return (
+    <div className="p-4 bg-gray-50 shadow-lg rounded-[2rem] max-w-2xl mx-auto my-8 pb-24 border border-gray-100">
+      <div className="mb-6 px-4">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-xl font-black text-gray-900 uppercase tracking-tighter italic">Your Current Ticket</h3>
+          <span className="bg-blue-600 text-white text-[10px] font-black px-2 py-1 rounded-full">{lines.length} Sets</span>
         </div>
+
+        {isDataLoading ? (
+          <p className="text-center text-gray-400 py-4 animate-pulse font-bold italic">Loading sets...</p>
+        ) : (
+          <div className="space-y-4">
+            {displayLines.map((line, index) => (
+              <LottoLinePicker
+                key={line.id}
+                lineId={line.id}
+                displayIndex={index + 1}
+                selectedNumbers={line.numbers}
+                onNumbersChange={handleNumbersChange}
+                onDeleteLine={handleDeleteLine}
+              />
+            ))}
+            
+            {!showAllDetails && lines.length > 5 && (
+              <button 
+                onClick={() => setShowAllDetails(true)}
+                className="w-full py-4 bg-white border-2 border-dashed border-gray-200 rounded-2xl text-gray-400 font-bold text-sm hover:border-blue-300 hover:text-blue-500 transition-all group"
+              >
+                Showing 5 of {lines.length} sets. <span className="text-blue-600 underline">Show all {hiddenCount} more tickets?</span>
+              </button>
+            )}
+
+            {showAllDetails && lines.length > 5 && (
+              <button 
+                onClick={() => setShowAllDetails(false)}
+                className="w-full py-3 text-gray-400 font-bold text-xs uppercase tracking-widest hover:text-gray-600 transition-colors"
+              >
+                ↑ Collapse ticket view
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Sticky Footer */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white p-4 shadow-lg border-t border-gray-200 z-50">
-        <div className="max-w-2xl mx-auto flex flex-wrap justify-center items-center gap-4">
+      <div className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-md p-4 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] border-t border-gray-100 z-50">
+        <div className="max-w-2xl mx-auto flex flex-wrap justify-center items-center gap-3">
           <button
-            onClick={() => handleAddLine()}
-            className="px-6 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors duration-200"
+            onClick={() => { handleAddLine(); setShowAllDetails(true); }}
+            className="px-5 py-2.5 rounded-xl bg-white border border-gray-200 text-gray-700 font-bold text-sm hover:bg-gray-50 transition-all shadow-sm"
           >
-            Add Set
+            + Add Set
           </button>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-xl border border-gray-200">
             <select
               value={quickPickQuantity}
               onChange={(e) => setQuickPickQuantity(Number(e.target.value))}
-              className="w-24 p-2 border border-gray-300 rounded-lg text-center bg-white text-black"
+              className="bg-transparent px-2 font-bold text-sm outline-none text-gray-700"
             >
-              {[1, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100].map(qty => (
-                <option key={qty} value={qty}>x{qty}</option>
-              ))}
+              {[10, 20, 50, 100, 200].map(qty => <option key={qty} value={qty}>x{qty}</option>)}
             </select>
             <button
               onClick={handleMultiQuickPick}
-              className="px-6 py-2 rounded-lg bg-purple-600 text-white font-semibold hover:bg-purple-700 transition-colors duration-200"
+              className="px-5 py-2 rounded-lg bg-blue-600 text-white font-black text-xs uppercase tracking-wider hover:bg-blue-700 transition-all shadow-md"
             >
               Quick Pick
             </button>
@@ -282,70 +276,73 @@ export default function NumberPicker({ onCheckAllResults, onClearAll, resultsRef
 
           <button
             onClick={() => setShowHistory(!showHistory)}
-            className={`px-6 py-2 rounded-lg font-semibold transition-colors duration-200 ${showHistory ? 'bg-gray-700 text-white' : 'bg-teal-600 text-white hover:bg-teal-700'}`}
+            className={`px-5 py-2.5 rounded-xl font-bold text-sm transition-all shadow-sm ${showHistory ? 'bg-gray-900 text-white' : 'bg-green-100 text-green-700 border border-green-200'}`}
           >
             {showHistory ? 'Close History' : `Wins (${winningHistory.length})`}
           </button>
 
           <button
             onClick={handleClearAllCurrentLines}
-            className="px-6 py-2 rounded-lg bg-red-500 text-white font-semibold hover:bg-red-600 transition-colors duration-200"
+            className="p-2.5 rounded-xl bg-red-50 text-red-500 border border-red-100 hover:bg-red-100 transition-all"
+            title="Clear current tickets"
           >
-            Clear All
+            🗑️
           </button>
+          
           <button
             onClick={handleCheckAllResultsClick}
-            className="px-8 py-3 rounded-lg bg-indigo-600 text-white font-bold text-lg hover:bg-indigo-700 transition-colors duration-200"
+            className="px-8 py-3 rounded-2xl bg-indigo-600 text-white font-black text-lg hover:bg-indigo-700 transition-all shadow-lg hover:scale-[1.02] active:scale-95"
           >
-            Check All Results
+            Check Results
           </button>
         </div>
       </div>
 
-      {/* History UI */}
+      {/* Winning History Sidebar/Modal Style UI */}
       {showHistory && (
-        <div className="mt-8 p-4 bg-white shadow-lg rounded-lg border border-teal-100">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-2xl font-bold text-gray-800 text-left">Winning History</h3>
+        <div className="mt-8 p-6 bg-white shadow-2xl rounded-[2.5rem] border border-green-100 animate-in zoom-in-95 duration-200">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-2xl font-black text-gray-900 uppercase tracking-tighter italic">Winning History</h3>
             {winningHistory.length > 0 && (
               <button
                 onClick={handleClearAllHistory}
-                className="text-xs font-bold text-red-500 hover:text-red-700 uppercase tracking-tighter"
+                className="text-[10px] font-black text-red-500 hover:text-red-700 uppercase tracking-widest bg-red-50 px-3 py-1 rounded-full"
               >
-                Clear All
+                Clear History
               </button>
             )}
           </div>
           
           {winningHistory.length === 0 ? (
-            <p className="text-gray-500 italic text-center py-8">No winning results recorded yet.</p>
+            <div className="py-12 text-center">
+              <p className="text-4xl mb-4">🏆</p>
+              <p className="text-gray-400 font-bold italic">No wins recorded yet. Try a high-volume Quick Pick!</p>
+            </div>
           ) : (
-            <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+            <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
               {winningHistory.map((item, idx) => (
-                <div key={item.id || idx} className="border border-green-200 rounded-lg p-4 bg-green-50 relative group">
+                <div key={item.id || idx} className="border border-green-100 rounded-2xl p-4 bg-green-50/50 hover:bg-green-50 transition-colors relative group border-l-4 border-l-green-500">
                   <div className="flex justify-between items-start mb-2">
                     <div>
-                      <p className="text-[10px] font-bold text-green-700 uppercase tracking-widest">Draw: {item.drawDate}</p>
+                      <p className="text-[9px] font-black text-green-600 uppercase tracking-widest">Draw Date: {item.drawDate}</p>
                       <p className="text-lg font-black text-gray-800">{item.prizeTier}</p>
                     </div>
                     <button 
                       onClick={() => handleDeleteHistoryItem(item.id)}
-                      className="text-gray-400 hover:text-red-500 transition-colors"
-                      title="Delete entry"
+                      className="text-gray-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
                     >
                       🗑️
                     </button>
                   </div>
-                  
                   <div className="flex justify-between items-end">
                     <div className="flex flex-wrap gap-1">
                       {item.numbers.map(n => (
-                        <span key={n} className="w-6 h-6 flex items-center justify-center rounded-full bg-white border border-green-200 text-[10px] font-bold text-gray-700">
+                        <span key={n} className="w-6 h-6 flex items-center justify-center rounded-full bg-white text-[10px] font-black text-gray-700 shadow-sm border border-gray-100">
                           {n}
                         </span>
                       ))}
                     </div>
-                    <div className="text-[10px] text-gray-500 font-bold uppercase">
+                    <div className="text-[10px] font-black text-gray-400 uppercase italic">
                       {item.mainMatchesCount}M + {item.bonusMatchesCount}S
                     </div>
                   </div>

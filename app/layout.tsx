@@ -15,9 +15,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Would Have I Won? | Oz Lotto Simulator & Result Tracker",
-  description: "The ultimate risk-free Oz Lotto simulator. Check your lucky numbers against official results, track your 'what-if' winnings, and explore lotto probabilities.",
-  keywords: "Oz Lotto, Lotto Simulator, Lottery Results, Lucky Numbers, Australia Lotto",
+  title: "WhatIFLotto | The Ultimate Oz Lotto 'Near Miss' & Regret Calculator",
+  description: "Stop wondering 'What If?'. Test your lucky numbers against official Oz Lotto results. Our simulator tracks your near-misses, potential winnings, and simulated profit over time.",
+  keywords: "Oz Lotto, WhatIFLotto, Lotto Regret Calculator, Lotto Simulator, Near Miss Tracker, Lucky Numbers Australia",
 };
 
 export default function RootLayout({
@@ -46,7 +46,7 @@ export default function RootLayout({
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
                 <div className="col-span-1 md:col-span-2">
-                  <h3 className="text-white text-lg font-bold mb-4 italic">Would Have I Won?</h3>
+                  <h3 className="text-white text-lg font-bold mb-4 italic text-yellow-400">WhatIF<span className="text-white">Lotto</span></h3>
                   <p className="text-sm leading-relaxed max-w-md">
                     We provide a fun, risk-free environment to test your lottery luck. 
                     Our simulator uses official Oz Lotto data to help you visualize 
@@ -70,7 +70,7 @@ export default function RootLayout({
                 </div>
               </div>
               <div className="mt-12 pt-8 border-t border-gray-800 text-center text-xs">
-                <p>&copy; {currentYear} Would Have I Won. Not affiliated with any official lottery provider.</p>
+                <p>&copy; {currentYear} WhatIFLotto. Not affiliated with any official lottery provider.</p>
               </div>
             </div>
           </footer>

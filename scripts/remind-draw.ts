@@ -81,10 +81,10 @@ async function sendReminders() {
       console.log(`Sending reminder to: ${user.email}...`);
 
       const result = await resend.emails.send({
-        from: 'WouldHaveIWon <onboarding@resend.dev>',
+        from: 'WhatIFLotto <onboarding@resend.dev>',
         to: user.email,
         subject: "🎰 Today is Draw Day! Pick your lucky numbers",
-        text: `Today is Oz Lotto day (${sydneyDate})! Don't forget to secure your free (fake) tickets on WouldHaveIWon before the results are announced tonight. Will today be the day you 'would have' won millions? Test your luck now!`,
+        text: `Today is Oz Lotto day (${sydneyDate})! Don't forget to secure your free (fake) tickets on WhatIFLotto before the results are announced tonight. Will today be the day you 'would have' won millions? Test your luck now!`,
       });
 
       if (result.error) {

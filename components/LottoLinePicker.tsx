@@ -2,15 +2,15 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { generateQuickPick } from '../lib/lotto-utils'; // Use relative import
+import { generateQuickPick } from '../lib/lotto-utils';
 
 const NUMBER_RANGE_START = 1;
-const NUMBER_RANGE_END = 47
+const NUMBER_RANGE_END = 47;
 const MAX_SELECTIONS = 7;
 
 interface LottoLinePickerProps {
   lineId: string;
-  displayIndex: number; // New prop for display
+  displayIndex: number;
   selectedNumbers: number[];
   onNumbersChange: (lineId: string, numbers: number[]) => void;
   onDeleteLine: (lineId: string) => void;
@@ -18,11 +18,8 @@ interface LottoLinePickerProps {
 
 export default function LottoLinePicker({ lineId, displayIndex, selectedNumbers, onNumbersChange, onDeleteLine }: LottoLinePickerProps) {
   const allNumbers = Array.from({ length: NUMBER_RANGE_END }, (_, i) => i + NUMBER_RANGE_START);
-
-  // Use an internal state for selected numbers to manage clicks before propagating
   const [internalSelectedNumbers, setInternalSelectedNumbers] = useState<number[]>(selectedNumbers);
 
-  // Update internal state when prop changes (e.g., parent quick-picks or edits)
   useEffect(() => {
     setInternalSelectedNumbers([...selectedNumbers].sort((a, b) => a - b));
   }, [selectedNumbers]);
@@ -31,46 +28,47 @@ export default function LottoLinePicker({ lineId, displayIndex, selectedNumbers,
     setInternalSelectedNumbers(prevSelected => {
       let newSelection: number[];
       if (prevSelected.includes(num)) {
-        // Deselect number
         newSelection = prevSelected.filter(n => n !== num);
       } else if (prevSelected.length < MAX_SELECTIONS) {
-        // Select number
         newSelection = [...prevSelected, num];
       } else {
-        // Max selections reached, do nothing
         return prevSelected;
       }
-      onNumbersChange(lineId, newSelection); // Propagate change to parent
+      onNumbersChange(lineId, newSelection);
       return newSelection;
     });
   };
 
   const handleClear = () => {
-    onNumbersChange(lineId, []); // Propagate change to parent
+    onNumbersChange(lineId, []);
     setInternalSelectedNumbers([]);
   };
 
   const handleQuickPick = () => {
     const newQuickPick = generateQuickPick();
-    onNumbersChange(lineId, newQuickPick); // Propagate change to parent
+    onNumbersChange(lineId, newQuickPick);
     setInternalSelectedNumbers(newQuickPick);
   };
 
   const isSetComplete = internalSelectedNumbers.length === MAX_SELECTIONS;
 
   return (
-    <div className="border border-gray-200 rounded-lg p-4 bg-white shadow-md"> {/* Refined card styling */}
-      <div className="flex justify-between items-center mb-3">
-        <h3 className="text-lg font-semibold text-gray-800">Set {displayIndex}</h3>
+    <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 transition-all hover:shadow-md">
+      <div className="flex justify-between items-center mb-6">
+        <div className="flex items-center gap-3">
+          <span className="w-8 h-8 bg-indigo-600 text-white rounded-lg flex items-center justify-center font-black text-xs shadow-lg shadow-indigo-100 italic">#{displayIndex}</span>
+          <h3 className="font-black text-gray-900 uppercase tracking-tighter text-sm">Lucky Selection</h3>
+        </div>
         <button
           onClick={() => onDeleteLine(lineId)}
-          className="text-red-500 hover:text-red-700 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50"
+          className="text-gray-300 hover:text-red-500 transition-colors p-1"
+          title="Clear set"
         >
-          Delete
+          🗑️
         </button>
       </div>
 
-      <div className="flex flex-wrap justify-center gap-1.5 mb-4">
+      <div className="grid grid-cols-7 sm:grid-cols-10 gap-1.5 mb-8">
         {allNumbers.map(num => {
           const isSelected = internalSelectedNumbers.includes(num);
           const isDisabled = !isSelected && internalSelectedNumbers.length >= MAX_SELECTIONS;
@@ -80,13 +78,13 @@ export default function LottoLinePicker({ lineId, displayIndex, selectedNumbers,
               onClick={() => handleNumberClick(num)}
               disabled={isDisabled}
               className={`
-                w-9 h-9 rounded-full flex items-center justify-center
-                font-semibold text-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1
+                aspect-square rounded-full flex items-center justify-center
+                font-black text-[10px] transition-all duration-300 transform active:scale-90
                 ${isSelected
-                  ? 'bg-blue-600 text-white shadow-md focus:ring-blue-500'
-                  : 'bg-gray-100 text-gray-700 hover:bg-blue-100 focus:ring-gray-300' // Softer unselected background
+                  ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200 ring-2 ring-indigo-400 ring-offset-1 scale-110'
+                  : 'bg-gray-50 text-gray-400 hover:bg-gray-100 border border-gray-100'
                 }
-                ${isDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                ${isDisabled ? 'opacity-20 grayscale' : 'cursor-pointer'}
               `}
             >
               {num}
@@ -95,31 +93,34 @@ export default function LottoLinePicker({ lineId, displayIndex, selectedNumbers,
         })}
       </div>
 
-      <div className="mb-3 text-center">
-        <p className="text-gray-700 text-md font-medium">
-          Selected: {internalSelectedNumbers.length > 0 ? internalSelectedNumbers.join(', ') : 'None'}
-          {isSetComplete && <span className="text-green-600 ml-2">(Complete)</span>}
-        </p>
-        {!isSetComplete && (
-          <p className="text-sm text-gray-500">
-            (Pick {MAX_SELECTIONS - internalSelectedNumbers.length} more)
-          </p>
-        )}
-      </div>
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-gray-50">
+        <div className="flex items-center gap-2">
+          {isSetComplete ? (
+            <span className="flex items-center gap-1.5 text-[10px] font-black text-emerald-500 uppercase bg-emerald-50 px-3 py-1.5 rounded-full ring-1 ring-emerald-100">
+              <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+              Set Validated
+            </span>
+          ) : (
+            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest bg-gray-50 px-3 py-1.5 rounded-full border border-gray-100">
+              Pick {MAX_SELECTIONS - internalSelectedNumbers.length} More
+            </span>
+          )}
+        </div>
 
-      <div className="flex justify-center gap-3">
-        <button
-          onClick={handleClear}
-          className="px-4 py-1.5 rounded-lg bg-red-500 text-white text-sm font-semibold hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 transition-colors duration-200"
-        >
-          Clear
-        </button>
-        <button
-          onClick={handleQuickPick}
-          className="px-4 py-1.5 rounded-lg bg-green-500 text-white text-sm font-semibold hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 transition-colors duration-200"
-        >
-          Quick Pick
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={handleClear}
+            className="text-[10px] font-black text-gray-400 hover:text-red-500 uppercase tracking-widest px-4 py-2 transition-colors"
+          >
+            Clear
+          </button>
+          <button
+            onClick={handleQuickPick}
+            className="text-[10px] font-black bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white uppercase tracking-widest px-6 py-2 rounded-xl transition-all shadow-sm"
+          >
+            Quick Pick
+          </button>
+        </div>
       </div>
     </div>
   );

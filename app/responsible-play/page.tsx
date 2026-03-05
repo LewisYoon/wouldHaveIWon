@@ -16,7 +16,7 @@ export default function ResponsiblePlayPage() {
         <div className="prose prose-lg max-w-none space-y-8">
           <section>
             <h2 className="text-2xl font-bold mb-4">Why We Built This Simulator</h2>
-            <p>We created <strong>Would Have I Won?</strong> to provide a safe space for people to explore their interest in the lottery. By seeing the actual odds in action, we hope to educate users on the highly improbable nature of winning major prizes.</p>
+            <p>We created <strong>WhatIFLotto</strong> to provide a safe space for people to explore their interest in the lottery. By seeing the actual odds in action, we hope to educate users on the highly improbable nature of winning major prizes.</p>
           </section>
 
           <section>
