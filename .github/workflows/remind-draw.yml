@@ -3,7 +3,7 @@ on:
   schedule:
     # 10:00 PM UTC Sun/Tue is 9:00 AM Mon/Wed Sydney time (AEDT)
     # 0 = Sunday (Remind Mon for Tue Oz Lotto), 2 = Tuesday (Remind Wed for Thu Powerball)
-    - cron: '0 22 * * 0,2'
+    - cron: '0 8 * * *' #'0 22 * * 0,2'
   workflow_dispatch:
 
 jobs:
