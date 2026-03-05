@@ -10,6 +10,7 @@ import { supabase } from '../lib/supabase';
 const MAX_TOTAL_LINES = 1000;
 const OZ_REQUIRED = 7;
 const PB_REQUIRED = 8; // 7 main + 1 powerball
+const TATTS_REQUIRED = 6;
 
 type LottoLine = {
   id: string;
@@ -40,7 +41,7 @@ interface NumberPickerProps {
   onClearAll: () => void;
   resultsRef: React.RefObject<HTMLDivElement | null>;
   drawResult: DrawResult | null;
-  game?: 'Oz Lotto' | 'Powerball';
+  game?: 'Oz Lotto' | 'Powerball' | 'Tatts Lotto';
 }
 
 export default function NumberPicker({ 
@@ -132,7 +133,7 @@ export default function NumberPicker({
   };
 
   const handleCheckAllResultsClick = async () => {
-    const required = game === 'Oz Lotto' ? OZ_REQUIRED : PB_REQUIRED;
+    const required = game === 'Oz Lotto' ? OZ_REQUIRED : game === 'Powerball' ? PB_REQUIRED : TATTS_REQUIRED;
     const completeLines = lines.filter(line => line.numbers.filter(n => n > 0).length === required);
     
     if (completeLines.length === 0) {
@@ -232,7 +233,7 @@ export default function NumberPicker({
 
           <div className="flex items-center gap-1 bg-gray-100 dark:bg-white/5 p-1 rounded-xl border border-gray-200 dark:border-white/10">
             <select value={quickPickQuantity} onChange={(e) => setQuickPickQuantity(Number(e.target.value))} className="bg-transparent px-2 font-black text-xs outline-none text-gray-700 dark:text-gray-300">
-              {[10, 25, 50, 100].map(qty => <option key={qty} value={qty}>x{qty}</option>)}
+              {[10, 25, 50, 100].map(qty => <option key={qty} value={qty}>{qty}</option>)}
             </select>
             <button onClick={handleMultiQuickPick} className="px-4 py-2 rounded-lg bg-indigo-600 text-white font-black text-[10px] uppercase tracking-widest hover:bg-indigo-700 transition-all">Quick Burst</button>
           </div>
