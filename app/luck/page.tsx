@@ -248,7 +248,7 @@ export default function LuckPage() {
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           {tickets.map((t, idx) => {
                             const c = res ? compareNumbers(t.numbers, res.numbers, res.bonus) : null;
-                            const prize = c ? (res.prizes[c.prizeTier] || 0) : 0;
+                            const prize = (c && res) ? (res.prizes[c.prizeTier] || 0) : 0;
                             const ticketWon = prize > 0 || c?.prizeTier === 'Division 1';
                             
                             return (
