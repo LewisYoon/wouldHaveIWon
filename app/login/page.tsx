@@ -35,8 +35,11 @@ export default function LoginPage() {
   };
   
   const handleGoogleSignIn = async () => {
+    setError(null);
     try {
-      await signInWithGoogle();
+      const { error } = await signInWithGoogle();
+      if (error) throw error;
+      // Redirect happens automatically via Supabase
     } catch (err: any) {
       setError(err.message || 'An unexpected error occurred with Google Sign-In.');
     }
