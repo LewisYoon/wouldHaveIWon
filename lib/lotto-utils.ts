@@ -3,26 +3,28 @@
 /**
  * Oz Lotto: Tuesdays
  * Powerball: Thursdays
+ * Tatts Lotto: Saturdays
  */
-export function getNextDrawDates(count: number = 5, game: 'Oz Lotto' | 'Powerball' = 'Oz Lotto'): string[] {
+export function getNextDrawDates(count: number = 5, game: 'Oz Lotto' | 'Powerball' | 'Tatts Lotto' = 'Oz Lotto'): string[] {
   const dates: string[] = [];
   const today = new Date();
-  const targetDay = game === 'Oz Lotto' ? 2 : 4; // 2 = Tuesday, 4 = Thursday
+  let targetDay = 2; // Default Oz Lotto (Tuesday)
+  
+  if (game === 'Powerball') targetDay = 4; // Thursday
+  if (game === 'Tatts Lotto') targetDay = 6; // Saturday
   
   // 1. Calculate the MOST RECENT past draw date for testing/logging
   let lastDraw = new Date(today);
   lastDraw.setHours(0, 0, 0, 0);
-  // Calculate difference to last target day
+  
   let diffToLast = (today.getDay() - targetDay + 7) % 7;
   
-  // If today is draw day but before 8:30 PM, the "last" draw was 7 days ago
   const isDrawDay = today.getDay() === targetDay;
   const isPastDrawTime = today.getHours() > 20 || (today.getHours() === 20 && today.getMinutes() >= 30);
   
   if (isDrawDay && !isPastDrawTime) {
     diffToLast = 7;
   } else if (diffToLast === 0 && isPastDrawTime) {
-    // It's currently draw day and results are out, so "last draw" is today
     diffToLast = 0;
   }
 
@@ -35,10 +37,8 @@ export function getNextDrawDates(count: number = 5, game: 'Oz Lotto' | 'Powerbal
     return `${year}-${month}-${day}`;
   };
 
-  // Add the last draw first
   dates.push(formatDate(lastDraw));
 
-  // 2. Add future draws
   let nextDraw = new Date(lastDraw);
   for (let i = 1; i <= count; i++) {
     const d = new Date(nextDraw);
@@ -52,12 +52,19 @@ export function getNextDrawDates(count: number = 5, game: 'Oz Lotto' | 'Powerbal
 /**
  * Oz Lotto: 7 numbers from 1-47
  * Powerball: 7 numbers from 1-35 + 1 Powerball from 1-20
+ * Tatts Lotto: 6 numbers from 1-45
  */
-export function generateQuickPick(game: 'Oz Lotto' | 'Powerball' = 'Oz Lotto'): number[] {
+export function generateQuickPick(game: 'Oz Lotto' | 'Powerball' | 'Tatts Lotto' = 'Oz Lotto'): number[] {
   if (game === 'Oz Lotto') {
     const quickPick = new Set<number>();
     while (quickPick.size < 7) {
       quickPick.add(Math.floor(Math.random() * 47) + 1);
+    }
+    return Array.from(quickPick).sort((a, b) => a - b);
+  } else if (game === 'Tatts Lotto') {
+    const quickPick = new Set<number>();
+    while (quickPick.size < 6) {
+      quickPick.add(Math.floor(Math.random() * 45) + 1);
     }
     return Array.from(quickPick).sort((a, b) => a - b);
   } else {
@@ -80,15 +87,15 @@ export interface ComparisonResult {
 }
 
 /**
- * Comparison logic for both games
+ * Comparison logic for all games
  */
 export function compareNumbers(
   userNumbers: number[],
   drawNumbers: number[],
-  bonusNumbers: number[], // Supplementary for Oz Lotto, or [Powerball] for Powerball
-  game: 'Oz Lotto' | 'Powerball' = 'Oz Lotto'
+  bonusNumbers: number[], 
+  game: 'Oz Lotto' | 'Powerball' | 'Tatts Lotto'
 ): ComparisonResult {
-  const userSet = new Set(game === 'Oz Lotto' ? userNumbers : userNumbers.slice(0, 7));
+  const userSet = new Set(game === 'Powerball' ? userNumbers.slice(0, 7) : userNumbers);
   const drawSet = new Set(drawNumbers);
 
   let mainMatchesCount = 0;
@@ -114,6 +121,25 @@ export function compareNumbers(
     else if (mainMatchesCount === 5) prizeTier = "Division 5";
     else if (mainMatchesCount === 4) prizeTier = "Division 6";
     else if (mainMatchesCount === 3 && bonusMatchesCount >= 1) prizeTier = "Division 7";
+
+    return { mainMatchesCount, bonusMatchesCount, matchedBonusNumbers: matchedBonusNumbers.sort((a, b) => a - b), prizeTier };
+  } else if (game === 'Tatts Lotto') {
+    const bonusSet = new Set(bonusNumbers);
+    const matchedBonusNumbers: number[] = [];
+    for (const num of userNumbers) {
+      if (bonusSet.has(num) && !drawSet.has(num)) {
+        matchedBonusNumbers.push(num);
+      }
+    }
+    const bonusMatchesCount = matchedBonusNumbers.length;
+    let prizeTier = "No Prize";
+
+    if (mainMatchesCount === 6) prizeTier = "Division 1";
+    else if (mainMatchesCount === 5 && bonusMatchesCount >= 1) prizeTier = "Division 2";
+    else if (mainMatchesCount === 5) prizeTier = "Division 3";
+    else if (mainMatchesCount === 4) prizeTier = "Division 4";
+    else if (mainMatchesCount === 3 && bonusMatchesCount >= 1) prizeTier = "Division 5";
+    else if (mainMatchesCount === 3) prizeTier = "Division 6"; // Note: Some variations require 1 or 2 supps for Div 6, but usually 3 main is standard.
 
     return { mainMatchesCount, bonusMatchesCount, matchedBonusNumbers: matchedBonusNumbers.sort((a, b) => a - b), prizeTier };
   } else {
