@@ -1,49 +1,108 @@
-'use client';
-
 import Link from 'next/link';
 import Navbar from '../components/Navbar';
 
-export default function HomePage() {
+export default function Home() {
   return (
-    <div className="flex min-h-screen flex-col items-center bg-gray-50">
+    <div className="min-h-screen bg-gray-50">
       <Navbar />
-
-      <main className="flex w-full flex-1 flex-col items-center px-4 md:px-20 text-center pt-16 pb-32">
-        <h1 className="text-4xl md:text-6xl font-extrabold mb-12 text-gray-900 tracking-tight">
-          Would I Have Won Lotto?
-        </h1>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl">
-          {/* Try Your Luck Card */}
-          <Link href="/luck" className="group bg-white p-8 rounded-2xl shadow-xl border border-gray-100 flex flex-col items-center justify-center transition-all duration-300 hover:shadow-2xl hover:-translate-y-1">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-6 transition-colors duration-300 group-hover:bg-green-200">
-              <span className="text-3xl text-green-600 font-bold">$</span>
-            </div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">Try your luck with $0 cost</h2>
-            <p className="text-gray-600 mb-8 leading-relaxed">
-              Experience the thrill of picking numbers and checking results against actual draws for free.
-            </p>
-            <span className="mt-auto px-8 py-3 bg-green-600 text-white font-bold rounded-xl uppercase tracking-wider text-sm shadow-lg shadow-green-200 transition-colors duration-300 group-hover:bg-green-700">
+      
+      {/* Hero Section */}
+      <header className="bg-gradient-to-br from-blue-700 to-indigo-900 text-white py-20 px-4">
+        <div className="max-w-5xl mx-auto text-center">
+          <h1 className="text-5xl md:text-7xl font-black mb-6 tracking-tight">
+            WOULD HAVE <br className="sm:hidden" /><span className="text-yellow-400 font-serif italic">I WON?</span>
+          </h1>
+          <p className="text-xl md:text-2xl text-blue-100 mb-10 max-w-2xl mx-auto font-light leading-relaxed">
+            The world's most accurate Oz Lotto simulator. Test your numbers against official results without spending a single cent.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link 
+              href="/luck" 
+              className="px-10 py-4 bg-yellow-400 hover:bg-yellow-300 text-indigo-950 font-black rounded-full text-lg shadow-lg hover:scale-105 transition-all uppercase tracking-wider"
+            >
               Try Your Luck
-            </span>
-          </Link>
-
-          {/* Simulator Card */}
-          <Link href="/simulator" className="group bg-white p-8 rounded-2xl shadow-xl border border-gray-100 flex flex-col items-center justify-center transition-all duration-300 hover:shadow-2xl hover:-translate-y-1">
-            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-6 transition-colors duration-300 group-hover:bg-blue-200">
-              <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
-              </svg>
-            </div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">OZ Lotto Simulator</h2>
-            <p className="text-gray-600 mb-8 leading-relaxed">
-              Check your saved numbers against real historical draw results and see if you would have won!
-            </p>
-            <span className="mt-auto px-8 py-3 bg-blue-600 text-white font-bold rounded-xl uppercase tracking-wider text-sm shadow-lg shadow-blue-200 transition-colors duration-300 group-hover:bg-blue-700">
-              Start Simulator
-            </span>
-          </Link>
+            </Link>
+            <Link 
+              href="/simulator" 
+              className="px-10 py-4 bg-transparent border-2 border-white/30 hover:border-white hover:bg-white/10 text-white font-bold rounded-full text-lg transition-all"
+            >
+              Open Simulator
+            </Link>
+          </div>
         </div>
+      </header>
+
+      {/* Main Content Section - AdSense High Quality Content */}
+      <main className="max-w-6xl mx-auto px-4 py-20">
+        
+        {/* Features Grid */}
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-24">
+          <div className="text-center group">
+            <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6 text-3xl group-hover:bg-blue-600 group-hover:text-white transition-all">
+              🎰
+            </div>
+            <h3 className="text-xl font-bold mb-3 text-gray-900">Real Official Data</h3>
+            <p className="text-gray-600 text-sm leading-relaxed">
+              We sync with thelott.com every Tuesday night to bring you genuine Oz Lotto winning numbers and prize dividends.
+            </p>
+          </div>
+          <div className="text-center group">
+            <div className="w-16 h-16 bg-green-100 text-green-600 rounded-2xl flex items-center justify-center mx-auto mb-6 text-3xl group-hover:bg-green-600 group-hover:text-white transition-all">
+              💾
+            </div>
+            <h3 className="text-xl font-bold mb-3 text-gray-900">Permanent Sync</h3>
+            <p className="text-gray-600 text-sm leading-relaxed">
+              Sign in with Google to save your ticket history forever. Track your "What-If" performance across any device.
+            </p>
+          </div>
+          <div className="text-center group">
+            <div className="w-16 h-16 bg-purple-100 text-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6 text-3xl group-hover:bg-purple-600 group-hover:text-white transition-all">
+              📉
+            </div>
+            <h3 className="text-xl font-bold mb-3 text-gray-900">Educational Odds</h3>
+            <p className="text-gray-600 text-sm leading-relaxed">
+              Learn the mathematical reality behind 1 in 45 million. Our simulator helps visualize probability in a safe environment.
+            </p>
+          </div>
+        </section>
+
+        {/* Informational Text Block - Crucial for AdSense */}
+        <section className="bg-white rounded-3xl p-8 md:p-16 border border-gray-100 shadow-xl shadow-gray-200/50 mb-20">
+          <div className="max-w-3xl mx-auto">
+            <h2 className="text-3xl font-black text-gray-900 mb-8 text-center uppercase tracking-tighter">Why Use Would Have I Won?</h2>
+            <div className="prose prose-blue max-w-none text-gray-700 space-y-6">
+              <p>
+                Have you ever wondered if your "lucky numbers" would have actually won you the Division 1 jackpot? Or perhaps you've spent years playing the same set of numbers and wanted to see their performance over time? 
+              </p>
+              <p>
+                <strong>Would Have I Won?</strong> was built to solve these curiosities without the financial commitment. Our Oz Lotto simulator is designed for entertainment and educational purposes, allowing you to explore the world of probability in a beautiful, user-friendly interface.
+              </p>
+              <div className="bg-gray-50 p-6 rounded-2xl italic border-l-4 border-blue-600">
+                "Our mission is to provide a transparent, data-driven experience that promotes responsible play through simulation."
+              </div>
+              <p>
+                Whether you're a math enthusiast interested in the 7/47 structure of Oz Lotto, or just someone looking for a bit of fun on Tuesday nights, our platform provides the tools you need to visualize your luck.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Interactive CTA */}
+        <section className="bg-indigo-900 rounded-[3rem] p-12 text-center text-white relative overflow-hidden">
+          <div className="relative z-10">
+            <h2 className="text-3xl md:text-4xl font-black mb-4">Ready to test your luck?</h2>
+            <p className="text-indigo-200 mb-8 max-w-lg mx-auto">It only takes a few seconds to pick your first set of simulated tickets.</p>
+            <Link 
+              href="/luck" 
+              className="inline-block px-12 py-4 bg-white text-indigo-900 font-black rounded-full hover:bg-indigo-50 transition-all uppercase tracking-widest text-sm"
+            >
+              Get Started for Free
+            </Link>
+          </div>
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-32 -mt-32"></div>
+          <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full -ml-24 -mb-24"></div>
+        </section>
+
       </main>
     </div>
   );
