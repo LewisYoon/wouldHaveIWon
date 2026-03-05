@@ -99,7 +99,7 @@ async function notifyUsers(game: string, drawDate: string, winningNumbers: numbe
       const status = userResults.get(chunk[j]);
 
       if (user?.email && status) {
-        const subject = status.won ? `🎉 You hit a match in the ${game}!` : `The ${game} results are ready for you`;
+        const subject = status.won ? `You hit a match in the ${game}` : `The ${game} results are ready for you`;
         
         emailBatch.push({
           from: 'WhatIFLotto <notifications@whatiflotto.com>',
