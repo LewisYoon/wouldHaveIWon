@@ -11,6 +11,7 @@ dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 const resendApiKey = process.env.RESEND_API_KEY || '';
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://whatiflotto.com';
 
 if (!supabaseUrl || !serviceRoleKey) {
   console.error('ERROR: Missing required environment variables!');
@@ -19,6 +20,53 @@ if (!supabaseUrl || !serviceRoleKey) {
 
 const supabase = createClient(supabaseUrl, serviceRoleKey);
 const resend = resendApiKey ? new Resend(resendApiKey) : null;
+
+function getEmailTemplate(game: string, drawDate: string, status: { won: boolean }) {
+  const isOz = game === 'Oz Lotto';
+  const brandColor = isOz ? '#10b981' : '#4f46e5'; // Emerald-600 or Indigo-600
+  
+  const title = status.won ? `🎉 Winner! Your ${game} Results` : `${game} Results are In`;
+  const heroText = status.won 
+    ? `Great news! One of your tracked tickets for the ${game} draw has won a prize.`
+    : `The results for the ${drawDate} ${game} draw are now available for comparison.`;
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #374151; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 0 auto; padding: 40px 20px; }
+        .header { text-align: center; margin-bottom: 32px; }
+        .logo { font-weight: 900; font-size: 24px; color: #111827; text-transform: uppercase; letter-spacing: -0.05em; }
+        .logo span { color: ${brandColor}; font-style: italic; text-transform: lowercase; }
+        .card { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 24px; padding: 40px; text-align: center; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        .badge { display: inline-block; padding: 4px 12px; background: ${brandColor}10; color: ${brandColor}; border-radius: 9999px; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 16px; }
+        .title { font-size: 24px; font-weight: 900; color: #111827; margin-bottom: 16px; text-transform: uppercase; letter-spacing: -0.025em; }
+        .text { font-size: 16px; color: #6b7280; margin-bottom: 32px; }
+        .button { display: inline-block; padding: 16px 32px; background: ${brandColor}; color: #ffffff !important; text-decoration: none; border-radius: 16px; font-weight: 900; text-transform: uppercase; font-size: 14px; letter-spacing: 0.05em; transition: all 0.2s; }
+        .footer { text-align: center; margin-top: 32px; font-size: 12px; color: #9ca3af; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <div class="logo">WhatIF<span>lotto</span></div>
+        </div>
+        <div class="card">
+          <div class="badge">${game} • Official Draw</div>
+          <div class="title">${title}</div>
+          <p class="text">${heroText}</p>
+          <a href="${siteUrl}/luck" class="button">View My Results</a>
+        </div>
+        <div class="footer">
+          <p>© ${new Date().getFullYear()} WhatIFLotto Australia<br>For simulation purposes only. No real money involved.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+}
 
 async function notifyUsers(game: string, drawDate: string, winningNumbers: number[], bonusNumbers: number[]) {
   if (!resend) return;
@@ -48,7 +96,6 @@ async function notifyUsers(game: string, drawDate: string, winningNumbers: numbe
   const emailBatch: any[] = [];
 
   // 2. Fetch user emails and prepare batch
-  // Note: We process in small chunks to avoid Supabase Auth rate limits
   const chunkSize = 20;
   for (let i = 0; i < userIds.length; i += chunkSize) {
     const chunk = userIds.slice(i, i + chunkSize);
@@ -62,15 +109,13 @@ async function notifyUsers(game: string, drawDate: string, winningNumbers: numbe
 
       if (user?.email && status) {
         const subject = status.won ? `🎉 You are a ${game} winner!` : `${game} Results are Out!`;
-        const message = status.won 
-          ? `Great news! One of your tickets for the ${drawDate} ${game} draw has won a prize. Visit WhatIFLotto to check your division!`
-          : `The ${game} results for ${drawDate} are now available. Visit WhatIFLotto to see how your tickets performed.`;
+        const html = getEmailTemplate(game, drawDate, status);
 
         emailBatch.push({
           from: 'WhatIFLotto <notifications@whatiflotto.com>',
           to: user.email,
           subject: subject,
-          text: message,
+          html: html,
         });
       }
     }
@@ -80,9 +125,7 @@ async function notifyUsers(game: string, drawDate: string, winningNumbers: numbe
   for (let i = 0; i < emailBatch.length; i += 100) {
     const batch = emailBatch.slice(i, i + 100);
     try {
-      console.log(`Sending batch to: ${batch.map(b => b.to).join(', ')}`);
       const response = await resend.batch.send(batch);
-      console.log(`Resend API Response:`, JSON.stringify(response, null, 2));
       console.log(`Successfully sent batch of ${batch.length} ${game} notifications.`);
     } catch (e) {
       console.error(`Failed to send email batch:`, e);

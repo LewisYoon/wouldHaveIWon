@@ -24,6 +24,8 @@ interface DrawResult {
   prizes: Record<string, number>;
 }
 
+const TICKET_COST = 1.45;
+
 export default function LuckPage() {
   const { user, isLoading: isAuthLoading } = useAuth();
   const [game, setGame] = useState<'Oz Lotto' | 'Powerball'>('Oz Lotto');
@@ -36,7 +38,7 @@ export default function LuckPage() {
   const [expandedDates, setExpandedDates] = useState<Set<string>>(new Set());
   const [isDataLoading, setIsDataLoading] = useState(true);
 
-  // Stats for "Regret Dashboard"
+  // Stats for "Luck Analysis Dashboard"
   const stats = useMemo(() => {
     let totalMissedPrize = 0;
     let totalTicketsChecked = 0;
@@ -52,7 +54,6 @@ export default function LuckPage() {
         totalMissedPrize += prize;
         if (c.prizeTier !== 'No Prize') {
           totalWins++;
-          // Basic comparison for best division
           if (bestDivision === 'No Prize' || c.prizeTier < bestDivision) {
             bestDivision = c.prizeTier;
           }
@@ -60,7 +61,9 @@ export default function LuckPage() {
       }
     });
 
-    return { totalMissedPrize, totalTicketsChecked, totalWins, bestDivision };
+    const totalInvested = myTickets.length * TICKET_COST;
+
+    return { totalMissedPrize, totalTicketsChecked, totalWins, bestDivision, totalInvested };
   }, [myTickets, drawResultsList]);
 
   // Sync selected date when game changes
@@ -167,24 +170,31 @@ export default function LuckPage() {
               ))}
             </div>
           </div>
-          <Countdown targetDate={upcomingDates[0]} game={game} />
+          {/* Find the next FUTURE date for the countdown (index 0 is often 'last' or 'today' now) */}
+          <Countdown targetDate={upcomingDates.find(d => new Date(d) > new Date()) || upcomingDates[1]} game={game} />
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-12 px-6">
         
-        {/* Left Column: Input & Regret Stats */}
+        {/* Left Column: Input & Luck Stats */}
         <div className="lg:col-span-5 space-y-8">
           
-          {/* Regret Dashboard */}
+          {/* Luck Dashboard */}
           <div className={`rounded-[2.5rem] p-8 text-white shadow-2xl relative overflow-hidden group ${game === 'Oz Lotto' ? 'bg-emerald-950' : 'bg-gray-900'}`}>
             <div className={`absolute top-0 right-0 w-32 h-32 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-700 ${game === 'Oz Lotto' ? 'bg-emerald-500/10' : 'bg-indigo-500/10'}`} />
             <div className="relative z-10">
               <p className={`text-[10px] font-black uppercase tracking-widest mb-6 ${game === 'Oz Lotto' ? 'text-emerald-400' : 'text-indigo-400'}`}>Luck Analysis Dashboard</p>
               <div className="space-y-6">
-                <div>
-                  <p className="text-xs font-bold text-gray-400 uppercase mb-1">Total Missed Potential</p>
-                  <p className={`text-5xl font-black tracking-tighter ${game === 'Oz Lotto' ? 'text-emerald-400' : 'text-indigo-400'}`}>{formatCurrency(stats.totalMissedPrize)}</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs font-bold text-gray-400 uppercase mb-1">Missed Potential</p>
+                    <p className={`text-3xl font-black tracking-tighter ${game === 'Oz Lotto' ? 'text-emerald-400' : 'text-indigo-400'}`}>{formatCurrency(stats.totalMissedPrize)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-gray-400 uppercase mb-1">Total Spent (Fake)</p>
+                    <p className="text-3xl font-black tracking-tighter text-gray-100">{formatCurrency(stats.totalInvested)}</p>
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/10">
                   <div>
