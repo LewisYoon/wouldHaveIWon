@@ -1,8 +1,8 @@
 'use client';
 
 import Navbar from '../../components/Navbar';
-import { useState } from 'react';
 import Link from 'next/link';
+import { useState } from 'react';
 
 export default function OddsPage() {
   const [game, setGame] = useState<'Oz Lotto' | 'Powerball' | 'Tatts Lotto'>('Oz Lotto');
