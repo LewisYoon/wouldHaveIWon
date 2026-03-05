@@ -7,7 +7,7 @@ import LottoLinePicker from './LottoLinePicker';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 
-const MAX_TOTAL_LINES = 1000; // Increased limit
+const MAX_TOTAL_LINES = 100000; // Increased limit
 const MAX_SELECTIONS_PER_LINE = 7;
 const LOCAL_STORAGE_CURRENT_LINES_KEY = 'lottoCurrentLines';
 const LOCAL_STORAGE_WINNING_HISTORY_KEY = 'lottoWinningHistory';
