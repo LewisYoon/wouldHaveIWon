@@ -20,34 +20,27 @@ if (!supabaseUrl || !serviceRoleKey) {
 const supabase = createClient(supabaseUrl, serviceRoleKey);
 const resend = resendApiKey ? new Resend(resendApiKey) : null;
 
+// Helper to wait between requests to respect rate limits
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 async function sendReminders() {
   if (!resend) {
     console.log('Skipping reminders: RESEND_API_KEY not set.');
     return;
   }
 
-  // Get the target draw date (The upcoming Tuesday)
   const targetDrawDate = getNextDrawDates(1)[0];
-
   console.log(`--- WhatIFLotto Universal Reminder ---`);
   console.log(`Target Draw Date: ${targetDrawDate}`);
 
-  // 1. Get all registered users
   const { data: { users }, error: authError } = await supabase.auth.admin.listUsers();
-  
-  if (authError) {
-    console.error('Error fetching users from Supabase Auth:', authError);
+  if (authError || !users) {
+    console.error('Error fetching users:', authError);
     return;
   }
 
-  if (!users || users.length === 0) {
-    console.log('No registered users found in Supabase.');
-    return;
-  }
+  console.log(`Processing reminders for ${users.length} users...`);
 
-  console.log(`Sending reminders to ALL ${users.length} users...`);
-
-  // 2. Get users who already have tickets (just for personalized messaging)
   const { data: ticketsForTargetDate } = await supabase
     .from('tickets')
     .select('user_id')
@@ -55,7 +48,6 @@ async function sendReminders() {
 
   const usersWithTickets = new Set(ticketsForTargetDate?.map(t => t.user_id) || []);
 
-  // 3. Notify everyone
   let sentCount = 0;
   for (const user of users) {
     if (!user.email) continue;
@@ -63,43 +55,41 @@ async function sendReminders() {
     const alreadyHasTicket = usersWithTickets.has(user.id);
 
     try {
-      console.log(`[Sending] Reminder to: ${user.email} (Already has tickets: ${alreadyHasTicket})...`);
+      console.log(`[Queueing] Reminder to: ${user.email}...`);
 
       const subject = alreadyHasTicket 
         ? "🎰 Boost your luck! Secure more tickets" 
         : "🎰 Don't miss the draw! Pick your lucky numbers";
 
       const message = alreadyHasTicket
-        ? `You've already got tickets secured for the ${targetDrawDate} draw on WhatIFLotto! 
-        
-Why not boost your chances? Secure a few more "what-if" tickets before the results are announced. 
+        ? `You've already got tickets secured for the ${targetDrawDate} draw on WhatIFLotto! Why not boost your chances? Secure a few more "what-if" tickets before the results are announced. \n\nAdd more: ${process.env.NEXT_PUBLIC_SITE_URL || 'https://whatiflotto.com'}`
+        : `The Oz Lotto draw for ${targetDrawDate} is coming up! Don't forget to secure your free (fake) tickets on WhatIFLotto before the results are announced tonight. \n\nLock in your numbers: ${process.env.NEXT_PUBLIC_SITE_URL || 'https://whatiflotto.com'}`;
 
-Add more numbers here: ${process.env.NEXT_PUBLIC_SITE_URL || 'https://whatiflotto.com'}`
-        : `The Oz Lotto draw for ${targetDrawDate} is coming up! 
-
-Don't forget to secure your free (fake) tickets on WhatIFLotto before the results are announced. 
-
-Will this be the week you 'would have' won the jackpot? Jump in now and lock in your numbers: ${process.env.NEXT_PUBLIC_SITE_URL || 'https://whatiflotto.com'}`;
-
-      const result = await resend.emails.send({
-        from: 'WhatIFLotto <onboarding@resend.dev>',
+      const { data, error } = await resend.emails.send({
+        from: 'WhatIFLotto <notifications@wouldhaveiwon.dev>',
         to: user.email,
         subject: subject,
         text: message,
       });
 
-      if (result.error) {
-        console.error(`Resend error for ${user.email}:`, result.error);
+      if (error) {
+        // If we hit a restriction or rate limit, log it clearly
+        console.error(`[Resend Error] for ${user.email}:`, error.message);
       } else {
         sentCount++;
         console.log(`[Success] Email sent to ${user.email}`);
       }
+
+      // WAIT 600ms between each email to respect the "2 requests per second" limit
+      await sleep(600);
+
     } catch (e) {
-      console.error(`[Fail] Could not notify user ${user.id}:`, e);
+      console.error(`[System Fail] Could not notify user ${user.id}:`, e);
     }
   }
 
-  console.log(`--- Finished. Universal reminders sent: ${sentCount} ---`);
+  console.log(`--- Finished. Universal reminders successfully accepted by Resend: ${sentCount} ---`);
+  console.log(`Note: If success count is lower than user count, check logs for '403 Forbidden' (unverified domain) or '429' (rate limit).`);
 }
 
 sendReminders();
