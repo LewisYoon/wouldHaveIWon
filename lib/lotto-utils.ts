@@ -1,31 +1,35 @@
 // lotto-project/lib/lotto-utils.ts
 
-export function getNextDrawDates(count: number = 5): string[] {
+/**
+ * Oz Lotto: Tuesdays
+ * Powerball: Thursdays
+ */
+export function getNextDrawDates(count: number = 5, game: 'Oz Lotto' | 'Powerball' = 'Oz Lotto'): string[] {
   const dates: string[] = [];
   const today = new Date();
+  const targetDay = game === 'Oz Lotto' ? 2 : 4; // 2 = Tuesday, 4 = Thursday
   
-  // Find the next Tuesday
-  let nextTuesday = new Date(today);
-  nextTuesday.setHours(0, 0, 0, 0); // Reset time to midnight local
-  nextTuesday.setDate(today.getDate() + ((7 - today.getDay() + 2) % 7));
+  let nextDraw = new Date(today);
+  nextDraw.setHours(0, 0, 0, 0);
   
-  // If today is Tuesday and it's past 8:30 PM, the next draw is next week
-  const isTuesday = today.getDay() === 2;
+  // Find the next occurrence of the target day
+  nextDraw.setDate(today.getDate() + ((7 - today.getDay() + targetDay) % 7));
+  
+  // If today is the draw day, check if it's past draw time (approx 8:30 PM)
+  const isDrawDay = today.getDay() === targetDay;
   const isPastDrawTime = today.getHours() > 20 || (today.getHours() === 20 && today.getMinutes() >= 30);
   
-  if (isTuesday && isPastDrawTime) {
-    nextTuesday.setDate(nextTuesday.getDate() + 7);
-  } else if (isTuesday && !isPastDrawTime) {
-    // Keep today's date if it's Tuesday but before 8:30 PM
-    nextTuesday = new Date(today);
-    nextTuesday.setHours(0, 0, 0, 0);
+  if (isDrawDay && isPastDrawTime) {
+    nextDraw.setDate(nextDraw.getDate() + 7);
+  } else if (isDrawDay && !isPastDrawTime) {
+    nextDraw = new Date(today);
+    nextDraw.setHours(0, 0, 0, 0);
   }
 
   for (let i = 0; i < count; i++) {
-    const d = new Date(nextTuesday);
-    d.setDate(nextTuesday.getDate() + (i * 7));
+    const d = new Date(nextDraw);
+    d.setDate(nextDraw.getDate() + (i * 7));
     
-    // Format to YYYY-MM-DD using local time
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
@@ -35,13 +39,26 @@ export function getNextDrawDates(count: number = 5): string[] {
   return dates;
 }
 
-export function generateQuickPick(): number[] {
-  const quickPick = new Set<number>();
-  while (quickPick.size < 7) {
-    const randomNumber = Math.floor(Math.random() * 47) + 1; // Changed range to 1-47
-    quickPick.add(randomNumber);
+/**
+ * Oz Lotto: 7 numbers from 1-47
+ * Powerball: 7 numbers from 1-35 + 1 Powerball from 1-20
+ */
+export function generateQuickPick(game: 'Oz Lotto' | 'Powerball' = 'Oz Lotto'): number[] {
+  if (game === 'Oz Lotto') {
+    const quickPick = new Set<number>();
+    while (quickPick.size < 7) {
+      quickPick.add(Math.floor(Math.random() * 47) + 1);
+    }
+    return Array.from(quickPick).sort((a, b) => a - b);
+  } else {
+    // Powerball
+    const mainNumbers = new Set<number>();
+    while (mainNumbers.size < 7) {
+      mainNumbers.add(Math.floor(Math.random() * 35) + 1);
+    }
+    const powerball = Math.floor(Math.random() * 20) + 1;
+    return [...Array.from(mainNumbers).sort((a, b) => a - b), powerball];
   }
-  return Array.from(quickPick).sort((a, b) => a - b);
 }
 
 export interface ComparisonResult {
@@ -49,58 +66,63 @@ export interface ComparisonResult {
   bonusMatchesCount: number;
   matchedBonusNumbers: number[];
   prizeTier: string;
+  isPowerballMatched?: boolean;
 }
 
+/**
+ * Comparison logic for both games
+ */
 export function compareNumbers(
   userNumbers: number[],
   drawNumbers: number[],
-  bonusNumbers: number[]
+  bonusNumbers: number[], // Supplementary for Oz Lotto, or [Powerball] for Powerball
+  game: 'Oz Lotto' | 'Powerball' = 'Oz Lotto'
 ): ComparisonResult {
-  const userSet = new Set(userNumbers);
+  const userSet = new Set(game === 'Oz Lotto' ? userNumbers : userNumbers.slice(0, 7));
   const drawSet = new Set(drawNumbers);
-  const bonusSet = new Set(bonusNumbers);
 
   let mainMatchesCount = 0;
-  const matchedBonusNumbers: number[] = [];
-
-  // Count main matches
   for (const num of userSet) {
-    if (drawSet.has(num)) {
-      mainMatchesCount++;
+    if (drawSet.has(num)) mainMatchesCount++;
+  }
+
+  if (game === 'Oz Lotto') {
+    const bonusSet = new Set(bonusNumbers);
+    const matchedBonusNumbers: number[] = [];
+    for (const num of userNumbers) {
+      if (bonusSet.has(num) && !drawSet.has(num)) {
+        matchedBonusNumbers.push(num);
+      }
     }
+    const bonusMatchesCount = matchedBonusNumbers.length;
+    let prizeTier = "No Prize";
+
+    if (mainMatchesCount === 7) prizeTier = "Division 1";
+    else if (mainMatchesCount === 6 && bonusMatchesCount >= 1) prizeTier = "Division 2";
+    else if (mainMatchesCount === 6) prizeTier = "Division 3";
+    else if (mainMatchesCount === 5 && bonusMatchesCount >= 1) prizeTier = "Division 4";
+    else if (mainMatchesCount === 5) prizeTier = "Division 5";
+    else if (mainMatchesCount === 4) prizeTier = "Division 6";
+    else if (mainMatchesCount === 3 && bonusMatchesCount >= 1) prizeTier = "Division 7";
+
+    return { mainMatchesCount, bonusMatchesCount, matchedBonusNumbers: matchedBonusNumbers.sort((a, b) => a - b), prizeTier };
+  } else {
+    // Powerball
+    const userPB = userNumbers[7];
+    const drawPB = bonusNumbers[0];
+    const isPowerballMatched = userPB === drawPB;
+    let prizeTier = "No Prize";
+
+    if (mainMatchesCount === 7 && isPowerballMatched) prizeTier = "Division 1";
+    else if (mainMatchesCount === 7) prizeTier = "Division 2";
+    else if (mainMatchesCount === 6 && isPowerballMatched) prizeTier = "Division 3";
+    else if (mainMatchesCount === 6) prizeTier = "Division 4";
+    else if (mainMatchesCount === 5 && isPowerballMatched) prizeTier = "Division 5";
+    else if (mainMatchesCount === 4 && isPowerballMatched) prizeTier = "Division 6";
+    else if (mainMatchesCount === 5) prizeTier = "Division 7";
+    else if (mainMatchesCount === 3 && isPowerballMatched) prizeTier = "Division 8";
+    else if (mainMatchesCount === 2 && isPowerballMatched) prizeTier = "Division 9";
+
+    return { mainMatchesCount, bonusMatchesCount: isPowerballMatched ? 1 : 0, matchedBonusNumbers: isPowerballMatched ? [userPB] : [], prizeTier, isPowerballMatched };
   }
-
-  // Find bonus matches
-  for (const num of userSet) {
-    if (bonusSet.has(num) && !drawSet.has(num)) { // A number can only be a bonus match if it's not a main match
-      matchedBonusNumbers.push(num);
-    }
-  }
-  const bonusMatchesCount = matchedBonusNumbers.length;
-
-  let prizeTier: string = "No Prize";
-
-  // Determine prize tier based on Oz Lotto rules
-  if (mainMatchesCount === 7) {
-    prizeTier = "Division 1";
-  } else if (mainMatchesCount === 6 && bonusMatchesCount >= 1) {
-    prizeTier = "Division 2";
-  } else if (mainMatchesCount === 6) {
-    prizeTier = "Division 3";
-  } else if (mainMatchesCount === 5 && bonusMatchesCount >= 1) {
-    prizeTier = "Division 4";
-  } else if (mainMatchesCount === 5) {
-    prizeTier = "Division 5";
-  } else if (mainMatchesCount === 4) {
-    prizeTier = "Division 6";
-  } else if (mainMatchesCount === 3 && bonusMatchesCount >= 1) {
-    prizeTier = "Division 7";
-  }
-
-  return {
-    mainMatchesCount,
-    bonusMatchesCount,
-    matchedBonusNumbers: matchedBonusNumbers.sort((a, b) => a - b),
-    prizeTier,
-  };
 }

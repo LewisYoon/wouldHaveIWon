@@ -20,80 +20,52 @@ if (!supabaseUrl || !serviceRoleKey) {
 const supabase = createClient(supabaseUrl, serviceRoleKey);
 const resend = resendApiKey ? new Resend(resendApiKey) : null;
 
-async function notifyUsers(drawDate: string, winningNumbers: number[], bonusNumbers: number[]) {
-  if (!resend) {
-    console.log('Skipping notifications: RESEND_API_KEY not set.');
-    return;
-  }
+async function notifyUsers(game: string, drawDate: string, winningNumbers: number[], bonusNumbers: number[]) {
+  if (!resend) return;
 
-  console.log(`Starting notifications for draw date: ${drawDate}...`);
+  console.log(`Checking notifications for ${game} on ${drawDate}...`);
 
-  // 1. Get all tickets for this draw date
-  // We join with auth.users to get email addresses (requires service role)
   const { data: tickets, error: ticketError } = await supabase
     .from('tickets')
-    .select(`
-      user_id,
-      numbers
-    `)
-    .eq('draw_date', drawDate);
+    .select(`user_id, numbers`)
+    .eq('draw_date', drawDate)
+    .eq('game', game);
 
-  if (ticketError) {
-    console.error('Error fetching tickets for notification:', ticketError);
-    return;
-  }
+  if (ticketError || !tickets?.length) return;
 
-  if (!tickets || tickets.length === 0) {
-    console.log('No user tickets found for this draw.');
-    return;
-  }
-
-  // 2. Group tickets by user and determine win status
   const userResults = new Map<string, { won: boolean }>();
-  
   for (const ticket of tickets) {
-    const userId = ticket.user_id;
-    const result = compareNumbers(ticket.numbers, winningNumbers, bonusNumbers);
-    const isWinner = result.prizeTier !== "No Prize";
-
-    const current = userResults.get(userId) || { won: false };
-    userResults.set(userId, { won: current.won || isWinner });
+    const result = compareNumbers(ticket.numbers, winningNumbers, bonusNumbers, game as any);
+    const current = userResults.get(ticket.user_id) || { won: false };
+    userResults.set(ticket.user_id, { won: current.won || result.prizeTier !== "No Prize" });
   }
 
-  // 3. Get user emails from Supabase Auth
-  // Note: Standard Supabase client can't list users easily, 
-  // so we'll fetch them one by one or via a custom RPC if needed.
-  // For this script, we'll try to get them via the auth.admin API.
   for (const [userId, status] of userResults.entries()) {
     try {
-      const { data: { user }, error: userError } = await supabase.auth.admin.getUserById(userId);
-      
-      if (userError || !user?.email) {
-        console.error(`Could not get email for user ${userId}:`, userError);
-        continue;
-      }
+      const { data: { user } } = await supabase.auth.admin.getUserById(userId);
+      if (!user?.email) continue;
 
-      const subject = status.won ? "🎉 You are a winner!" : "Lotto Results are Out!";
+      const subject = status.won ? `🎉 You are a ${game} winner!` : `${game} Results are Out!`;
       const message = status.won 
-        ? `Great news! One of your tickets for the ${drawDate} Oz Lotto draw has won a prize. Visit WhatIFLotto to check your division!`
-        : `The Oz Lotto results for ${drawDate} are now available. Visit WhatIFLotto to see how your tickets performed.`;
+        ? `Great news! One of your tickets for the ${drawDate} ${game} draw has won a prize. Visit WhatIFLotto to check your division!`
+        : `The ${game} results for ${drawDate} are now available. Visit WhatIFLotto to see how your tickets performed.`;
 
       await resend.emails.send({
-        from: 'WhatIFLotto <notifications@whatiflotto.com>', // Update this after verifying your domain in Resend
+        from: 'WhatIFLotto <notifications@whatiflotto.com>',
         to: user.email,
         subject: subject,
         text: message,
       });
-
-      console.log(`Notification sent to ${user.email} (Winner: ${status.won})`);
+      console.log(`Sent ${game} notification to ${user.email}`);
     } catch (e) {
-      console.error(`Failed to notify user ${userId}:`, e);
+      console.error(`Failed to notify ${userId}:`, e);
     }
   }
 }
 
-async function fetchLatestResults() {
-  console.log('Fetching latest Oz Lotto results...');
+async function fetchGame(game: 'OzLotto' | 'Powerball') {
+  console.log(`Fetching latest ${game} results...`);
+  const displayName = game === 'OzLotto' ? 'Oz Lotto' : 'Powerball';
   
   try {
     const response = await fetch('https://data.api.thelott.com/sales/vmax/web/data/lotto/latestresults', {
@@ -108,25 +80,20 @@ async function fetchLatestResults() {
       body: JSON.stringify({
         CompanyId: 'GoldenCasket',
         MaxDrawCount: 1,
-        OptionalProductFilter: ['OzLotto'],
+        OptionalProductFilter: [game],
       }),
     });
 
-    if (!response.ok) throw new Error(`Failed to fetch: ${response.statusText}`);
-
     const data: any = await response.json();
-    if (!data.Success || !data.DrawResults?.length) {
-      console.log('No results found.');
-      return;
-    }
+    if (!data.Success || !data.DrawResults?.length) return;
 
     const latest = data.DrawResults[0];
     const drawNumber = latest.DrawNumber;
     const drawDate = latest.DrawDate.split('T')[0];
 
-    const { data: existing } = await supabase.from('draw_results').select('id').eq('draw_number', drawNumber).maybeSingle();
+    const { data: existing } = await supabase.from('draw_results').select('id').eq('draw_number', drawNumber).eq('game', displayName).maybeSingle();
     if (existing) {
-      console.log(`Draw #${drawNumber} already exists.`);
+      console.log(`${displayName} Draw #${drawNumber} already exists.`);
       return;
     }
 
@@ -139,22 +106,25 @@ async function fetchLatestResults() {
     const { error: insertError } = await supabase.from('draw_results').insert({
       draw_number: drawNumber,
       draw_date: drawDate,
-      game: 'Oz Lotto',
+      game: displayName,
       numbers: latest.PrimaryNumbers,
       bonus: latest.SecondaryNumbers,
       prizes: prizes,
     });
 
     if (insertError) throw insertError;
-    console.log(`Successfully saved Draw #${drawNumber}`);
+    console.log(`Successfully saved ${displayName} Draw #${drawNumber}`);
 
-    // Trigger Notifications
-    await notifyUsers(drawDate, latest.PrimaryNumbers, latest.SecondaryNumbers);
+    await notifyUsers(displayName, drawDate, latest.PrimaryNumbers, latest.SecondaryNumbers);
 
   } catch (error: any) {
-    console.error('Error:', error.message);
-    process.exit(1);
+    console.error(`Error fetching ${game}:`, error.message);
   }
 }
 
-fetchLatestResults();
+async function run() {
+  await fetchGame('OzLotto');
+  await fetchGame('Powerball');
+}
+
+run();

@@ -20,76 +20,60 @@ if (!supabaseUrl || !serviceRoleKey) {
 const supabase = createClient(supabaseUrl, serviceRoleKey);
 const resend = resendApiKey ? new Resend(resendApiKey) : null;
 
-// Helper to wait between requests to respect rate limits
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-async function sendReminders() {
-  if (!resend) {
-    console.log('Skipping reminders: RESEND_API_KEY not set.');
-    return;
-  }
+async function sendRemindersForGame(game: 'Oz Lotto' | 'Powerball') {
+  if (!resend) return;
 
-  const targetDrawDate = getNextDrawDates(1)[0];
-  console.log(`--- WhatIFLotto Universal Reminder ---`);
+  const targetDrawDate = getNextDrawDates(1, game)[0];
+  console.log(`--- WhatIFLotto Reminder for ${game} ---`);
   console.log(`Target Draw Date: ${targetDrawDate}`);
 
   const { data: { users }, error: authError } = await supabase.auth.admin.listUsers();
-  if (authError || !users) {
-    console.error('Error fetching users:', authError);
-    return;
-  }
-
-  console.log(`Processing reminders for ${users.length} users...`);
+  if (authError || !users) return;
 
   const { data: ticketsForTargetDate } = await supabase
     .from('tickets')
     .select('user_id')
-    .eq('draw_date', targetDrawDate);
+    .eq('draw_date', targetDrawDate)
+    .eq('game', game);
 
   const usersWithTickets = new Set(ticketsForTargetDate?.map(t => t.user_id) || []);
 
-  let sentCount = 0;
   for (const user of users) {
     if (!user.email) continue;
-
     const alreadyHasTicket = usersWithTickets.has(user.id);
 
     try {
-      console.log(`[Queueing] Reminder to: ${user.email}...`);
-
       const subject = alreadyHasTicket 
-        ? "🎰 Boost your luck! Secure more tickets" 
-        : "🎰 Don't miss the draw! Pick your lucky numbers";
+        ? `🎰 Boost your luck! Secure more ${game} tickets` 
+        : `🎰 Don't miss the ${game} draw! Pick your lucky numbers`;
 
       const message = alreadyHasTicket
-        ? `You've already got tickets secured for the ${targetDrawDate} draw on WhatIFLotto! Why not boost your chances? Secure a few more "what-if" tickets before the results are announced. \n\nAdd more: ${process.env.NEXT_PUBLIC_SITE_URL || 'https://whatiflotto.com'}`
-        : `The Oz Lotto draw for ${targetDrawDate} is coming up! Don't forget to secure your free (fake) tickets on WhatIFLotto before the results are announced tonight. \n\nLock in your numbers: ${process.env.NEXT_PUBLIC_SITE_URL || 'https://whatiflotto.com'}`;
+        ? `You've already got tickets secured for the ${targetDrawDate} ${game} draw on WhatIFLotto! Why not boost your chances? Secure a few more "what-if" tickets before the results are announced.`
+        : `The ${game} draw for ${targetDrawDate} is coming up! Don't forget to secure your free (fake) tickets on WhatIFLotto before the results are announced tonight.`;
 
-      const { data, error } = await resend.emails.send({
+      const { error } = await resend.emails.send({
         from: 'WhatIFLotto <notifications@whatiflotto.com>',
         to: user.email,
         subject: subject,
-        text: message,
+        text: `${message}\n\nLock in your numbers: ${process.env.NEXT_PUBLIC_SITE_URL || 'https://whatiflotto.com'}`,
       });
 
-      if (error) {
-        // If we hit a restriction or rate limit, log it clearly
-        console.error(`[Resend Error] for ${user.email}:`, error.message);
-      } else {
-        sentCount++;
-        console.log(`[Success] Email sent to ${user.email}`);
-      }
-
-      // WAIT 600ms between each email to respect the "2 requests per second" limit
+      if (!error) console.log(`[Success] ${game} Reminder sent to ${user.email}`);
       await sleep(600);
-
     } catch (e) {
-      console.error(`[System Fail] Could not notify user ${user.id}:`, e);
+      console.error(`Fail for ${user.id}:`, e);
     }
   }
-
-  console.log(`--- Finished. Universal reminders successfully accepted by Resend: ${sentCount} ---`);
-  console.log(`Note: If success count is lower than user count, check logs for '403 Forbidden' (unverified domain) or '429' (rate limit).`);
 }
 
-sendReminders();
+async function run() {
+  const today = new Date().getDay();
+  // If Monday (1) or Tuesday (2), remind Oz Lotto
+  if (today === 1 || today === 2) await sendRemindersForGame('Oz Lotto');
+  // If Wednesday (3) or Thursday (4), remind Powerball
+  if (today === 3 || today === 4) await sendRemindersForGame('Powerball');
+}
+
+run();
