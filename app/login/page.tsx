@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useRouter } from 'next/navigation';
 import Navbar from '../../components/Navbar';
-import Link from 'next/link';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -22,11 +21,11 @@ export default function LoginPage() {
 
     try {
       if (isSignUp) {
-        const { error } = await signUp(email, password);
+        const { error } = await signUp({ email, password });
         if (error) throw error;
         setMessage('Success! Please check your email for a confirmation link to complete your registration.');
       } else {
-        const { error } = await signIn(email, password);
+        const { error } = await signIn({ email, password });
         if (error) throw error;
         router.push('/luck');
       }
