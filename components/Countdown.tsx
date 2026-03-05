@@ -35,7 +35,7 @@ export default function Countdown({ targetDate, game }: CountdownProps) {
   if (!timeLeft) return null;
 
   return (
-    <div className="flex items-center gap-3 bg-indigo-900 text-white px-6 py-3 rounded-2xl shadow-xl shadow-indigo-100/50 border border-indigo-700/50">
+    <div className="flex items-center gap-3 bg-indigo-900 text-white px-6 py-3 rounded-2xl shadow-xl border-indigo-700/50">
       <div className="flex flex-col">
         <span className="text-[8px] font-black uppercase tracking-[0.2em] text-indigo-300">Next {game} Draw</span>
         <div className="flex items-baseline gap-2">

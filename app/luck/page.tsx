@@ -4,7 +4,6 @@ import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import Navbar from '../../components/Navbar';
 import LottoLinePicker from '../../components/LottoLinePicker';
-import Countdown from '../../components/Countdown';
 import { getNextDrawDates, compareNumbers, generateQuickPick } from '../../lib/lotto-utils';
 import { supabase } from '../../lib/supabase';
 import Link from 'next/link';
@@ -144,83 +143,91 @@ export default function LuckPage() {
 
   const formatCurrency = (val: number) => new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(val);
 
-  if (isAuthLoading) return <div className="min-h-screen flex items-center justify-center bg-gray-50 font-black text-indigo-600 animate-pulse uppercase tracking-widest">Initialising...</div>;
+  if (isAuthLoading) return <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-950 font-black text-indigo-600 animate-pulse uppercase tracking-widest">Initialising...</div>;
 
   return (
-    <div className="flex min-h-screen flex-col bg-gray-50 pb-24">
+    <div className="flex min-h-screen flex-col bg-gray-50 dark:bg-gray-950 pb-24 transition-colors duration-500 text-gray-900 dark:text-gray-100 overflow-x-hidden">
       <Navbar />
 
-      <header className="bg-white border-b border-gray-200 py-12 px-6 mb-12 shadow-sm">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-end justify-between gap-8">
-          <div>
-            <h1 className="text-4xl md:text-5xl font-black text-gray-900 tracking-tighter uppercase mb-4">Try Your <span className="text-indigo-600">Luck</span></h1>
-            <div className="flex gap-2">
-              {['Oz Lotto', 'Powerball'].map((g) => (
-                <button
-                  key={g}
-                  onClick={() => setGame(g as any)}
-                  className={`px-8 py-2.5 rounded-full text-xs font-black uppercase tracking-widest transition-all ${
-                    game === g 
-                      ? (g === 'Oz Lotto' ? 'bg-emerald-600 text-white shadow-xl shadow-emerald-100' : 'bg-indigo-600 text-white shadow-xl shadow-indigo-100')
-                      : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
-                  }`}
-                >
-                  {g}
-                </button>
-              ))}
-            </div>
+      <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-white/5 py-16 px-6 mb-16 shadow-sm transition-all duration-500 relative overflow-hidden">
+        <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.07] bg-[radial-gradient(#4f46e5_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none" />
+        
+        <div className="max-w-7xl mx-auto relative z-10 animate-in fade-in slide-in-from-left-8 duration-700">
+          <h1 className="text-5xl md:text-7xl font-black text-gray-900 dark:text-white tracking-tighter uppercase mb-8">
+            Luck <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 italic">Tracking</span>
+          </h1>
+          <div className="flex gap-3">
+            {['Oz Lotto', 'Powerball'].map((g) => (
+              <button
+                key={g}
+                onClick={() => setGame(g as any)}
+                className={`px-10 py-3.5 rounded-2xl text-sm font-black uppercase tracking-widest transition-all duration-300 transform active:scale-95 ${
+                  game === g 
+                    ? (g === 'Oz Lotto' ? 'bg-emerald-600 text-white shadow-xl shadow-emerald-500/20' : 'bg-indigo-600 text-white shadow-xl shadow-indigo-500/20')
+                    : 'bg-white dark:bg-white/5 text-gray-400 dark:text-gray-500 hover:bg-gray-50 dark:hover:bg-white/10 border border-gray-100 dark:border-white/5'
+                }`}
+              >
+                {g}
+              </button>
+            ))}
           </div>
-          {/* Find the next FUTURE date for the countdown (index 0 is often 'last' or 'today' now) */}
-          <Countdown targetDate={upcomingDates.find(d => new Date(d) > new Date()) || upcomingDates[1]} game={game} />
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-12 px-6">
+      <main className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-16 px-6 relative z-10">
         
         {/* Left Column: Input & Luck Stats */}
-        <div className="lg:col-span-5 space-y-8">
+        <div className="lg:col-span-5 space-y-10 animate-in fade-in slide-in-from-bottom-8 duration-1000">
           
           {/* Luck Dashboard */}
-          <div className={`rounded-[2.5rem] p-8 text-white shadow-2xl relative overflow-hidden group ${game === 'Oz Lotto' ? 'bg-emerald-950' : 'bg-gray-900'}`}>
-            <div className={`absolute top-0 right-0 w-32 h-32 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-700 ${game === 'Oz Lotto' ? 'bg-emerald-500/10' : 'bg-indigo-500/10'}`} />
-            <div className="relative z-10">
-              <p className={`text-[10px] font-black uppercase tracking-widest mb-6 ${game === 'Oz Lotto' ? 'text-emerald-400' : 'text-indigo-400'}`}>Luck Analysis Dashboard</p>
-              <div className="space-y-6">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-xs font-bold text-gray-400 uppercase mb-1">Missed Potential</p>
-                    <p className={`text-3xl font-black tracking-tighter ${game === 'Oz Lotto' ? 'text-emerald-400' : 'text-indigo-400'}`}>{formatCurrency(stats.totalMissedPrize)}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-gray-400 uppercase mb-1">Total Spent (Fake)</p>
-                    <p className="text-3xl font-black tracking-tighter text-gray-100">{formatCurrency(stats.totalInvested)}</p>
-                  </div>
+          <div className={`rounded-[3rem] p-10 border transition-all duration-700 shadow-2xl hover:scale-[1.02] group relative overflow-hidden ${
+            game === 'Oz Lotto' 
+              ? 'bg-emerald-50/50 dark:bg-emerald-950/30 border-emerald-100 dark:border-emerald-500/10' 
+              : 'bg-indigo-50/50 dark:bg-indigo-950/30 border-indigo-100 dark:border-indigo-500/10'
+          }`}>
+            <div className={`absolute top-0 right-0 w-32 h-32 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-700 ${game === 'Oz Lotto' ? 'bg-emerald-500/5' : 'bg-indigo-500/5'}`} />
+            
+            <p className={`text-[11px] font-black uppercase tracking-[0.3em] mb-8 ${game === 'Oz Lotto' ? 'text-emerald-600 dark:text-emerald-400' : 'text-indigo-600 dark:text-indigo-400'}`}>Luck Engine Diagnostics</p>
+            <div className="space-y-10 relative z-10">
+              <div className="grid grid-cols-2 gap-8">
+                <div className="animate-in fade-in zoom-in-95 duration-700">
+                  <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase mb-2">Missed Potential</p>
+                  <p className={`text-4xl font-black tracking-tighter ${game === 'Oz Lotto' ? 'text-emerald-600 dark:text-emerald-400' : 'text-indigo-600 dark:text-indigo-400'}`}>{formatCurrency(stats.totalMissedPrize)}</p>
                 </div>
-                <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/10">
-                  <div>
-                    <p className="text-[8px] font-black text-gray-500 uppercase">Checked Tickets</p>
-                    <p className="text-lg font-black">{stats.totalTicketsChecked}</p>
-                  </div>
-                  <div>
-                    <p className="text-[8px] font-black text-gray-500 uppercase">Best Match</p>
-                    <p className="text-lg font-black text-emerald-400">{stats.bestDivision}</p>
-                  </div>
+                <div className="animate-in fade-in zoom-in-95 duration-700 delay-100">
+                  <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase mb-2">Theoretical Spend</p>
+                  <p className="text-4xl font-black tracking-tighter text-gray-700 dark:text-gray-200">{formatCurrency(stats.totalInvested)}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-8 pt-8 border-t border-gray-200 dark:border-white/5">
+                <div>
+                  <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1">Check Cycles</p>
+                  <p className="text-2xl font-black text-gray-900 dark:text-white">{stats.totalTicketsChecked}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1">Elite Division</p>
+                  <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{stats.bestDivision}</p>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border border-gray-100">
-            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">1. Choose Draw Date</label>
-            <select 
-              value={selectedDate} 
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className={`w-full appearance-none bg-gray-50 border-2 border-gray-100 rounded-2xl p-4 font-black text-gray-800 outline-none transition-all mb-8 ${game === 'Oz Lotto' ? 'focus:border-emerald-500' : 'focus:border-indigo-500'}`}
-            >
-              {upcomingDates.map(date => <option key={date} value={date}>{date} ({game === 'Oz Lotto' ? 'Tuesday' : 'Thursday'})</option>)}
-            </select>
+          <div className="bg-white dark:bg-gray-900 p-10 rounded-[3rem] border border-gray-100 dark:border-white/5 shadow-[0_30px_80px_rgba(0,0,0,0.05)] transition-all duration-500">
+            <label className="block text-[11px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em] mb-6 ml-2">1. Select Deployment Date</label>
+            <div className="relative group mb-10">
+              <select 
+                value={selectedDate} 
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className={`w-full appearance-none bg-gray-50 dark:bg-gray-800/50 border-2 border-gray-100 dark:border-white/5 rounded-2xl p-5 font-black text-gray-800 dark:text-white outline-none transition-all cursor-pointer ${game === 'Oz Lotto' ? 'focus:border-emerald-500' : 'focus:border-indigo-500'}`}
+              >
+                {upcomingDates.map(date => <option key={date} value={date}>{date} ({game === 'Oz Lotto' ? 'Tuesday' : 'Thursday'})</option>)}
+              </select>
+              <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none opacity-30 group-hover:translate-y-[-40%] transition-transform duration-300">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+              </div>
+            </div>
 
-            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">2. Select Your Numbers</label>
+            <label className="block text-[11px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em] mb-6 ml-2">2. Configure Sequences</label>
             <LottoLinePicker 
               lineId="luck-picker"
               displayIndex={1}
@@ -230,33 +237,46 @@ export default function LuckPage() {
               game={game}
             />
 
-            <div className="grid grid-cols-1 gap-4 mt-8">
-              <button onClick={handleSaveTicket} className={`py-5 text-white font-black rounded-2xl shadow-xl transition-all uppercase tracking-widest text-xs active:scale-95 ${game === 'Oz Lotto' ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-100' : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-100'}`}>Save Set to Tracker</button>
-              <div className="flex gap-3">
-                <select value={quickPickQty} onChange={(e) => setQuickPickQuantity(Number(e.target.value))} className="bg-gray-100 rounded-2xl p-4 font-black text-gray-700 w-24 text-center">
-                  {[10, 25, 50, 100].map(q => <option key={q} value={q}>x{q}</option>)}
-                </select>
-                <button onClick={handleMultiQuickPick} className="flex-1 py-5 bg-emerald-500 text-white font-black rounded-2xl hover:bg-emerald-600 shadow-xl shadow-emerald-100 transition-all uppercase tracking-widest text-xs active:scale-95">Quick Pick Burst</button>
+            <div className="grid grid-cols-1 gap-5 mt-12">
+              <button onClick={handleSaveTicket} className={`py-6 text-white font-black rounded-3xl transition-all uppercase tracking-[0.2em] text-sm active:scale-95 shadow-xl hover:brightness-110 ${game === 'Oz Lotto' ? 'bg-emerald-600 shadow-emerald-500/20' : 'bg-indigo-600 shadow-indigo-500/20'}`}>Authorize Single Set</button>
+              <div className="flex gap-4">
+                <div className="bg-gray-100 dark:bg-gray-800 rounded-3xl p-1 flex items-center border border-transparent dark:border-white/5">
+                  <select value={quickPickQty} onChange={(e) => setQuickPickQuantity(Number(e.target.value))} className="bg-transparent px-5 font-black text-xs outline-none text-gray-700 dark:text-gray-300 cursor-pointer">
+                    {[10, 25, 50, 100].map(q => <option key={q} value={q}>x{q}</option>)}
+                  </select>
+                </div>
+                <button onClick={handleMultiQuickPick} className="flex-1 py-6 bg-emerald-500 text-white font-black rounded-3xl transition-all uppercase tracking-[0.2em] text-sm shadow-xl shadow-emerald-500/20 hover:brightness-110 active:scale-95">Sequence Burst</button>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Right Column: Ticket List */}
-        <div className="lg:col-span-7 space-y-6">
-          <div className="flex items-center justify-between px-4">
-            <h2 className="text-xl font-black text-gray-900 uppercase tracking-tighter">{game} History</h2>
-            <span className="text-[10px] font-black text-gray-400 bg-gray-200 px-3 py-1 rounded-full uppercase">{myTickets.length} Sets Total</span>
+        {/* Right Column: History Section */}
+        <div className="lg:col-span-7 space-y-10 animate-in fade-in slide-in-from-right-8 duration-1000">
+          <div className="flex items-center justify-between px-6">
+            <div className="flex flex-col">
+              <h2 className="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tighter italic">Archive</h2>
+              <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mt-1 italic">Personal ${game} Record</p>
+            </div>
+            <span className="text-[11px] font-black text-gray-400 dark:text-gray-500 bg-gray-200 dark:bg-white/5 px-5 py-2 rounded-full uppercase tracking-widest">{myTickets.length} Sequences</span>
           </div>
 
-          <div className="space-y-4">
-            {isDataLoading ? <p className="text-center py-20 text-gray-400 font-bold italic animate-pulse">Scanning database...</p> : Object.keys(ticketsByDate).length === 0 ? (
-              <div className="bg-white p-20 rounded-[3rem] border-2 border-dashed border-gray-100 text-center">
-                <p className="text-gray-400 font-bold italic mb-4">No {game} tickets tracked yet.</p>
-                <button onClick={handleMultiQuickPick} className="text-xs font-black text-indigo-600 uppercase tracking-widest">Generate my first 10 tickets</button>
+          <div className="space-y-6">
+            {isDataLoading ? (
+              <div className="py-40 flex flex-col items-center gap-6 animate-pulse">
+                <div className="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                <p className="text-gray-400 font-black uppercase tracking-[0.3em] text-xs italic">Syncing Database...</p>
+              </div>
+            ) : Object.keys(ticketsByDate).length === 0 ? (
+              <div className="bg-white dark:bg-gray-900 p-32 rounded-[4rem] border-2 border-dashed border-gray-100 dark:border-white/5 text-center transition-all duration-700 group hover:border-indigo-500/30">
+                <div className="w-24 h-24 bg-gray-50 dark:bg-white/5 rounded-full flex items-center justify-center mx-auto mb-10 group-hover:scale-110 transition-transform">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-300 dark:text-gray-600"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                </div>
+                <p className="text-gray-400 dark:text-gray-500 font-bold italic mb-8">No sequences tracked in the archive.</p>
+                <button onClick={handleMultiQuickPick} className="text-[11px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-[0.3em] border-b-2 border-indigo-600/20 hover:border-indigo-600 transition-all pb-1">Deploy initial sequence</button>
               </div>
             ) : (
-              Object.entries(ticketsByDate).sort((a, b) => b[0].localeCompare(a[0])).map(([date, tickets]) => {
+              Object.entries(ticketsByDate).sort((a, b) => b[0].localeCompare(a[0])).map(([date, tickets], groupIdx) => {
                 const isExpanded = expandedDates.has(date);
                 const res = drawResultsList.find(r => r.drawDate === date);
                 let totalPrize = 0;
@@ -274,43 +294,53 @@ export default function LuckPage() {
                 const isWinner = res && (totalPrize > 0 || div1Win);
 
                 return (
-                  <div key={date} className={`bg-white rounded-[2rem] border transition-all duration-300 ${isWinner ? 'border-emerald-200 shadow-xl scale-[1.01]' : 'border-gray-100'}`}>
-                    <div className="flex items-center pr-4">
-                      <button onClick={() => { const next = new Set(expandedDates); if (next.has(date)) next.delete(date); else next.add(date); setExpandedDates(next); }} className="flex-1 p-6 flex items-center justify-between text-left">
-                        <div className="flex items-center gap-6">
-                          <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-black ${isWinner ? 'bg-emerald-500 text-white' : 'bg-gray-100 text-gray-400'}`}>{tickets.length}</div>
+                  <div key={date} className={`bg-white dark:bg-gray-900 rounded-[3rem] border transition-all duration-500 ${isWinner ? 'border-emerald-200 dark:border-emerald-500 shadow-2xl' : 'border-gray-100 dark:border-white/5 shadow-sm hover:shadow-xl'} animate-in fade-in slide-in-from-bottom-4`} style={{ transitionDelay: `${groupIdx * 100}ms` }}>
+                    <div className="flex items-center pr-6">
+                      <button onClick={() => { const next = new Set(expandedDates); if (next.has(date)) next.delete(date); else next.add(date); setExpandedDates(next); }} className="flex-1 p-10 flex items-center justify-between text-left group">
+                        <div className="flex items-center gap-10">
+                          <div className={`w-16 h-16 rounded-2xl flex items-center justify-center font-black text-xl transition-all duration-500 group-hover:rotate-12 ${isWinner ? 'bg-emerald-500 text-white' : 'bg-gray-100 dark:bg-white/5 text-gray-400 dark:text-gray-500'}`}>{tickets.length}</div>
                           <div>
-                            <p className="text-[10px] font-black text-indigo-600 uppercase mb-1">Draw Date: {date}</p>
-                            <p className="text-lg font-black text-gray-900">{res ? 'Results Analysed' : 'Awaiting Draw'}</p>
+                            <p className={`text-[11px] font-black uppercase tracking-[0.2em] mb-2 ${isWinner ? 'text-emerald-600 dark:text-emerald-400' : 'text-indigo-600 dark:text-indigo-400'}`}>Draw: {date}</p>
+                            <p className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">{res ? (isWinner ? 'WINNER DETECTED' : 'ANALYSIS COMPLETE') : 'PENDING DRAW'}</p>
                           </div>
                         </div>
                         {res ? (
-                          <div className="text-right mr-4">
-                            <p className={`text-xl font-black ${isWinner ? 'text-emerald-600' : 'text-gray-300'}`}>{div1Win ? 'JACKPOT!' : formatCurrency(totalPrize)}</p>
-                            {bestMatchForDate >= 5 && !div1Win && <p className="text-[8px] font-black text-orange-500 uppercase">HEARTBREAK NEAR-MISS!</p>}
+                          <div className="text-right mr-6">
+                            <p className={`text-3xl font-black tracking-tighter ${isWinner ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-300 dark:text-gray-700'}`}>{div1Win ? 'JACKPOT!' : formatCurrency(totalPrize)}</p>
+                            {bestMatchForDate >= 5 && !div1Win && <p className="text-[9px] font-black text-orange-500 uppercase tracking-widest mt-1 animate-pulse italic">Critical Near-Miss</p>}
                           </div>
                         ) : (
-                          <div className="text-right mr-4">
-                             <p className="text-xs font-black text-gray-300 uppercase italic">Pending...</p>
+                          <div className="text-right mr-6">
+                             <div className="flex items-center justify-end gap-2 text-gray-300 dark:text-gray-700 uppercase italic font-black text-xs tracking-widest">
+                               <span className="w-1.5 h-1.5 bg-gray-300 dark:bg-gray-700 rounded-full animate-bounce" />
+                               Waiting...
+                             </div>
                           </div>
                         )}
                       </button>
-                      <button onClick={() => handleDeleteDateGroup(date)} className="text-gray-300 hover:text-red-500 p-2 transition-colors">🗑️</button>
+                      <button onClick={() => handleDeleteDateGroup(date)} className="text-gray-300 dark:text-gray-700 hover:text-red-500 p-3 transition-colors transform hover:scale-125 duration-300">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                      </button>
                     </div>
 
                     {isExpanded && (
-                      <div className={`p-8 border-t ${isWinner ? 'bg-emerald-50/20' : 'bg-gray-50/50'}`}>
+                      <div className={`p-10 border-t dark:border-white/5 animate-in slide-in-from-top-4 duration-500 ${isWinner ? 'bg-emerald-50/20 dark:bg-emerald-500/5' : 'bg-gray-50/50 dark:bg-white/5'}`}>
                         {res && (
-                          <div className="mb-8 bg-white p-6 rounded-3xl border border-gray-100 flex flex-col items-center">
-                            <p className="text-[9px] font-black text-gray-400 uppercase mb-4 tracking-widest">Winning Numbers for {date}</p>
-                            <div className="flex flex-wrap gap-2.5 justify-center">
-                              {res.numbers.map(n => <span key={n} className="w-10 h-10 rounded-full bg-emerald-500 text-white flex items-center justify-center font-black border-b-4 border-emerald-700 shadow-lg text-sm">{n}</span>)}
-                              <div className="w-px h-10 bg-gray-200 mx-1" />
-                              {res.bonus.map(n => <span key={n} className="w-10 h-10 rounded-full bg-amber-400 text-amber-950 flex items-center justify-center font-black border-b-4 border-amber-600 shadow-lg text-sm">{n}</span>)}
+                          <div className="mb-12 bg-white dark:bg-gray-800 p-10 rounded-[3rem] border border-gray-100 dark:border-white/5 flex flex-col items-center shadow-inner relative overflow-hidden group">
+                            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+                            <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase mb-8 tracking-[0.4em] relative z-10">Official Target Numbers</p>
+                            <div className="flex flex-wrap gap-4 justify-center relative z-10">
+                              {res.numbers.map((n, i) => (
+                                <span key={n} className="w-14 h-14 rounded-full bg-emerald-500 text-white flex items-center justify-center font-black border-b-[6px] border-emerald-700 shadow-xl text-xl transform hover:-translate-y-1 transition-transform" style={{ transitionDelay: `${i * 50}ms` }}>{n}</span>
+                              ))}
+                              <div className="w-px h-14 bg-gray-200 dark:bg-white/10 mx-2" />
+                              {res.bonus.map((n, i) => (
+                                <span key={n} className="w-14 h-14 rounded-full bg-amber-400 text-amber-950 flex items-center justify-center font-black border-b-[6px] border-amber-600 shadow-xl text-xl transform hover:-translate-y-1 transition-transform" style={{ transitionDelay: `${(res.numbers.length + i) * 50}ms` }}>{n}</span>
+                              ))}
                             </div>
                           </div>
                         )}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                           {tickets.map((t, idx) => {
                             const c = res ? compareNumbers(t.numbers, res.numbers, res.bonus, game) : null;
                             const prize = (c && res) ? (res.prizes[c.prizeTier] || 0) : 0;
@@ -318,21 +348,21 @@ export default function LuckPage() {
                             const nearMiss = c && c.mainMatchesCount >= 5 && !ticketWon;
 
                             return (
-                              <div key={t.id} className={`p-5 rounded-3xl border transition-all ${ticketWon ? 'bg-white border-emerald-300 shadow-xl' : 'bg-white/60 border-gray-100 opacity-60 hover:opacity-100'}`}>
-                                <div className="flex justify-between items-center mb-4">
-                                  <span className="text-[10px] font-black text-gray-300 uppercase italic">Set #{idx + 1}</span>
-                                  {c && <span className={`text-[10px] font-black px-3 py-1 rounded-full uppercase ${ticketWon ? 'bg-emerald-500 text-white' : nearMiss ? 'bg-orange-500 text-white animate-pulse' : 'bg-gray-100 text-gray-400'}`}>{nearMiss ? 'So Close!' : c.prizeTier}</span>}
+                              <div key={t.id} className={`p-8 rounded-[2.5rem] border transition-all duration-500 hover:-translate-y-1 ${ticketWon ? 'bg-white dark:bg-gray-800 border-emerald-300 dark:border-emerald-500 shadow-2xl scale-[1.02] z-10' : 'bg-white/60 dark:bg-white/5 border-gray-100 dark:border-white/5 opacity-70 hover:opacity-100'}`}>
+                                <div className="flex justify-between items-center mb-8">
+                                  <span className="text-[11px] font-black text-gray-300 dark:text-gray-600 uppercase italic">Sequence #{String(idx + 1).padStart(2, '0')}</span>
+                                  {c && <span className={`text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest ${ticketWon ? 'bg-emerald-500 text-white' : nearMiss ? 'bg-orange-500 text-white animate-pulse shadow-[0_0_15px_rgba(249,115,22,0.4)]' : 'bg-gray-100 dark:bg-white/10 text-gray-400 dark:text-gray-500'}`}>{nearMiss ? 'CRITICAL NEAR-MISS' : c.prizeTier}</span>}
                                 </div>
-                                <div className="flex flex-wrap gap-1.5">
+                                <div className="flex flex-wrap gap-2.5 mb-2">
                                   {t.numbers.slice(0, 7).map(n => {
                                     const match = res && res.numbers.includes(n);
-                                    return <span key={n} className={`w-7 h-7 flex items-center justify-center rounded-full text-[10px] font-black border-b-2 ${match ? 'bg-emerald-500 text-white border-emerald-700' : 'bg-gray-100 text-gray-400 border-gray-200'}`}>{n}</span>;
+                                    return <span key={n} className={`w-10 h-10 flex items-center justify-center rounded-full text-[12px] font-black border-b-2 transition-all duration-500 ${match ? 'bg-emerald-500 text-white border-emerald-700 shadow-lg scale-110' : 'bg-gray-100 dark:bg-white/10 text-gray-400 dark:text-gray-500 border-gray-200 dark:border-white/5'}`}>{n}</span>;
                                   })}
                                   {game === 'Powerball' && t.numbers[7] && (
-                                    <span className={`w-7 h-7 flex items-center justify-center rounded-full text-[10px] font-black border-b-2 ${res && res.bonus.includes(t.numbers[7]) ? 'bg-amber-400 text-amber-950 border-amber-600' : 'bg-amber-50 text-amber-600/40 border-amber-100'}`}>{t.numbers[7]}</span>
+                                    <span className={`w-10 h-10 flex items-center justify-center rounded-full text-[12px] font-black border-b-2 transition-all duration-500 ${res && res.bonus.includes(t.numbers[7]) ? 'bg-amber-400 text-amber-950 border-amber-600 shadow-lg scale-110' : 'bg-amber-50 dark:bg-amber-500/5 text-amber-600/40 dark:text-amber-400/20 border-amber-100 dark:border-white/5'}`}>{t.numbers[7]}</span>
                                   )}
                                 </div>
-                                {ticketWon && <p className="mt-4 text-sm font-black text-emerald-600">You missed {formatCurrency(prize)}!</p>}
+                                {ticketWon && <p className="mt-8 text-lg font-black text-emerald-600 dark:text-emerald-400 italic">+{formatCurrency(prize)} MISSING</p>}
                               </div>
                             );
                           })}

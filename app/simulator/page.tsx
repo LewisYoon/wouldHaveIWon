@@ -178,57 +178,60 @@ export default function SimulatorPage() {
     const absProfit = Math.abs(stats.profit);
     if (stats.profit >= 0) {
       return {
-        label: "With these winnings, you could buy:",
+        label: "Market Value Equivalence",
         items: [
           { name: "Flat White Coffees", qty: Math.floor(stats.totalWon / 5.5) },
           { name: "Electric Scooters", qty: Math.floor(stats.totalWon / 800) },
-          { name: "Nights in Luxury Hotels", qty: Math.floor(stats.totalWon / 1200) }
+          { name: "Luxury Hotel Nights", qty: Math.floor(stats.totalWon / 1200) }
         ]
       };
     } else {
       return {
-        label: "With the money you lost, you could have bought:",
+        label: "Opportunity Cost Equivalence",
         items: [
-          { name: "Yearly Netflix Subs", qty: Math.floor(absProfit / 240) },
-          { name: "Avo on Toast Meals", qty: Math.floor(absProfit / 25) },
-          { name: "Full Tanks of Fuel", qty: Math.floor(absProfit / 100) }
+          { name: "Yearly Subscriptions", qty: Math.floor(absProfit / 240) },
+          { name: "Premium Dining Meals", qty: Math.floor(absProfit / 25) },
+          { name: "Fuel Tank Refills", qty: Math.floor(absProfit / 100) }
         ]
       };
     }
   }, [stats.profit, stats.totalWon]);
 
   const luckNarrative = useMemo(() => {
-    if (stats.jackpotHit) return "IMPOSSIBLE LUCK! You hit the Division 1 Jackpot. Go buy a real ticket immediately.";
-    if (stats.roi > 100) return "Statistically elite. You beat the house today, which happens to only 1% of simulators.";
-    if (stats.roi > 50) return "Not bad. You got some of your money back, but the house still wins.";
-    if (allComparisonResults && stats.totalWon === 0) return "Complete Wipeout. Not a single winning ticket in this batch.";
-    return "The math of the lottery is harsh. You're experiencing the reality of 1 in 45 million odds.";
+    if (stats.jackpotHit) return "ANOMALY DETECTED: You hit the Division 1 Jackpot. Statistical probability breached.";
+    if (stats.roi > 100) return "ELITE LUCK: You beat the house today. Occurs in < 1% of simulation cycles.";
+    if (stats.roi > 50) return "MARGINAL RECOVERY: Partial return secured, but the house retains the edge.";
+    if (allComparisonResults && stats.totalWon === 0) return "TOTAL WIPEOUT: Not a single sequence matched. Mathematical reality confirmed.";
+    return "STANDARD PROBABILITY: The house edge is working as intended. 1 in 45 million odds remain firm.";
   }, [stats, allComparisonResults]);
 
   if (isLoading) {
-    return <div className="flex min-h-screen items-center justify-center bg-gray-50 font-black text-indigo-600 animate-pulse uppercase tracking-widest text-sm">Initialising Simulator...</div>;
+    return <div className="flex min-h-screen items-center justify-center bg-white dark:bg-gray-950 font-black text-indigo-600 animate-pulse uppercase tracking-widest text-sm transition-colors duration-500">Authorizing Simulator...</div>;
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center bg-gray-50 pb-32">
+    <div className="flex min-h-screen flex-col items-center bg-gray-50 dark:bg-gray-950 pb-32 transition-colors duration-500 overflow-x-hidden">
       <Navbar />
       
       {showConfetti && <Confetti numberOfPieces={300} recycle={false} />}
 
-      <main className="flex w-full flex-col items-center px-4 md:px-20 text-center pt-12">
-        <div className="mb-12">
-          <h1 className="text-5xl md:text-7xl font-black text-gray-900 tracking-tighter uppercase leading-[0.8] mb-6">
-            WhatIF<span className="text-indigo-600">Simulator</span>
+      <main className="flex w-full flex-col items-center px-6 md:px-20 text-center pt-16 relative z-10">
+        {/* Background Grid Accent */}
+        <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.07] bg-[radial-gradient(#4f46e5_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none -z-10" />
+
+        <div className="mb-16 animate-in fade-in slide-in-from-top-8 duration-700">
+          <h1 className="text-6xl md:text-8xl font-black text-gray-900 dark:text-white tracking-tighter uppercase leading-[0.8] mb-10 transition-colors duration-500">
+            Neural<span className="text-indigo-600 dark:text-indigo-400 italic font-serif lowercase">Simulator</span>
           </h1>
-          <div className="flex gap-3 justify-center">
+          <div className="flex gap-4 justify-center">
             {['Oz Lotto', 'Powerball'].map((g) => (
               <button
                 key={g}
                 onClick={() => setGame(g as any)}
-                className={`px-8 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${
+                className={`px-10 py-4 rounded-[2rem] text-sm font-black uppercase tracking-[0.2em] transition-all duration-300 transform active:scale-95 ${
                   game === g 
-                    ? (g === 'Oz Lotto' ? 'bg-emerald-600 text-white shadow-xl shadow-emerald-100 scale-105' : 'bg-indigo-600 text-white shadow-xl shadow-indigo-100 scale-105')
-                    : 'bg-white text-gray-400 border border-gray-200 hover:bg-gray-50'
+                    ? (g === 'Oz Lotto' ? 'bg-emerald-600 text-white shadow-xl scale-105' : 'bg-indigo-600 text-white shadow-xl scale-105')
+                    : 'bg-white dark:bg-white/5 text-gray-400 dark:text-gray-500 border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/10 shadow-sm'
                 }`}
               >
                 {g}
@@ -237,74 +240,74 @@ export default function SimulatorPage() {
           </div>
         </div>
 
-        <div className="w-full max-w-2xl mb-12 space-y-6">
+        <div className="w-full max-w-2xl mb-16 space-y-10 animate-in fade-in slide-in-from-bottom-8 duration-1000">
           {/* Mode Selector */}
-          <div className="bg-white p-2 rounded-[2rem] shadow-sm border border-gray-100 flex overflow-hidden max-w-md mx-auto">
+          <div className="bg-white dark:bg-gray-900 p-2 rounded-[2.5rem] border border-gray-100 dark:border-white/5 flex overflow-hidden max-w-md mx-auto transition-colors duration-500 shadow-xl group hover:border-indigo-500/30">
             {(['official', 'random', 'manual'] as const).map((mode) => (
               <button
                 key={mode}
                 onClick={() => setDrawMode(mode)}
-                className={`flex-1 py-3 px-4 rounded-2xl text-[10px] font-black uppercase tracking-wider transition-all ${
-                  drawMode === mode ? 'bg-gray-900 text-white shadow-lg' : 'text-gray-400 hover:bg-gray-50'
+                className={`flex-1 py-4 px-6 rounded-[2rem] text-[11px] font-black uppercase tracking-widest transition-all duration-500 ${
+                  drawMode === mode ? 'bg-gray-900 dark:bg-indigo-600 text-white shadow-lg' : 'text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5'
                 }`}
               >
-                {mode === 'official' ? 'Official' : mode === 'random' ? 'Random' : 'Manual'}
+                {mode === 'official' ? 'Real Data' : mode === 'random' ? 'Entropy' : 'Manual'}
               </button>
             ))}
           </div>
 
           {/* Draw Configuration UI */}
-          <div className="bg-white p-8 rounded-[3rem] shadow-2xl border border-gray-100 transition-all overflow-hidden relative group">
-            <div className={`absolute top-0 right-0 w-32 h-32 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110 ${game === 'Oz Lotto' ? 'bg-emerald-50' : 'bg-indigo-50'}`} />
+          <div className="bg-white dark:bg-gray-900 p-12 rounded-[4rem] border border-gray-100 dark:border-white/5 transition-all duration-700 overflow-hidden relative shadow-2xl hover:shadow-indigo-500/10 group">
+            <div className={`absolute top-0 right-0 w-48 h-48 rounded-full -mr-24 -mt-24 transition-transform duration-1000 group-hover:scale-150 ${game === 'Oz Lotto' ? 'bg-emerald-500/5' : 'bg-indigo-500/5'}`} />
             
             <div className="relative z-10">
               {drawMode === 'official' && (
-                <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+                <div className="animate-in fade-in zoom-in-95 duration-500">
                   {officialResult ? (
                     <>
-                      <p className={`text-[10px] font-black uppercase tracking-widest mb-2 ${game === 'Oz Lotto' ? 'text-emerald-600' : 'text-indigo-600'}`}>Live Official Draw Data</p>
-                      <p className="text-xl font-black text-gray-900 mb-6 tracking-tight">Draw Date: {officialResult.drawDate}</p>
-                      <div className="flex flex-wrap gap-2.5 justify-center">
+                      <p className={`text-[11px] font-black uppercase tracking-[0.3em] mb-4 ${game === 'Oz Lotto' ? 'text-emerald-600' : 'text-indigo-600'}`}>Official Node Sync</p>
+                      <p className="text-2xl font-black text-gray-900 dark:text-white mb-10 tracking-tight">Sequence Date: {officialResult.drawDate}</p>
+                      <div className="flex flex-wrap gap-4 justify-center">
                         {officialResult.numbers.map((n, i) => (
-                          <span key={`off-${i}`} className={`w-11 h-11 rounded-full text-white flex items-center justify-center font-black shadow-lg border-b-4 text-lg ${game === 'Oz Lotto' ? 'bg-emerald-500 border-emerald-700' : 'bg-indigo-500 border-indigo-700'}`}>{n}</span>
+                          <span key={`off-${i}`} className={`w-14 h-14 rounded-full text-white flex items-center justify-center font-black shadow-xl border-b-[6px] text-xl transition-transform hover:-translate-y-1 duration-300 ${game === 'Oz Lotto' ? 'bg-emerald-500 border-emerald-700' : 'bg-indigo-500 border-indigo-700'}`} style={{ transitionDelay: `${i * 50}ms` }}>{n}</span>
                         ))}
-                        <div className="w-px h-11 bg-gray-200 mx-1" />
+                        <div className="w-px h-14 bg-gray-200 dark:bg-white/10 mx-2" />
                         {officialResult.bonus.map((n, i) => (
-                          <span key={`off-b-${i}`} className="w-11 h-11 rounded-full bg-amber-400 text-amber-950 flex items-center justify-center font-black shadow-lg border-b-4 border-amber-600 text-lg">{n}</span>
+                          <span key={`off-b-${i}`} className="w-14 h-14 rounded-full bg-amber-400 text-amber-950 flex items-center justify-center font-black shadow-xl border-b-[6px] border-amber-600 text-xl transition-transform hover:-translate-y-1 duration-300" style={{ transitionDelay: `${(officialResult.numbers.length + i) * 50}ms` }}>{n}</span>
                         ))}
                       </div>
                     </>
-                  ) : <div className="py-4 text-gray-400 font-bold italic animate-pulse">Fetching latest {game} results...</div>}
+                  ) : <div className="py-10 text-gray-400 dark:text-gray-500 font-black italic animate-pulse tracking-[0.2em] text-xs uppercase">Initializing Neural Link...</div>}
                 </div>
               )}
 
               {drawMode === 'random' && (
-                <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 flex flex-col items-center">
-                  <p className="text-[10px] font-black text-purple-600 uppercase tracking-widest mb-6">Probability Simulation Mode</p>
-                  <div className="flex flex-wrap gap-2.5 justify-center mb-10">
+                <div className="animate-in fade-in zoom-in-95 duration-500 flex flex-col items-center">
+                  <p className="text-[11px] font-black text-purple-600 dark:text-purple-400 uppercase tracking-[0.3em] mb-10">Entropy Generation Module</p>
+                  <div className="flex flex-wrap gap-4 justify-center mb-12 min-h-[56px]">
                     {customResult.numbers.length > 0 ? (
                       <>
                         {customResult.numbers.map((n, i) => (
-                          <span key={`rand-${i}`} className={`w-11 h-11 rounded-full text-white flex items-center justify-center font-black shadow-lg border-b-4 text-lg ${game === 'Oz Lotto' ? 'bg-emerald-600 border-emerald-800' : 'bg-indigo-600 border-indigo-800'}`}>{n}</span>
+                          <span key={`rand-${i}`} className={`w-14 h-14 rounded-full text-white flex items-center justify-center font-black shadow-xl border-b-[6px] text-xl transition-transform hover:-translate-y-1 duration-300 ${game === 'Oz Lotto' ? 'bg-emerald-600 border-emerald-800' : 'bg-indigo-600 border-indigo-800'}`}>{n}</span>
                         ))}
-                        <div className="w-px h-11 bg-gray-200 mx-1" />
+                        <div className="w-px h-14 bg-gray-200 dark:bg-white/10 mx-2" />
                         {customResult.bonus.map((n, i) => (
-                          <span key={`rand-b-${i}`} className="w-11 h-11 rounded-full bg-amber-400 text-amber-950 flex items-center justify-center font-black shadow-lg border-b-4 border-amber-600 text-lg">{n}</span>
+                          <span key={`rand-b-${i}`} className="w-14 h-14 rounded-full bg-amber-400 text-amber-950 flex items-center justify-center font-black shadow-xl border-b-[6px] border-amber-600 text-xl transition-transform hover:-translate-y-1 duration-300">{n}</span>
                         ))}
                       </>
-                    ) : <div className="h-11 flex items-center text-gray-300 font-black italic tracking-tighter uppercase">No numbers generated</div>}
+                    ) : <div className="h-14 flex items-center text-gray-300 dark:text-gray-700 font-black italic tracking-[0.3em] uppercase text-xs">Waiting for entropy trigger</div>}
                   </div>
-                  <button onClick={generateRandomResult} className="px-10 py-4 bg-purple-600 text-white font-black rounded-2xl hover:bg-purple-700 shadow-xl shadow-purple-100 transition-all uppercase tracking-widest text-xs">Generate Random Draw</button>
+                  <button onClick={generateRandomResult} className="px-12 py-5 bg-purple-600 text-white font-black rounded-3xl hover:bg-purple-700 shadow-2xl transition-all uppercase tracking-widest text-sm active:scale-95">Generate Entropy Draw</button>
                 </div>
               )}
 
               {drawMode === 'manual' && (
-                <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 space-y-8">
-                  <p className="text-[10px] font-black text-orange-600 uppercase tracking-widest text-center">Custom Scenario Configuration</p>
-                  <div className="space-y-8">
+                <div className="animate-in fade-in zoom-in-95 duration-500 space-y-12">
+                  <p className="text-[11px] font-black text-orange-600 dark:text-orange-400 uppercase tracking-[0.3em] text-center">Manual Parameter Config</p>
+                  <div className="space-y-12">
                     <div className="text-left">
-                      <p className="text-[9px] font-black text-gray-400 uppercase mb-4 tracking-widest ml-4">1. Select 7 Winning Main Numbers</p>
-                      <div className="flex flex-wrap gap-1.5 justify-center bg-gray-50 p-6 rounded-3xl border border-gray-100">
+                      <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase mb-6 tracking-[0.2em] ml-4">1. Authorize Main Sequence (7)</p>
+                      <div className="flex flex-wrap gap-2.5 justify-center bg-gray-50 dark:bg-gray-800/50 p-8 rounded-[3rem] border border-gray-100 dark:border-white/5 shadow-inner">
                         {Array.from({ length: game === 'Oz Lotto' ? 47 : 35 }, (_, i) => i + 1).map(num => {
                           const isMain = customResult.numbers.includes(num);
                           const disabled = !isMain && customResult.numbers.length >= 7;
@@ -318,7 +321,7 @@ export default function SimulatorPage() {
                                   : [...customResult.numbers, num].sort((a,b) => a-b);
                                 setCustomResult(prev => ({ ...prev, numbers: newNumbers }));
                               }}
-                              className={`w-8 h-8 rounded-full text-[10px] font-black transition-all ${isMain ? (game === 'Oz Lotto' ? 'bg-emerald-600 text-white scale-110 shadow-lg' : 'bg-indigo-600 text-white scale-110 shadow-lg') : 'bg-white text-gray-400 border border-gray-200 hover:border-indigo-300'} ${disabled ? 'opacity-20' : ''}`}
+                              className={`w-10 h-10 rounded-full text-[11px] font-black transition-all duration-300 ${isMain ? (game === 'Oz Lotto' ? 'bg-emerald-600 text-white scale-110 shadow-lg' : 'bg-indigo-600 text-white scale-110 shadow-lg') : 'bg-white dark:bg-white/5 text-gray-400 dark:text-gray-500 border border-gray-200 dark:border-white/10 hover:border-indigo-300 dark:hover:border-indigo-500 shadow-sm'} ${disabled ? 'opacity-20 grayscale' : ''}`}
                             >
                               {num}
                             </button>
@@ -328,8 +331,8 @@ export default function SimulatorPage() {
                     </div>
 
                     <div className="text-left">
-                      <p className="text-[9px] font-black text-amber-600 uppercase mb-4 tracking-widest ml-4">2. Select {game === 'Oz Lotto' ? '3 Supplementary' : '1 Powerball'}</p>
-                      <div className="flex flex-wrap gap-1.5 justify-center bg-amber-50/50 p-6 rounded-3xl border border-amber-100">
+                      <p className="text-[10px] font-black text-amber-600 uppercase mb-6 tracking-[0.2em] ml-4">2. Authorize Bonus Params ({game === 'Oz Lotto' ? '3' : '1'})</p>
+                      <div className="flex flex-wrap gap-2.5 justify-center bg-amber-50/30 dark:bg-amber-500/5 p-8 rounded-[3rem] border border-amber-100 dark:border-amber-500/10 shadow-inner">
                         {Array.from({ length: game === 'Oz Lotto' ? 47 : 20 }, (_, i) => i + 1).map(num => {
                           const isSupp = customResult.bonus.includes(num);
                           const maxSupp = game === 'Oz Lotto' ? 3 : 1;
@@ -344,7 +347,7 @@ export default function SimulatorPage() {
                                   : [...customResult.bonus, num].sort((a,b) => a-b);
                                 setCustomResult(prev => ({ ...prev, bonus: newBonus }));
                               }}
-                              className={`w-8 h-8 rounded-full text-[10px] font-black transition-all ${isSupp ? 'bg-amber-400 text-amber-950 scale-110 shadow-lg' : 'bg-white text-gray-400 border border-gray-200 hover:border-amber-400'} ${disabled ? 'opacity-20' : ''}`}
+                              className={`w-10 h-10 rounded-full text-[11px] font-black transition-all duration-300 ${isSupp ? 'bg-amber-400 text-amber-950 scale-110 shadow-lg' : 'bg-white dark:bg-white/5 text-gray-400 dark:text-gray-500 border border-gray-200 dark:border-white/10 hover:border-amber-400 dark:hover:border-amber-500 shadow-sm'} ${disabled ? 'opacity-20 grayscale' : ''}`}
                             >
                               {num}
                             </button>
@@ -359,39 +362,41 @@ export default function SimulatorPage() {
           </div>
         </div>
 
-        <NumberPicker 
-          onCheckAllResults={handleCheckAllResults} 
-          onClearAll={handleClearAllResults} 
-          resultsRef={resultsRef} 
-          drawResult={activeResult}
-          game={game}
-        />
+        <div className="w-full animate-in fade-in slide-in-from-bottom-12 duration-1000 delay-300">
+          <NumberPicker 
+            onCheckAllResults={handleCheckAllResults} 
+            onClearAll={handleClearAllResults} 
+            resultsRef={resultsRef} 
+            drawResult={activeResult}
+            game={game}
+          />
+        </div>
 
         {allComparisonResults && (
-          <div ref={resultsRef} className="w-full max-w-5xl mt-16 space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+          <div ref={resultsRef} className="w-full max-w-6xl mt-24 space-y-12 animate-in fade-in slide-in-from-bottom-12 duration-1000">
             
             {/* Luck Narrative & Real World Value */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <div className={`p-10 rounded-[3rem] text-left shadow-2xl relative overflow-hidden group text-white ${game === 'Oz Lotto' ? 'bg-emerald-900' : 'bg-indigo-900'}`}>
-                <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 group-hover:scale-125 transition-transform duration-700" />
-                <p className={`text-[10px] font-black uppercase tracking-[0.2em] mb-4 ${game === 'Oz Lotto' ? 'text-emerald-300' : 'text-indigo-300'}`}>Luck Analysis Engine</p>
-                <h3 className="text-3xl font-black mb-6 tracking-tighter leading-tight italic">"{luckNarrative}"</h3>
-                <div className="flex items-center gap-4">
-                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl ${game === 'Oz Lotto' ? 'bg-emerald-500/20' : 'bg-indigo-500/20'}`}>📊</div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+              <div className={`p-12 rounded-[4rem] text-left border transition-all duration-700 relative overflow-hidden text-white shadow-2xl hover:scale-[1.01] group ${game === 'Oz Lotto' ? 'bg-emerald-950 border-emerald-500/20' : 'bg-indigo-950 border-indigo-500/20'}`}>
+                <div className={`absolute top-0 right-0 w-48 h-48 rounded-full -mr-24 -mt-24 transition-transform duration-[2s] group-hover:scale-150 ${game === 'Oz Lotto' ? 'bg-emerald-500/5' : 'bg-indigo-500/5'}`} />
+                <p className={`text-[11px] font-black uppercase tracking-[0.4em] mb-10 ${game === 'Oz Lotto' ? 'text-emerald-400' : 'text-indigo-400'}`}>Luck Cycle Analysis</p>
+                <h3 className="text-3xl md:text-4xl font-black mb-12 tracking-tighter leading-tight italic transition-colors">"{luckNarrative}"</h3>
+                <div className="flex items-center gap-6 relative z-10">
+                  <div className={`w-16 h-16 rounded-3xl flex items-center justify-center text-3xl shadow-inner ${game === 'Oz Lotto' ? 'bg-emerald-500/10' : 'bg-indigo-500/10'}`}>📊</div>
                   <div>
-                    <p className={`text-xs font-bold ${game === 'Oz Lotto' ? 'text-emerald-300' : 'text-indigo-300'}`}>Return on Investment</p>
-                    <p className="text-2xl font-black">{stats.roi.toFixed(1)}%</p>
+                    <p className={`text-xs font-bold uppercase tracking-widest ${game === 'Oz Lotto' ? 'text-emerald-400' : 'text-indigo-400'}`}>Return on Deployment</p>
+                    <p className="text-4xl font-black text-white tracking-tighter">{stats.roi.toFixed(1)}%</p>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-white p-10 rounded-[3rem] shadow-xl border border-gray-100 text-left">
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-6">{realWorldValue.label}</p>
-                <div className="space-y-4">
+              <div className="bg-white dark:bg-gray-900 p-12 rounded-[4rem] border border-gray-100 dark:border-white/5 text-left transition-all duration-500 shadow-2xl hover:shadow-indigo-500/5">
+                <p className="text-[11px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.4em] mb-10">{realWorldValue.label}</p>
+                <div className="space-y-6">
                   {realWorldValue.items.map((item, i) => (
-                    <div key={i} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl">
-                      <span className="font-bold text-gray-600">{item.name}</span>
-                      <span className="text-xl font-black text-gray-900">{item.qty.toLocaleString()}x</span>
+                    <div key={i} className="flex items-center justify-between p-6 bg-gray-50 dark:bg-gray-800/50 rounded-3xl border border-transparent dark:border-white/5 transition-all duration-500 group hover:bg-white dark:hover:bg-gray-800 shadow-sm hover:shadow-md">
+                      <span className="font-bold text-gray-600 dark:text-gray-400 text-lg">{item.name}</span>
+                      <span className="text-3xl font-black text-gray-900 dark:text-white tracking-tighter transition-transform group-hover:scale-110">{item.qty.toLocaleString()}x</span>
                     </div>
                   ))}
                 </div>
@@ -399,56 +404,54 @@ export default function SimulatorPage() {
             </div>
 
             {/* Stats Dashboard */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border border-gray-100 text-left relative overflow-hidden">
-                <div className={`absolute top-0 right-0 w-2 h-full opacity-20 ${game === 'Oz Lotto' ? 'bg-emerald-500' : 'bg-indigo-500'}`} />
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Total Simulated Cost</p>
-                <p className="text-4xl font-black text-gray-900 tracking-tighter">{formatCurrency(stats.totalSpent)}</p>
-                <p className="text-[10px] font-bold text-gray-400 mt-2 italic">{allComparisonResults.length} Tickets Simulated</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="bg-white dark:bg-gray-900 p-10 rounded-[3rem] border border-gray-100 dark:border-white/5 text-left transition-all duration-500 shadow-xl group hover:-translate-y-1">
+                <p className="text-[11px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.3em] mb-4">Cycles Configured</p>
+                <p className="text-5xl font-black text-gray-900 dark:text-white tracking-tighter">{formatCurrency(stats.totalSpent)}</p>
+                <p className="text-[11px] font-bold text-gray-400 dark:text-gray-500 mt-4 italic uppercase tracking-widest">{allComparisonResults.length} Neural Sequences</p>
               </div>
-              <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border border-gray-100 text-left relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-2 h-full bg-emerald-500 opacity-20" />
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Simulated Winnings</p>
-                <p className="text-4xl font-black text-emerald-600 tracking-tighter">{formatCurrency(stats.totalWon)}</p>
-                <p className="text-[10px] font-bold text-emerald-500 mt-2 italic">{stats.winCount} Winning Sets Found</p>
+              <div className="bg-white dark:bg-gray-900 p-10 rounded-[3rem] border border-gray-100 dark:border-white/5 text-left transition-all duration-500 shadow-xl group hover:-translate-y-1">
+                <p className="text-[11px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.3em] mb-4">Neural Winnings</p>
+                <p className="text-5xl font-black text-emerald-600 dark:text-emerald-400 tracking-tighter">{formatCurrency(stats.totalWon)}</p>
+                <p className="text-[11px] font-bold text-emerald-500 dark:text-emerald-400 mt-4 italic uppercase tracking-widest">{stats.winCount} Successful Matches</p>
               </div>
-              <div className={`p-8 rounded-[2.5rem] shadow-2xl border text-left relative overflow-hidden transition-colors duration-500 ${stats.profit >= 0 ? 'bg-emerald-600 border-emerald-700 text-white' : 'bg-rose-600 border-rose-700 text-white'}`}>
-                <p className="text-[10px] font-black text-white/60 uppercase tracking-widest mb-2">Net Profit/Loss</p>
-                <p className="text-4xl font-black tracking-tighter">{formatCurrency(stats.profit)}</p>
-                <p className="text-[10px] font-bold text-white/60 mt-2 uppercase tracking-tighter">{stats.profit >= 0 ? 'Beating the Odds' : 'Math Always Wins'}</p>
+              <div className={`p-10 rounded-[3rem] border text-left transition-all duration-700 shadow-2xl group hover:-translate-y-1 ${stats.profit >= 0 ? 'bg-emerald-600 border-emerald-700 text-white' : 'bg-rose-600 border-rose-700 text-white'}`}>
+                <p className="text-[11px] font-black text-white/60 uppercase tracking-[0.3em] mb-4">Net Efficiency</p>
+                <p className="text-5xl font-black tracking-tighter text-white">{formatCurrency(stats.profit)}</p>
+                <p className="text-[11px] font-bold text-white/60 mt-4 uppercase tracking-widest italic">{stats.profit >= 0 ? 'System Breach Successful' : 'House Integrity Maintained'}</p>
               </div>
             </div>
 
             {/* Analysis Grid */}
-            <div className="bg-white p-10 rounded-[3rem] shadow-2xl border border-gray-100 text-left">
-              <div className="flex items-center justify-between mb-8">
-                <h2 className="text-3xl font-black text-gray-900 tracking-tighter uppercase italic">Draw Analysis</h2>
-                <div className="flex gap-2">
-                  <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 rounded-full border border-emerald-100">
-                    <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
-                    <span className="text-[9px] font-black text-emerald-600 uppercase">Verified Logic</span>
+            <div className="bg-white dark:bg-gray-900 p-12 rounded-[4rem] border border-gray-100 dark:border-white/5 text-left transition-all duration-500 shadow-2xl">
+              <div className="flex items-center justify-between mb-12">
+                <h2 className="text-4xl font-black text-gray-900 dark:text-white tracking-tighter uppercase italic transition-colors">Sequence Analysis</h2>
+                <div className="flex gap-3">
+                  <div className="flex items-center gap-3 px-5 py-2 bg-emerald-50 dark:bg-emerald-500/10 rounded-full border border-emerald-100 dark:border-emerald-500/20 transition-all">
+                    <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
+                    <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">Logic Verified</span>
                   </div>
                 </div>
               </div>
               
-              <div className="grid grid-cols-1 gap-3">
+              <div className="grid grid-cols-1 gap-4 max-h-[800px] overflow-y-auto pr-4 custom-scrollbar">
                 {allComparisonResults.map((result, index) => {
                   const hasPrize = result.prizeTier !== "No Prize";
                   const prizeAmt = activeResult?.prizes[result.prizeTier] || 0;
                   return (
-                    <div key={index} className={`flex flex-col sm:flex-row sm:items-center justify-between p-5 rounded-3xl transition-all duration-300 border ${hasPrize ? 'bg-emerald-50/50 border-emerald-200 shadow-sm' : 'bg-gray-50/30 border-gray-100 opacity-40 grayscale hover:opacity-100 hover:grayscale-0'}`}>
-                      <div className="flex items-center gap-5">
-                        <span className="text-[10px] font-black text-gray-300 w-6">#{String(index + 1).padStart(2, '0')}</span>
+                    <div key={index} className={`flex flex-col sm:flex-row sm:items-center justify-between p-8 rounded-[2.5rem] transition-all duration-500 border group hover:-translate-y-1 ${hasPrize ? 'bg-emerald-50/50 dark:bg-emerald-500/5 border-emerald-200 dark:border-emerald-500/20 shadow-lg' : 'bg-gray-50/30 dark:bg-white/5 border-gray-100 dark:border-white/5 opacity-40 grayscale hover:opacity-100 hover:grayscale-0 hover:shadow-md'}`}>
+                      <div className="flex items-center gap-8">
+                        <span className="text-[12px] font-black text-gray-300 dark:text-gray-700 w-8 transition-colors group-hover:text-indigo-500">{String(index + 1).padStart(2, '0')}</span>
                         <div>
-                          <p className="text-sm font-black text-gray-800 tracking-tight">
-                            {result.mainMatchesCount} Main {game === 'Powerball' ? `+ ${result.bonusMatchesCount > 0 ? 'Powerball' : 'No PB'}` : `+ ${result.bonusMatchesCount} Supps`}
+                          <p className="text-lg font-black text-gray-800 dark:text-white tracking-tight transition-colors">
+                            {result.mainMatchesCount} Main {game === 'Powerball' ? `+ ${result.bonusMatchesCount > 0 ? 'PB' : 'No PB'}` : `+ ${result.bonusMatchesCount} Supps`}
                           </p>
-                          <p className={`text-[10px] font-bold uppercase tracking-widest ${hasPrize ? 'text-emerald-600' : 'text-gray-400'}`}>{result.prizeTier}</p>
+                          <p className={`text-[11px] font-bold uppercase tracking-[0.2em] mt-1 ${hasPrize ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400 dark:text-gray-500'}`}>{result.prizeTier}</p>
                         </div>
                       </div>
-                      <div className="text-right mt-3 sm:mt-0">
-                        <p className={`text-xl font-black tracking-tighter ${hasPrize ? 'text-emerald-600' : 'text-gray-200'}`}>
-                          {result.prizeTier === "Division 1" && prizeAmt === 0 ? 'JACKPOT!' : (hasPrize ? formatCurrency(prizeAmt) : formatCurrency(0))}
+                      <div className="text-right mt-6 sm:mt-0">
+                        <p className={`text-3xl font-black tracking-tighter transition-all duration-500 group-hover:scale-110 ${hasPrize ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-200 dark:text-gray-700'}`}>
+                          {result.prizeTier === "Division 1" && prizeAmt === 0 ? 'BREACHED!' : (hasPrize ? formatCurrency(prizeAmt) : formatCurrency(0))}
                         </p>
                       </div>
                     </div>

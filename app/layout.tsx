@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "../context/AuthContext";
 import Link from 'next/link';
+import Logo from "../components/Logo";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,9 +16,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "WhatIFLotto | The Ultimate Oz Lotto 'Near Miss' & Regret Calculator",
-  description: "Stop wondering 'What If?'. Test your lucky numbers against official Oz Lotto results. Our simulator tracks your near-misses, potential winnings, and simulated profit over time.",
-  keywords: "Oz Lotto, WhatIFLotto, Lotto Regret Calculator, Lotto Simulator, Near Miss Tracker, Lucky Numbers Australia",
+  title: "WhatIFLotto | Oz Lotto & Powerball Simulator",
+  description: "The ultimate risk-free way to test your lottery luck. Track your numbers against official Oz Lotto and Powerball results and see if you hit the jackpot.",
+  keywords: "Oz Lotto, Powerball, WhatIFLotto, Lotto Simulator, Luck Tracker, Lucky Numbers Australia",
 };
 
 export default function RootLayout({
@@ -37,41 +38,30 @@ export default function RootLayout({
           crossOrigin="anonymous"
         ></script>
       </head>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen bg-gray-50`}>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-white dark:bg-gray-950 transition-colors duration-500 flex flex-col`}>
         <AuthProvider>
           <div className="flex-grow">
             {children}
           </div>
           
-          <footer className="bg-gray-900 text-gray-400 py-12 border-t border-gray-800">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-                <div className="col-span-1 md:col-span-2">
-                  <h3 className="text-white text-lg font-bold mb-4 italic text-yellow-400">WhatIF<span className="text-white">Lotto</span></h3>
-                  <p className="text-sm leading-relaxed max-w-md">
-                    We provide a fun, risk-free environment to test your lottery luck. 
-                    Our simulator uses official Oz Lotto data to help you visualize 
-                    the reality of the game without spending a cent.
-                  </p>
-                </div>
-                <div>
-                  <h4 className="text-white text-sm font-bold uppercase tracking-wider mb-4">Resources</h4>
-                  <ul className="space-y-2 text-sm">
-                    <li><Link href="/how-it-works" className="hover:text-white transition">How It Works</Link></li>
-                    <li><Link href="/odds" className="hover:text-white transition">Oz Lotto Odds</Link></li>
-                    <li><Link href="/responsible-play" className="hover:text-white transition">Responsible Play</Link></li>
-                  </ul>
-                </div>
-                <div>
-                  <h4 className="text-white text-sm font-bold uppercase tracking-wider mb-4">Legal</h4>
-                  <ul className="space-y-2 text-sm">
-                    <li><Link href="/privacy" className="hover:text-white transition">Privacy Policy</Link></li>
-                    <li><Link href="/terms" className="hover:text-white transition">Terms of Service</Link></li>
-                  </ul>
-                </div>
+          <footer className="py-24 text-center border-t border-gray-100 dark:border-white/5 transition-colors duration-500 bg-gray-50 dark:bg-gray-900/30 mt-auto px-6">
+            <div className="max-w-7xl mx-auto">
+              <div className="mb-12 flex justify-center opacity-50 grayscale hover:opacity-100 transition-all duration-500">
+                <Logo />
               </div>
-              <div className="mt-12 pt-8 border-t border-gray-800 text-center text-xs">
-                <p>&copy; {currentYear} WhatIFLotto. Not affiliated with any official lottery provider.</p>
+              
+              <div className="flex justify-center flex-wrap gap-x-12 gap-y-6 mb-12 text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em]">
+                <Link href="/how-it-works" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">How It Works</Link>
+                <Link href="/odds" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">Odds</Link>
+                <Link href="/responsible-play" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">Responsible Play</Link>
+                <Link href="/privacy" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">Privacy</Link>
+                <Link href="/terms" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">Terms</Link>
+              </div>
+
+              <div className="max-w-2xl mx-auto">
+                <p className="text-[10px] text-gray-400 dark:text-gray-600 font-medium uppercase tracking-widest leading-relaxed">
+                  © {currentYear} WhatIFLotto Australia. Not affiliated with any official lottery provider. For simulation purposes only. No real money or gambling occurs on this platform.
+                </p>
               </div>
             </div>
           </footer>

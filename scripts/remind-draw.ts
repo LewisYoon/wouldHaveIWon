@@ -21,48 +21,61 @@ if (!supabaseUrl || !serviceRoleKey) {
 const supabase = createClient(supabaseUrl, serviceRoleKey);
 const resend = resendApiKey ? new Resend(resendApiKey) : null;
 
-const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
 function getReminderTemplate(game: string, targetDate: string, alreadyHasTicket: boolean) {
   const isOz = game === 'Oz Lotto';
   const brandColor = isOz ? '#10b981' : '#4f46e5';
   
-  const title = alreadyHasTicket ? `Boost Your Luck!` : `Pick Your Numbers`;
+  const title = alreadyHasTicket ? `Schedule Update: ${game}` : `Action Required: ${game} Sequence`;
   const heroText = alreadyHasTicket
-    ? `You've already secured tickets for the ${targetDate} ${game} draw. Why not boost your chances with a few more?`
-    : `The ${game} draw for ${targetDate} is coming up! Don't forget to lock in your free tracked tickets before results are announced tonight.`;
+    ? `Your existing sequences for the ${targetDate} ${game} draw are scheduled for verification. You may authorize additional sets if required.`
+    : `The ${game} draw cycle for ${targetDate} is approaching. System authorization for your tracked numbers is required before the results are published.`;
 
   return `
     <!DOCTYPE html>
-    <html>
+    <html lang="en">
     <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>${game} Reminder</title>
+      <!--[if mso]>
+      <style type="text/css">
+        body, table, td, a { font-family: Arial, Helvetica, sans-serif !important; }
+      </style>
+      <![endif]-->
       <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #374151; margin: 0; padding: 0; }
-        .container { max-width: 600px; margin: 0 auto; padding: 40px 20px; }
-        .header { text-align: center; margin-bottom: 32px; }
-        .logo { font-weight: 900; font-size: 24px; color: #111827; text-transform: uppercase; letter-spacing: -0.05em; }
-        .logo span { color: ${brandColor}; font-style: italic; text-transform: lowercase; }
-        .card { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 24px; padding: 40px; text-align: center; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
-        .badge { display: inline-block; padding: 4px 12px; background: ${brandColor}10; color: ${brandColor}; border-radius: 9999px; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 16px; }
-        .title { font-size: 24px; font-weight: 900; color: #111827; margin-bottom: 16px; text-transform: uppercase; letter-spacing: -0.025em; }
-        .text { font-size: 16px; color: #6b7280; margin-bottom: 32px; }
-        .button { display: inline-block; padding: 16px 32px; background: ${brandColor}; color: #ffffff !important; text-decoration: none; border-radius: 16px; font-weight: 900; text-transform: uppercase; font-size: 14px; letter-spacing: 0.05em; transition: all 0.2s; }
-        .footer { text-align: center; margin-top: 32px; font-size: 12px; color: #9ca3af; }
+        body { margin: 0; padding: 0; background-color: #f9fafb; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        .wrapper { width: 100%; table-layout: fixed; background-color: #f9fafb; padding-bottom: 40px; }
+        .content { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; margin-top: 40px; overflow: hidden; border: 1px solid #e5e7eb; }
+        .header { padding: 32px; text-align: center; background-color: #ffffff; border-bottom: 1px solid #f3f4f6; }
+        .body { padding: 40px; text-align: center; }
+        .footer { padding: 32px; text-align: center; font-size: 12px; color: #9ca3af; line-height: 1.5; }
+        .button { display: inline-block; padding: 14px 28px; background-color: ${brandColor}; color: #ffffff !important; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 14px; }
+        .badge { display: inline-block; padding: 4px 12px; background-color: #f3f4f6; color: #4b5563; border-radius: 9999px; font-size: 11px; font-weight: 700; text-transform: uppercase; margin-bottom: 16px; }
+        h1 { font-size: 24px; font-weight: 800; color: #111827; margin: 0 0 16px 0; }
+        p { font-size: 16px; color: #4b5563; margin: 0 0 32px 0; line-height: 1.6; }
       </style>
     </head>
     <body>
-      <div class="container">
-        <div class="header">
-          <div class="logo">WhatIF<span>lotto</span></div>
-        </div>
-        <div class="card">
-          <div class="badge">${game} • Draw Reminder</div>
-          <div class="title">${title}</div>
-          <p class="text">${heroText}</p>
-          <a href="${siteUrl}/luck" class="button">Pick My Numbers</a>
-        </div>
-        <div class="footer">
-          <p>© ${new Date().getFullYear()} WhatIFLotto Australia<br>For simulation purposes only. No real money involved.</p>
+      <div class="wrapper">
+        <div class="content">
+          <div class="header">
+            <div style="font-weight: 900; font-size: 20px; color: #111827; letter-spacing: -0.02em;">WhatIF<span style="color: ${brandColor};">Lotto</span></div>
+          </div>
+          <div class="body">
+            <div class="badge">Service Update</div>
+            <h1>${title}</h1>
+            <p>${heroText}</p>
+            <a href="${siteUrl}/luck" class="button">Configure Sequences</a>
+          </div>
+          <div class="footer">
+            <p>
+              This is a standard service reminder for WhatIFLotto users.<br>
+              Australia • <a href="${siteUrl}/privacy" style="color: #9ca3af; text-decoration: underline;">Privacy Policy</a>
+            </p>
+            <p style="margin-top: 16px; font-size: 10px; opacity: 0.8;">
+              Manage your alert preferences in your account settings. <a href="${siteUrl}/unsubscribe" style="color: #9ca3af;">Unsubscribe</a>
+            </p>
+          </div>
         </div>
       </div>
     </body>
@@ -74,8 +87,7 @@ async function sendRemindersForGame(game: 'Oz Lotto' | 'Powerball') {
   if (!resend) return;
 
   const targetDrawDate = getNextDrawDates(1, game)[0];
-  console.log(`--- WhatIFLotto Reminder for ${game} ---`);
-  console.log(`Target Draw Date: ${targetDrawDate}`);
+  console.log(`Initializing reminder batch for ${game} (${targetDrawDate})...`);
 
   const { data: { users }, error: authError } = await supabase.auth.admin.listUsers();
   if (authError || !users) return;
@@ -87,38 +99,51 @@ async function sendRemindersForGame(game: 'Oz Lotto' | 'Powerball') {
     .eq('game', game);
 
   const usersWithTickets = new Set(ticketsForTargetDate?.map(t => t.user_id) || []);
+  const emailBatch: any[] = [];
 
   for (const user of users) {
     if (!user.email) continue;
     const alreadyHasTicket = usersWithTickets.has(user.id);
 
+    // Transactional-style subject lines are less likely to be flagged as "Promotions"
+    const subject = alreadyHasTicket 
+      ? `Update: Your ${game} sequences for ${targetDrawDate}` 
+      : `Reminder: Action required for ${game} draw (${targetDrawDate})`;
+
+    const html = getReminderTemplate(game, targetDrawDate, alreadyHasTicket);
+    const plainText = alreadyHasTicket
+      ? `Your ${game} sequences for ${targetDrawDate} are scheduled. Configure more at: ${siteUrl}/luck`
+      : `The ${game} draw for ${targetDrawDate} is approaching. Configure your numbers at: ${siteUrl}/luck`;
+
+    emailBatch.push({
+      from: 'WhatIFLotto <notifications@whatiflotto.com>',
+      to: user.email,
+      subject: subject,
+      html: html,
+      text: plainText,
+      headers: {
+        'List-Unsubscribe': `<${siteUrl}/unsubscribe>`
+      }
+    });
+  }
+
+  // Send in batches of 100
+  for (let i = 0; i < emailBatch.length; i += 100) {
+    const batch = emailBatch.slice(i, i + 100);
     try {
-      const subject = alreadyHasTicket 
-        ? `🎰 Boost your luck! Secure more ${game} tickets` 
-        : `🎰 Don't miss the ${game} draw! Pick your lucky numbers`;
-
-      const html = getReminderTemplate(game, targetDrawDate, alreadyHasTicket);
-
-      const { error } = await resend.emails.send({
-        from: 'WhatIFLotto <notifications@whatiflotto.com>',
-        to: user.email,
-        subject: subject,
-        html: html,
-      });
-
-      if (!error) console.log(`[Success] ${game} Reminder sent to ${user.email}`);
-      await sleep(600);
+      await resend.batch.send(batch);
+      console.log(`Successfully dispatched batch of ${batch.length} ${game} reminders.`);
     } catch (e) {
-      console.error(`Fail for ${user.id}:`, e);
+      console.error(`Batch dispatch failure:`, e);
     }
   }
 }
 
 async function run() {
   const today = new Date().getDay();
-  // If Monday (1) or Tuesday (2), remind Oz Lotto
+  // Monday (1) or Tuesday (2) -> Oz Lotto
   if (today === 1 || today === 2) await sendRemindersForGame('Oz Lotto');
-  // If Wednesday (3) or Thursday (4), remind Powerball
+  // Wednesday (3) or Thursday (4) -> Powerball
   if (today === 3 || today === 4) await sendRemindersForGame('Powerball');
 }
 

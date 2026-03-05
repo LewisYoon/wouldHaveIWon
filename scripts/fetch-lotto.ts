@@ -23,44 +23,59 @@ const resend = resendApiKey ? new Resend(resendApiKey) : null;
 
 function getEmailTemplate(game: string, drawDate: string, status: { won: boolean }) {
   const isOz = game === 'Oz Lotto';
-  const brandColor = isOz ? '#10b981' : '#4f46e5'; // Emerald-600 or Indigo-600
+  const brandColor = isOz ? '#10b981' : '#4f46e5';
   
-  const title = status.won ? `🎉 Winner! Your ${game} Results` : `${game} Results are In`;
+  const title = status.won ? `Draw Results: Match Detected` : `Draw Results: Published`;
   const heroText = status.won 
-    ? `Great news! One of your tracked tickets for the ${game} draw has won a prize.`
-    : `The results for the ${drawDate} ${game} draw are now available for comparison.`;
+    ? `Your tracked numbers for the ${game} draw on ${drawDate} have successfully matched winning criteria.`
+    : `The official results for the ${game} draw on ${drawDate} are now available for your review.`;
 
   return `
     <!DOCTYPE html>
-    <html>
+    <html lang="en">
     <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>${game} Results</title>
+      <!--[if mso]>
+      <style type="text/css">
+        body, table, td, a { font-family: Arial, Helvetica, sans-serif !important; }
+      </style>
+      <![endif]-->
       <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #374151; margin: 0; padding: 0; }
-        .container { max-width: 600px; margin: 0 auto; padding: 40px 20px; }
-        .header { text-align: center; margin-bottom: 32px; }
-        .logo { font-weight: 900; font-size: 24px; color: #111827; text-transform: uppercase; letter-spacing: -0.05em; }
-        .logo span { color: ${brandColor}; font-style: italic; text-transform: lowercase; }
-        .card { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 24px; padding: 40px; text-align: center; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
-        .badge { display: inline-block; padding: 4px 12px; background: ${brandColor}10; color: ${brandColor}; border-radius: 9999px; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 16px; }
-        .title { font-size: 24px; font-weight: 900; color: #111827; margin-bottom: 16px; text-transform: uppercase; letter-spacing: -0.025em; }
-        .text { font-size: 16px; color: #6b7280; margin-bottom: 32px; }
-        .button { display: inline-block; padding: 16px 32px; background: ${brandColor}; color: #ffffff !important; text-decoration: none; border-radius: 16px; font-weight: 900; text-transform: uppercase; font-size: 14px; letter-spacing: 0.05em; transition: all 0.2s; }
-        .footer { text-align: center; margin-top: 32px; font-size: 12px; color: #9ca3af; }
+        body { margin: 0; padding: 0; background-color: #f9fafb; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        .wrapper { width: 100%; table-layout: fixed; background-color: #f9fafb; padding-bottom: 40px; }
+        .content { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; margin-top: 40px; overflow: hidden; border: 1px solid #e5e7eb; }
+        .header { padding: 32px; text-align: center; background-color: #ffffff; border-bottom: 1px solid #f3f4f6; }
+        .body { padding: 40px; text-align: center; }
+        .footer { padding: 32px; text-align: center; font-size: 12px; color: #9ca3af; line-height: 1.5; }
+        .button { display: inline-block; padding: 14px 28px; background-color: ${brandColor}; color: #ffffff !important; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 14px; }
+        .badge { display: inline-block; padding: 4px 12px; background-color: #f3f4f6; color: #4b5563; border-radius: 9999px; font-size: 11px; font-weight: 700; text-transform: uppercase; margin-bottom: 16px; }
+        h1 { font-size: 24px; font-weight: 800; color: #111827; margin: 0 0 16px 0; }
+        p { font-size: 16px; color: #4b5563; margin: 0 0 32px 0; line-height: 1.6; }
       </style>
     </head>
     <body>
-      <div class="container">
-        <div class="header">
-          <div class="logo">WhatIF<span>lotto</span></div>
-        </div>
-        <div class="card">
-          <div class="badge">${game} • Official Draw</div>
-          <div class="title">${title}</div>
-          <p class="text">${heroText}</p>
-          <a href="${siteUrl}/luck" class="button">View My Results</a>
-        </div>
-        <div class="footer">
-          <p>© ${new Date().getFullYear()} WhatIFLotto Australia<br>For simulation purposes only. No real money involved.</p>
+      <div class="wrapper">
+        <div class="content">
+          <div class="header">
+            <div style="font-weight: 900; font-size: 20px; color: #111827; letter-spacing: -0.02em;">WhatIF<span style="color: ${brandColor};">Lotto</span></div>
+          </div>
+          <div class="body">
+            <div class="badge">System Notification</div>
+            <h1>${title}</h1>
+            <p>${heroText}</p>
+            <a href="${siteUrl}/luck" class="button">Access Archive</a>
+          </div>
+          <div class="footer">
+            <p>
+              This is a transactional message regarding your tracked sequences on WhatIFLotto.<br>
+              Australia • <a href="${siteUrl}/privacy" style="color: #9ca3af; text-decoration: underline;">Privacy Policy</a>
+            </p>
+            <p style="margin-top: 16px; font-size: 10px; opacity: 0.8;">
+              If you wish to stop receiving these specific alerts, please adjust your notification settings in your account profile.
+            </p>
+          </div>
         </div>
       </div>
     </body>
@@ -71,7 +86,7 @@ function getEmailTemplate(game: string, drawDate: string, status: { won: boolean
 async function notifyUsers(game: string, drawDate: string, winningNumbers: number[], bonusNumbers: number[]) {
   if (!resend) return;
 
-  console.log(`Checking notifications for ${game} on ${drawDate}...`);
+  console.log(`Processing notification queue for ${game} (${drawDate})...`);
 
   const { data: tickets, error: ticketError } = await supabase
     .from('tickets')
@@ -80,11 +95,10 @@ async function notifyUsers(game: string, drawDate: string, winningNumbers: numbe
     .eq('game', game);
 
   if (ticketError || !tickets?.length) {
-    console.log(`No tickets found for ${game} on ${drawDate}.`);
+    console.log(`Queue empty for ${game} on ${drawDate}.`);
     return;
   }
 
-  // 1. Group results by user
   const userResults = new Map<string, { won: boolean }>();
   for (const ticket of tickets) {
     const result = compareNumbers(ticket.numbers, winningNumbers, bonusNumbers, game as any);
@@ -95,7 +109,6 @@ async function notifyUsers(game: string, drawDate: string, winningNumbers: numbe
   const userIds = Array.from(userResults.keys());
   const emailBatch: any[] = [];
 
-  // 2. Fetch user emails and prepare batch
   const chunkSize = 20;
   for (let i = 0; i < userIds.length; i += chunkSize) {
     const chunk = userIds.slice(i, i + chunkSize);
@@ -108,7 +121,8 @@ async function notifyUsers(game: string, drawDate: string, winningNumbers: numbe
       const status = userResults.get(userId);
 
       if (user?.email && status) {
-        const subject = status.won ? `🎉 You are a ${game} winner!` : `${game} Results are Out!`;
+        // Use more neutral, transactional subject lines to bypass "Promotion" tabs
+        const subject = `Notification: ${game} Draw Results (${drawDate})`;
         const html = getEmailTemplate(game, drawDate, status);
 
         emailBatch.push({
@@ -116,25 +130,30 @@ async function notifyUsers(game: string, drawDate: string, winningNumbers: numbe
           to: user.email,
           subject: subject,
           html: html,
+          // Add plain text version for spam filters
+          text: `The official results for the ${game} draw on ${drawDate} are now available. View your results at: ${siteUrl}/luck`,
+          headers: {
+            'X-Entity-Ref-ID': `${userId}-${drawDate}`,
+            'List-Unsubscribe': `<${siteUrl}/unsubscribe>`
+          }
         });
       }
     }
   }
 
-  // 3. Send emails in batches of 100 (Resend limit)
   for (let i = 0; i < emailBatch.length; i += 100) {
     const batch = emailBatch.slice(i, i + 100);
     try {
-      const response = await resend.batch.send(batch);
-      console.log(`Successfully sent batch of ${batch.length} ${game} notifications.`);
+      await resend.batch.send(batch);
+      console.log(`Transmitted batch of ${batch.length} ${game} notifications.`);
     } catch (e) {
-      console.error(`Failed to send email batch:`, e);
+      console.error(`Transmission failure:`, e);
     }
   }
 }
 
 async function fetchGame(game: 'OzLotto' | 'Powerball') {
-  console.log(`Fetching latest ${game} results...`);
+  console.log(`Querying node for ${game} results...`);
   const displayName = game === 'OzLotto' ? 'Oz Lotto' : 'Powerball';
   
   try {
@@ -143,7 +162,7 @@ async function fetchGame(game: 'OzLotto' | 'Powerball') {
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json, text/plain, */*',
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'User-Agent': 'Mozilla/5.0',
         'Origin': 'https://www.thelott.com',
         'Referer': 'https://www.thelott.com/'
       },
@@ -163,7 +182,7 @@ async function fetchGame(game: 'OzLotto' | 'Powerball') {
 
     const { data: existing } = await supabase.from('draw_results').select('id').eq('draw_number', drawNumber).eq('game', displayName).maybeSingle();
     if (existing) {
-      console.log(`${displayName} Draw #${drawNumber} already exists.`);
+      console.log(`Block #${drawNumber} already synchronized.`);
       return;
     }
 
@@ -183,12 +202,12 @@ async function fetchGame(game: 'OzLotto' | 'Powerball') {
     });
 
     if (insertError) throw insertError;
-    console.log(`Successfully saved ${displayName} Draw #${drawNumber}`);
+    console.log(`Committed ${displayName} Block #${drawNumber}`);
 
     await notifyUsers(displayName, drawDate, latest.PrimaryNumbers, latest.SecondaryNumbers);
 
   } catch (error: any) {
-    console.error(`Error fetching ${game}:`, error.message);
+    console.error(`Node Sync Error (${game}):`, error.message);
   }
 }
 

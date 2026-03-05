@@ -1,4 +1,4 @@
-// lotto-project/components/NumberPicker.tsx (Multi-Game & Volume Optimized)
+// lotto-project/components/NumberPicker.tsx
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
@@ -182,15 +182,23 @@ export default function NumberPicker({
   const displayLines = showAllDetails ? lines : lines.slice(0, 5);
 
   return (
-    <div className="p-4 bg-gray-50 shadow-lg rounded-[2rem] max-w-2xl mx-auto my-8 pb-24 border border-gray-100">
-      <div className="mb-6 px-4">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-black text-gray-900 uppercase tracking-tighter italic">Your {game} Ticket</h3>
-          <span className="bg-indigo-600 text-white text-[10px] font-black px-2 py-1 rounded-full">{lines.length} Sets</span>
+    <div className="w-full max-w-2xl mx-auto my-8 pb-32">
+      
+      {/* Header Info */}
+      <div className="flex items-center justify-between px-6 mb-6">
+        <div className="flex items-center gap-3">
+          <h3 className="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tighter italic">Your {game} Ticket</h3>
+          <span className="bg-indigo-600 text-white text-[10px] font-black px-2.5 py-1 rounded-full">{lines.length} Sets</span>
         </div>
+        <button onClick={() => setShowHistory(!showHistory)} className={`px-4 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all shadow-sm ${showHistory ? 'bg-gray-900 dark:bg-indigo-600 text-white' : 'bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-white/10'}`}>
+          {showHistory ? 'Hide Wins' : `View Wins (${winningHistory.length})`}
+        </button>
+      </div>
 
+      {/* Ticket List Section */}
+      <div className="bg-gray-50 dark:bg-gray-900/50 rounded-[3rem] p-4 border border-gray-100 dark:border-white/5 min-h-[400px]">
         {isDataLoading ? (
-          <p className="text-center text-gray-400 py-4 animate-pulse font-bold italic">Loading sets...</p>
+          <p className="text-center text-gray-400 py-24 animate-pulse font-bold italic">Loading your ticket...</p>
         ) : (
           <div className="space-y-4">
             {displayLines.map((line, index) => (
@@ -206,65 +214,69 @@ export default function NumberPicker({
             ))}
             
             {lines.length > 5 && (
-              <button onClick={() => setShowAllDetails(!showAllDetails)} className="w-full py-3 text-gray-400 font-black text-xs uppercase tracking-widest hover:text-gray-600 transition-colors">
-                {showAllDetails ? '↑ Collapse list' : `↓ Show all ${lines.length} sets`}
+              <button onClick={() => setShowAllDetails(!showAllDetails)} className="w-full py-6 text-gray-400 dark:text-gray-500 font-black text-[10px] uppercase tracking-[0.2em] hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
+                {showAllDetails ? '↑ Collapse List' : `↓ Expand all ${lines.length} sets`}
               </button>
             )}
           </div>
         )}
       </div>
 
-      {/* Sticky Footer */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-md p-4 shadow-lg border-t border-gray-100 z-50">
-        <div className="max-w-2xl mx-auto flex flex-wrap justify-center items-center gap-3">
-          <button onClick={() => { handleAddLine(); setShowAllDetails(true); }} className="px-5 py-2.5 rounded-xl bg-white border border-gray-200 text-gray-700 font-bold text-sm hover:bg-gray-50 transition-all">+ Add Set</button>
+      {/* Floating Sticky Action Bar */}
+      <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-2xl z-[90]">
+        <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl rounded-[2rem] p-4 shadow-xl border border-gray-100 dark:border-white/10 flex flex-wrap items-center justify-center gap-3">
           
-          <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-xl border border-gray-200">
-            <select value={quickPickQuantity} onChange={(e) => setQuickPickQuantity(Number(e.target.value))} className="bg-transparent px-2 font-bold text-sm outline-none text-gray-700">
-              {[10, 25, 50, 100].map(qty => <option key={qty} value={qty}>x{qty}</option>)}
-            </select>
-            <button onClick={handleMultiQuickPick} className="px-5 py-2 rounded-lg bg-indigo-600 text-white font-black text-xs uppercase tracking-wider hover:bg-indigo-700 transition-all shadow-md">Quick Pick</button>
-          </div>
-
-          <button onClick={() => setShowHistory(!showHistory)} className={`px-5 py-2.5 rounded-xl font-bold text-sm transition-all shadow-sm ${showHistory ? 'bg-gray-900 text-white' : 'bg-green-100 text-green-700 border border-green-200'}`}>
-            {showHistory ? 'Close History' : `Wins (${winningHistory.length})`}
+          <button onClick={() => { handleAddLine(); setShowAllDetails(true); }} className="p-3 rounded-xl bg-gray-100 dark:bg-white/5 text-gray-700 dark:text-white hover:bg-gray-200 dark:hover:bg-white/10 transition-all border border-transparent dark:border-white/10" title="Add Set">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           </button>
 
-          <button onClick={() => { setLines([]); handleAddLine(); onClearAll(); }} className="p-2.5 rounded-xl bg-red-50 text-red-500 border border-red-100 hover:bg-red-100 transition-all" title="Clear current tickets">🗑️</button>
-          
-          <button onClick={handleCheckAllResultsClick} className="px-8 py-3 rounded-2xl bg-indigo-600 text-white font-black text-lg hover:bg-indigo-700 transition-all shadow-lg hover:scale-105 active:scale-95">Check Results</button>
+          <div className="flex items-center gap-1 bg-gray-100 dark:bg-white/5 p-1 rounded-xl border border-gray-200 dark:border-white/10">
+            <select value={quickPickQuantity} onChange={(e) => setQuickPickQuantity(Number(e.target.value))} className="bg-transparent px-2 font-black text-xs outline-none text-gray-700 dark:text-gray-300">
+              {[10, 25, 50, 100].map(qty => <option key={qty} value={qty}>x{qty}</option>)}
+            </select>
+            <button onClick={handleMultiQuickPick} className="px-4 py-2 rounded-lg bg-indigo-600 text-white font-black text-[10px] uppercase tracking-widest hover:bg-indigo-700 transition-all">Quick Burst</button>
+          </div>
+
+          <button onClick={() => { if(window.confirm('Clear all current sets?')) { setLines([]); handleAddLine(); onClearAll(); } }} className="p-3 rounded-xl bg-red-50 dark:bg-red-500/10 text-red-500 border border-red-100 dark:border-red-500/20 hover:bg-red-100 transition-all">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+          </button>
+
+          <button onClick={handleCheckAllResultsClick} className="flex-1 py-4 px-8 rounded-2xl bg-emerald-500 text-white font-black text-sm hover:bg-emerald-600 transition-all uppercase tracking-widest">Check Results</button>
         </div>
       </div>
 
       {/* Winning History UI */}
       {showHistory && (
-        <div className="mt-8 p-6 bg-white shadow-2xl rounded-[2.5rem] border border-green-100 animate-in zoom-in-95 duration-200">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-2xl font-black text-gray-900 uppercase tracking-tighter italic">{game} Winning History</h3>
-            <button onClick={handleClearAllHistory} className="text-[10px] font-black text-red-500 hover:text-red-700 uppercase tracking-widest bg-red-50 px-3 py-1 rounded-full">Clear History</button>
+        <div className="mt-8 p-8 bg-white dark:bg-gray-900 shadow-xl rounded-[3rem] border border-gray-100 dark:border-white/5 animate-in zoom-in-95 duration-200">
+          <div className="flex justify-between items-center mb-8">
+            <div>
+              <h3 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter italic">{game} Wins</h3>
+              <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mt-1">Your successful simulations</p>
+            </div>
+            <button onClick={handleClearAllHistory} className="text-[10px] font-black text-red-500 hover:text-red-700 uppercase tracking-widest bg-red-50 dark:bg-red-500/10 px-4 py-2 rounded-full border border-red-100 dark:border-red-500/20">Clear All</button>
           </div>
           
           {winningHistory.length === 0 ? (
-            <div className="py-12 text-center text-gray-400 font-bold italic">No {game} wins recorded yet.</div>
+            <div className="py-20 text-center text-gray-400 font-bold italic">No winning sets found in this simulation.</div>
           ) : (
-            <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+            <div className="grid grid-cols-1 gap-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
               {winningHistory.map((item, idx) => (
-                <div key={item.id || idx} className="border border-green-100 rounded-2xl p-4 bg-green-50/50 relative group border-l-4 border-l-green-500">
-                  <div className="flex justify-between items-start mb-2">
+                <div key={item.id || idx} className="border border-gray-100 dark:border-white/10 rounded-[2rem] p-6 bg-gray-50 dark:bg-white/5 relative group border-l-8 border-l-emerald-500 transition-transform hover:scale-[1.01]">
+                  <div className="flex justify-between items-start mb-4">
                     <div>
-                      <p className="text-[9px] font-black text-green-600 uppercase tracking-widest">Draw Date: {item.drawDate}</p>
-                      <p className="text-lg font-black text-gray-800">{item.prizeTier}</p>
+                      <p className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">Draw Date: {item.drawDate}</p>
+                      <p className="text-xl font-black text-gray-900 dark:text-white">{item.prizeTier}</p>
                     </div>
-                    <button onClick={() => setWinningHistory(winningHistory.filter(w => w.id !== item.id))} className="text-gray-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100">🗑️</button>
+                    <button onClick={() => setWinningHistory(winningHistory.filter(w => w.id !== item.id))} className="text-gray-300 dark:text-gray-600 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100">🗑️</button>
                   </div>
                   <div className="flex justify-between items-end">
-                    <div className="flex flex-wrap gap-1">
-                      {item.numbers.slice(0, 7).map(n => <span key={n} className="w-6 h-6 flex items-center justify-center rounded-full bg-white text-[10px] font-black text-gray-700 shadow-sm border border-gray-100">{n}</span>)}
+                    <div className="flex flex-wrap gap-2">
+                      {item.numbers.slice(0, 7).map(n => <span key={n} className="w-8 h-8 flex items-center justify-center rounded-full bg-white dark:bg-gray-800 text-xs font-black text-gray-700 dark:text-gray-200 shadow-sm border border-gray-100 dark:border-white/5">{n}</span>)}
                       {game === 'Powerball' && item.numbers[7] && (
-                        <span className="w-6 h-6 flex items-center justify-center rounded-full bg-amber-400 text-amber-950 text-[10px] font-black shadow-sm ring-2 ring-amber-200">{item.numbers[7]}</span>
+                        <span className="w-8 h-8 flex items-center justify-center rounded-full bg-amber-400 text-amber-950 text-xs font-black shadow-lg ring-2 ring-amber-200 dark:ring-amber-400/20">{item.numbers[7]}</span>
                       )}
                     </div>
-                    <div className="text-[10px] font-black text-gray-400 uppercase italic">
+                    <div className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase italic">
                       {item.mainMatchesCount}M + {game === 'Powerball' ? (item.bonusMatchesCount > 0 ? 'PB' : 'No PB') : `${item.bonusMatchesCount}S`}
                     </div>
                   </div>
