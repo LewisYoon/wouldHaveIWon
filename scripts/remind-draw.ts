@@ -25,10 +25,10 @@ function getReminderTemplate(game: string, targetDate: string, alreadyHasTicket:
   const isOz = game === 'Oz Lotto';
   const brandColor = isOz ? '#10b981' : '#4f46e5';
   
-  const title = alreadyHasTicket ? `Schedule Update: ${game}` : `Action Required: ${game} Sequence`;
+  const title = alreadyHasTicket ? `Secure another set?` : `Ready for tonight's draw?`;
   const heroText = alreadyHasTicket
-    ? `Your existing sequences for the ${targetDate} ${game} draw are scheduled for verification. You may authorize additional sets if required.`
-    : `The ${game} draw cycle for ${targetDate} is approaching. System authorization for your tracked numbers is required before the results are published.`;
+    ? `You've already got your sequences locked in for the ${game} draw on ${targetDate}. Feeling extra lucky? You can always add a few more sets before we process the results tonight!`
+    : `Tonight is the big ${game} draw for ${targetDate}! Don't forget to pick your lucky numbers and save them to your tracker before the results are announced.`;
 
   return `
     <!DOCTYPE html>
@@ -37,45 +37,31 @@ function getReminderTemplate(game: string, targetDate: string, alreadyHasTicket:
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>${game} Reminder</title>
-      <!--[if mso]>
-      <style type="text/css">
-        body, table, td, a { font-family: Arial, Helvetica, sans-serif !important; }
-      </style>
-      <![endif]-->
       <style>
-        body { margin: 0; padding: 0; background-color: #f9fafb; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-        .wrapper { width: 100%; table-layout: fixed; background-color: #f9fafb; padding-bottom: 40px; }
-        .content { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; margin-top: 40px; overflow: hidden; border: 1px solid #e5e7eb; }
-        .header { padding: 32px; text-align: center; background-color: #ffffff; border-bottom: 1px solid #f3f4f6; }
-        .body { padding: 40px; text-align: center; }
-        .footer { padding: 32px; text-align: center; font-size: 12px; color: #9ca3af; line-height: 1.5; }
-        .button { display: inline-block; padding: 14px 28px; background-color: ${brandColor}; color: #ffffff !important; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 14px; }
-        .badge { display: inline-block; padding: 4px 12px; background-color: #f3f4f6; color: #4b5563; border-radius: 9999px; font-size: 11px; font-weight: 700; text-transform: uppercase; margin-bottom: 16px; }
-        h1 { font-size: 24px; font-weight: 800; color: #111827; margin: 0 0 16px 0; }
-        p { font-size: 16px; color: #4b5563; margin: 0 0 32px 0; line-height: 1.6; }
+        body { margin: 0; padding: 0; background-color: #f4f7f9; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        .container { max-width: 600px; margin: 40px auto; background: #ffffff; border-radius: 24px; border: 1px solid #e1e8ed; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+        .header { padding: 40px 30px 20px; text-align: center; }
+        .content { padding: 0 40px 40px; text-align: center; }
+        .footer { padding: 30px; text-align: center; font-size: 13px; color: #8899a6; background: #f8f9fa; line-height: 1.6; }
+        .btn { display: inline-block; padding: 16px 36px; background: ${brandColor}; color: #ffffff !important; text-decoration: none; border-radius: 14px; font-weight: 800; text-transform: uppercase; font-size: 14px; letter-spacing: 0.05em; }
+        h1 { color: #14171a; font-size: 28px; font-weight: 900; margin-bottom: 20px; tracking: -0.02em; }
+        p { color: #4b5563; font-size: 17px; line-height: 1.6; margin-bottom: 36px; }
       </style>
     </head>
     <body>
-      <div class="wrapper">
+      <div class="container">
+        <div class="header">
+          <div style="font-weight: 900; font-size: 22px; color: #14171a; letter-spacing: -0.04em; text-transform: uppercase;">WhatIF<span style="color: ${brandColor};">Lotto</span></div>
+        </div>
         <div class="content">
-          <div class="header">
-            <div style="font-weight: 900; font-size: 20px; color: #111827; letter-spacing: -0.02em;">WhatIF<span style="color: ${brandColor};">Lotto</span></div>
-          </div>
-          <div class="body">
-            <div class="badge">Service Update</div>
-            <h1>${title}</h1>
-            <p>${heroText}</p>
-            <a href="${siteUrl}/luck" class="button">Configure Sequences</a>
-          </div>
-          <div class="footer">
-            <p>
-              This is a standard service reminder for WhatIFLotto users.<br>
-              Australia • <a href="${siteUrl}/privacy" style="color: #9ca3af; text-decoration: underline;">Privacy Policy</a>
-            </p>
-            <p style="margin-top: 16px; font-size: 10px; opacity: 0.8;">
-              Manage your alert preferences in your account settings. <a href="${siteUrl}/unsubscribe" style="color: #9ca3af;">Unsubscribe</a>
-            </p>
-          </div>
+          <h1>${title}</h1>
+          <p>${heroText}</p>
+          <a href="${siteUrl}/luck" class="btn">Pick My Numbers</a>
+        </div>
+        <div class="footer">
+          Sent by WhatIFLotto Australia<br>
+          Helping you track your luck, every week.<br><br>
+          <a href="${siteUrl}/privacy" style="color: #8899a6; text-decoration: underline;">Privacy</a> • <a href="${siteUrl}/unsubscribe" style="color: #8899a6; text-decoration: underline;">Unsubscribe</a>
         </div>
       </div>
     </body>
@@ -87,7 +73,7 @@ async function sendRemindersForGame(game: 'Oz Lotto' | 'Powerball') {
   if (!resend) return;
 
   const targetDrawDate = getNextDrawDates(1, game)[0];
-  console.log(`Initializing reminder batch for ${game} (${targetDrawDate})...`);
+  console.log(`Preparing reminder batch for ${game} (${targetDrawDate})...`);
 
   const { data: { users }, error: authError } = await supabase.auth.admin.listUsers();
   if (authError || !users) return;
@@ -105,15 +91,14 @@ async function sendRemindersForGame(game: 'Oz Lotto' | 'Powerball') {
     if (!user.email) continue;
     const alreadyHasTicket = usersWithTickets.has(user.id);
 
-    // Transactional-style subject lines are less likely to be flagged as "Promotions"
     const subject = alreadyHasTicket 
-      ? `Update: Your ${game} sequences for ${targetDrawDate}` 
-      : `Reminder: Action required for ${game} draw (${targetDrawDate})`;
+      ? `Feeling extra lucky for tonight's ${game}?` 
+      : `Don't forget to pick your ${game} numbers if you have not!`;
 
     const html = getReminderTemplate(game, targetDrawDate, alreadyHasTicket);
     const plainText = alreadyHasTicket
-      ? `Your ${game} sequences for ${targetDrawDate} are scheduled. Configure more at: ${siteUrl}/luck`
-      : `The ${game} draw for ${targetDrawDate} is approaching. Configure your numbers at: ${siteUrl}/luck`;
+      ? `You've got sequences locked in for the ${game} draw on ${targetDate}. Add more at: ${siteUrl}/luck`
+      : `Tonight is the ${game} draw for ${targetDate}. Pick your numbers at: ${siteUrl}/luck`;
 
     emailBatch.push({
       from: 'WhatIFLotto <notifications@whatiflotto.com>',
@@ -127,23 +112,20 @@ async function sendRemindersForGame(game: 'Oz Lotto' | 'Powerball') {
     });
   }
 
-  // Send in batches of 100
   for (let i = 0; i < emailBatch.length; i += 100) {
     const batch = emailBatch.slice(i, i + 100);
     try {
       await resend.batch.send(batch);
-      console.log(`Successfully dispatched batch of ${batch.length} ${game} reminders.`);
+      console.log(`Dispatched ${batch.length} reminders.`);
     } catch (e) {
-      console.error(`Batch dispatch failure:`, e);
+      console.error(`Batch failure:`, e);
     }
   }
 }
 
 async function run() {
   const today = new Date().getDay();
-  // Monday (1) or Tuesday (2) -> Oz Lotto
   if (today === 1 || today === 2) await sendRemindersForGame('Oz Lotto');
-  // Wednesday (3) or Thursday (4) -> Powerball
   if (today === 3 || today === 4) await sendRemindersForGame('Powerball');
 }
 

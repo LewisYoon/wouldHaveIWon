@@ -25,10 +25,10 @@ function getEmailTemplate(game: string, drawDate: string, status: { won: boolean
   const isOz = game === 'Oz Lotto';
   const brandColor = isOz ? '#10b981' : '#4f46e5';
   
-  const title = status.won ? `Update: Draw Results Match` : `Update: Draw Results Available`;
+  const title = status.won ? `You've got a match!` : `The results are in`;
   const heroText = status.won 
-    ? `System analysis has identified a winning match for your ${game} tracked numbers (${drawDate}).`
-    : `The official results for the ${game} draw on ${drawDate} have been synchronized with your archive.`;
+    ? `Hey! Great news—one of your tracked sets for the ${game} draw on ${drawDate} just matched some winning numbers. Log in to see which division you hit!`
+    : `The official ${game} results for ${drawDate} are out. We've updated your archive so you can see how your lucky numbers performed this time around.`;
 
   return `
     <!DOCTYPE html>
@@ -38,29 +38,30 @@ function getEmailTemplate(game: string, drawDate: string, status: { won: boolean
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>${game} Results</title>
       <style>
-        body { margin: 0; padding: 0; background-color: #f4f7f9; font-family: Arial, sans-serif; }
-        .container { max-width: 600px; margin: 40px auto; background: #ffffff; border-radius: 8px; border: 1px solid #e1e8ed; overflow: hidden; }
-        .header { padding: 30px; text-align: center; border-bottom: 1px solid #f0f4f8; }
-        .content { padding: 40px; text-align: center; }
-        .footer { padding: 25px; text-align: center; font-size: 12px; color: #8899a6; background: #f8f9fa; }
-        .btn { display: inline-block; padding: 14px 30px; background: ${brandColor}; color: #ffffff !important; text-decoration: none; border-radius: 6px; font-weight: bold; }
-        h1 { color: #14171a; font-size: 22px; margin-bottom: 20px; }
-        p { color: #657786; font-size: 16px; line-height: 1.5; margin-bottom: 30px; }
+        body { margin: 0; padding: 0; background-color: #f4f7f9; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        .container { max-width: 600px; margin: 40px auto; background: #ffffff; border-radius: 24px; border: 1px solid #e1e8ed; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+        .header { padding: 40px 30px 20px; text-align: center; }
+        .content { padding: 0 40px 40px; text-align: center; }
+        .footer { padding: 30px; text-align: center; font-size: 13px; color: #8899a6; background: #f8f9fa; line-height: 1.6; }
+        .btn { display: inline-block; padding: 16px 36px; background: ${brandColor}; color: #ffffff !important; text-decoration: none; border-radius: 14px; font-weight: 800; text-transform: uppercase; font-size: 14px; letter-spacing: 0.05em; }
+        h1 { color: #14171a; font-size: 28px; font-weight: 900; margin-bottom: 20px; tracking: -0.02em; }
+        p { color: #4b5563; font-size: 17px; line-height: 1.6; margin-bottom: 36px; }
       </style>
     </head>
     <body>
       <div class="container">
         <div class="header">
-          <span style="font-weight: 900; font-size: 18px; color: #14171a; text-transform: uppercase;">WhatIF<span style="color: ${brandColor};">Lotto</span></span>
+          <div style="font-weight: 900; font-size: 22px; color: #14171a; letter-spacing: -0.04em; text-transform: uppercase;">WhatIF<span style="color: ${brandColor};">Lotto</span></div>
         </div>
         <div class="content">
           <h1>${title}</h1>
           <p>${heroText}</p>
-          <a href="${siteUrl}/luck" class="btn">View My Archive</a>
+          <a href="${siteUrl}/luck" class="btn">Check My Numbers</a>
         </div>
         <div class="footer">
-          © ${new Date().getFullYear()} WhatIFLotto Australia • Transactional Service Alert<br>
-          <a href="${siteUrl}/privacy" style="color: #8899a6;">Privacy Policy</a> • <a href="${siteUrl}/unsubscribe" style="color: #8899a6;">Unsubscribe</a>
+          Sent by WhatIFLotto Australia<br>
+          Helping you track your luck, every week.<br><br>
+          <a href="${siteUrl}/privacy" style="color: #8899a6; text-decoration: underline;">Privacy</a> • <a href="${siteUrl}/unsubscribe" style="color: #8899a6; text-decoration: underline;">Unsubscribe</a>
         </div>
       </div>
     </body>
@@ -98,12 +99,16 @@ async function notifyUsers(game: string, drawDate: string, winningNumbers: numbe
       const status = userResults.get(chunk[j]);
 
       if (user?.email && status) {
+        const subject = status.won ? `🎉 You hit a match in the ${game}!` : `The ${game} results are ready for you`;
+        
         emailBatch.push({
           from: 'WhatIFLotto <notifications@whatiflotto.com>',
           to: user.email,
-          subject: `Service: ${game} Results Sync (${drawDate})`,
+          subject: subject,
           html: getEmailTemplate(game, drawDate, status),
-          text: `The ${game} results for ${drawDate} are available. View at: ${siteUrl}/luck`,
+          text: status.won 
+            ? `You've got a match! One of your tracked sets for the ${game} draw on ${drawDate} won a prize. Check it here: ${siteUrl}/luck`
+            : `The ${game} results for ${drawDate} are now available. See how you did here: ${siteUrl}/luck`,
           headers: { 'List-Unsubscribe': `<${siteUrl}/unsubscribe>` }
         });
       }
