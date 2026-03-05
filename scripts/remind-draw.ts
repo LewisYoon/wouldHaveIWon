@@ -97,8 +97,8 @@ async function sendRemindersForGame(game: 'Oz Lotto' | 'Powerball') {
 
     const html = getReminderTemplate(game, targetDrawDate, alreadyHasTicket);
     const plainText = alreadyHasTicket
-      ? `You've got sequences locked in for the ${game} draw on ${targetDate}. Add more at: ${siteUrl}/luck`
-      : `Tonight is the ${game} draw for ${targetDate}. Pick your numbers at: ${siteUrl}/luck`;
+      ? `You've got sequences locked in for the ${game} draw on ${targetDrawDate}. Add more at: ${siteUrl}/luck`
+      : `Tonight is the ${game} draw for ${targetDrawDate}. Pick your numbers at: ${siteUrl}/luck`;
 
     emailBatch.push({
       from: 'WhatIFLotto <notifications@whatiflotto.com>',
