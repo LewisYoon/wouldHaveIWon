@@ -79,7 +79,7 @@ async function notifyUsers(drawDate: string, winningNumbers: number[], bonusNumb
         : `The Oz Lotto results for ${drawDate} are now available. Visit WhatIFLotto to see how your tickets performed.`;
 
       await resend.emails.send({
-        from: 'WhatIFLotto <onboarding@resend.dev>', // Update this after verifying your domain in Resend
+        from: 'WhatIFLotto <notifications@whatiflotto.com>', // Update this after verifying your domain in Resend
         to: user.email,
         subject: subject,
         text: message,

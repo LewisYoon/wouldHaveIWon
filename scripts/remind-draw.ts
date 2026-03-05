@@ -66,7 +66,7 @@ async function sendReminders() {
         : `The Oz Lotto draw for ${targetDrawDate} is coming up! Don't forget to secure your free (fake) tickets on WhatIFLotto before the results are announced tonight. \n\nLock in your numbers: ${process.env.NEXT_PUBLIC_SITE_URL || 'https://whatiflotto.com'}`;
 
       const { data, error } = await resend.emails.send({
-        from: 'WhatIFLotto <notifications@wouldhaveiwon.dev>',
+        from: 'WhatIFLotto <notifications@whatiflotto.com>',
         to: user.email,
         subject: subject,
         text: message,
