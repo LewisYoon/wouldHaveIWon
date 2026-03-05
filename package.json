@@ -8,7 +8,6 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-     "postbuild": "next-sitemap",
     "test": "ts-node lotto-utils.test.ts",
     "fetch-lotto": "tsx scripts/fetch-lotto.ts",
     "remind-draw": "tsx scripts/remind-draw.ts"
@@ -17,7 +16,6 @@
     "@supabase/supabase-js": "^2.98.0",
     "dotenv": "^17.3.1",
     "next": "16.1.6",
-    "next-sitemap": "^4.2.3",
     "react": "19.2.3",
     "react-confetti": "^6.4.0",
     "react-dom": "19.2.3",
