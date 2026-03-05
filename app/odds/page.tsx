@@ -7,7 +7,16 @@ import { useState } from 'react';
 export default function OddsPage() {
   const [game, setGame] = useState<'Oz Lotto' | 'Powerball' | 'Tatts Lotto'>('Oz Lotto');
 
-  const oddsData = {
+  const oddsData: Record<string, {
+    title: string;
+    desc: string;
+    mainNumbers: string;
+    suppNumbers?: string;
+    powerballNumbers?: string;
+    totalBalls: number;
+    breakdown: { div: string; matches: string; odds: string; }[];
+    color: string;
+  }> = {
     'Oz Lotto': {
       title: 'Oz Lotto Odds & Probabilities',
       desc: 'Oz Lotto requires you to pick 7 numbers from 1 to 47. Three supplementary numbers are drawn from the remaining 40 balls, and these are used to determine Divisions 2, 4, and 7.',
