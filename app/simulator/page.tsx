@@ -40,6 +40,8 @@ export default function SimulatorPage() {
       "Division 5": 50,
       "Division 6": 25,
       "Division 7": 15,
+      "Division 8": 10,
+      "Division 9": 5,
       "No Prize": 0
     }
   });
@@ -53,7 +55,8 @@ export default function SimulatorPage() {
     totalWon: 0,
     profit: 0,
     winCount: 0,
-    jackpotHit: false
+    jackpotHit: false,
+    roi: 0
   });
 
   // Fetch official result when game changes
@@ -120,7 +123,8 @@ export default function SimulatorPage() {
       totalWon: currentWon,
       profit: currentWon - spent,
       winCount: currentWins,
-      jackpotHit: hitJackpot
+      jackpotHit: hitJackpot,
+      roi: spent > 0 ? (currentWon / spent) * 100 : 0
     });
 
     setAllComparisonResults(results);
@@ -143,7 +147,8 @@ export default function SimulatorPage() {
       totalWon: 0,
       profit: 0,
       winCount: 0,
-      jackpotHit: false
+      jackpotHit: false,
+      roi: 0
     });
   };
 
@@ -168,14 +173,48 @@ export default function SimulatorPage() {
   const formatCurrency = (val: number) => 
     new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(val);
 
+  // Real-world value helpers
+  const realWorldValue = useMemo(() => {
+    const absProfit = Math.abs(stats.profit);
+    if (stats.profit >= 0) {
+      return {
+        label: "With these winnings, you could buy:",
+        items: [
+          { name: "Flat White Coffees", qty: Math.floor(stats.totalWon / 5.5) },
+          { name: "Electric Scooters", qty: Math.floor(stats.totalWon / 800) },
+          { name: "Nights in Luxury Hotels", qty: Math.floor(stats.totalWon / 1200) }
+        ]
+      };
+    } else {
+      return {
+        label: "With the money you lost, you could have bought:",
+        items: [
+          { name: "Yearly Netflix Subs", qty: Math.floor(absProfit / 240) },
+          { name: "Avo on Toast Meals", qty: Math.floor(absProfit / 25) },
+          { name: "Full Tanks of Fuel", qty: Math.floor(absProfit / 100) }
+        ]
+      };
+    }
+  }, [stats.profit, stats.totalWon]);
+
+  const luckNarrative = useMemo(() => {
+    if (stats.jackpotHit) return "IMPOSSIBLE LUCK! You hit the Division 1 Jackpot. Go buy a real ticket immediately.";
+    if (stats.roi > 100) return "Statistically elite. You beat the house today, which happens to only 1% of simulators.";
+    if (stats.roi > 50) return "Not bad. You got some of your money back, but the house still wins.";
+    if (allComparisonResults && stats.totalWon === 0) return "Complete Wipeout. Not a single winning ticket in this batch.";
+    return "The math of the lottery is harsh. You're experiencing the reality of 1 in 45 million odds.";
+  }, [stats, allComparisonResults]);
+
   if (isLoading) {
-    return <div className="flex min-h-screen items-center justify-center bg-gray-50 font-black text-indigo-600 animate-pulse uppercase tracking-widest text-sm">Loading Simulator...</div>;
+    return <div className="flex min-h-screen items-center justify-center bg-gray-50 font-black text-indigo-600 animate-pulse uppercase tracking-widest text-sm">Initialising Simulator...</div>;
   }
 
   return (
     <div className="flex min-h-screen flex-col items-center bg-gray-50 pb-32">
       <Navbar />
       
+      {showConfetti && <Confetti numberOfPieces={300} recycle={false} />}
+
       <main className="flex w-full flex-col items-center px-4 md:px-20 text-center pt-12">
         <div className="mb-12">
           <h1 className="text-5xl md:text-7xl font-black text-gray-900 tracking-tighter uppercase leading-[0.8] mb-6">
@@ -186,7 +225,11 @@ export default function SimulatorPage() {
               <button
                 key={g}
                 onClick={() => setGame(g as any)}
-                className={`px-8 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${game === g ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-100 scale-105' : 'bg-white text-gray-400 border border-gray-200 hover:bg-gray-50'}`}
+                className={`px-8 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${
+                  game === g 
+                    ? (g === 'Oz Lotto' ? 'bg-emerald-600 text-white shadow-xl shadow-emerald-100 scale-105' : 'bg-indigo-600 text-white shadow-xl shadow-indigo-100 scale-105')
+                    : 'bg-white text-gray-400 border border-gray-200 hover:bg-gray-50'
+                }`}
               >
                 {g}
               </button>
@@ -212,18 +255,18 @@ export default function SimulatorPage() {
 
           {/* Draw Configuration UI */}
           <div className="bg-white p-8 rounded-[3rem] shadow-2xl border border-gray-100 transition-all overflow-hidden relative group">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110" />
+            <div className={`absolute top-0 right-0 w-32 h-32 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110 ${game === 'Oz Lotto' ? 'bg-emerald-50' : 'bg-indigo-50'}`} />
             
             <div className="relative z-10">
               {drawMode === 'official' && (
                 <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
                   {officialResult ? (
                     <>
-                      <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-2">Live Official Draw Data</p>
+                      <p className={`text-[10px] font-black uppercase tracking-widest mb-2 ${game === 'Oz Lotto' ? 'text-emerald-600' : 'text-indigo-600'}`}>Live Official Draw Data</p>
                       <p className="text-xl font-black text-gray-900 mb-6 tracking-tight">Draw Date: {officialResult.drawDate}</p>
                       <div className="flex flex-wrap gap-2.5 justify-center">
                         {officialResult.numbers.map((n, i) => (
-                          <span key={`off-${i}`} className="w-11 h-11 rounded-full bg-emerald-500 text-white flex items-center justify-center font-black shadow-lg border-b-4 border-emerald-700 text-lg">{n}</span>
+                          <span key={`off-${i}`} className={`w-11 h-11 rounded-full text-white flex items-center justify-center font-black shadow-lg border-b-4 text-lg ${game === 'Oz Lotto' ? 'bg-emerald-500 border-emerald-700' : 'bg-indigo-500 border-indigo-700'}`}>{n}</span>
                         ))}
                         <div className="w-px h-11 bg-gray-200 mx-1" />
                         {officialResult.bonus.map((n, i) => (
@@ -242,7 +285,7 @@ export default function SimulatorPage() {
                     {customResult.numbers.length > 0 ? (
                       <>
                         {customResult.numbers.map((n, i) => (
-                          <span key={`rand-${i}`} className="w-11 h-11 rounded-full bg-indigo-600 text-white flex items-center justify-center font-black shadow-lg border-b-4 border-indigo-800 text-lg">{n}</span>
+                          <span key={`rand-${i}`} className={`w-11 h-11 rounded-full text-white flex items-center justify-center font-black shadow-lg border-b-4 text-lg ${game === 'Oz Lotto' ? 'bg-emerald-600 border-emerald-800' : 'bg-indigo-600 border-indigo-800'}`}>{n}</span>
                         ))}
                         <div className="w-px h-11 bg-gray-200 mx-1" />
                         {customResult.bonus.map((n, i) => (
@@ -275,7 +318,7 @@ export default function SimulatorPage() {
                                   : [...customResult.numbers, num].sort((a,b) => a-b);
                                 setCustomResult(prev => ({ ...prev, numbers: newNumbers }));
                               }}
-                              className={`w-8 h-8 rounded-full text-[10px] font-black transition-all ${isMain ? 'bg-indigo-600 text-white scale-110 shadow-lg' : 'bg-white text-gray-400 border border-gray-200 hover:border-indigo-300'} ${disabled ? 'opacity-20' : ''}`}
+                              className={`w-8 h-8 rounded-full text-[10px] font-black transition-all ${isMain ? (game === 'Oz Lotto' ? 'bg-emerald-600 text-white scale-110 shadow-lg' : 'bg-indigo-600 text-white scale-110 shadow-lg') : 'bg-white text-gray-400 border border-gray-200 hover:border-indigo-300'} ${disabled ? 'opacity-20' : ''}`}
                             >
                               {num}
                             </button>
@@ -325,25 +368,54 @@ export default function SimulatorPage() {
         />
 
         {allComparisonResults && (
-          <div ref={resultsRef} className="w-full max-w-4xl mt-16 space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+          <div ref={resultsRef} className="w-full max-w-5xl mt-16 space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            
+            {/* Luck Narrative & Real World Value */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className={`p-10 rounded-[3rem] text-left shadow-2xl relative overflow-hidden group text-white ${game === 'Oz Lotto' ? 'bg-emerald-900' : 'bg-indigo-900'}`}>
+                <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 group-hover:scale-125 transition-transform duration-700" />
+                <p className={`text-[10px] font-black uppercase tracking-[0.2em] mb-4 ${game === 'Oz Lotto' ? 'text-emerald-300' : 'text-indigo-300'}`}>Luck Analysis Engine</p>
+                <h3 className="text-3xl font-black mb-6 tracking-tighter leading-tight italic">"{luckNarrative}"</h3>
+                <div className="flex items-center gap-4">
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl ${game === 'Oz Lotto' ? 'bg-emerald-500/20' : 'bg-indigo-500/20'}`}>📊</div>
+                  <div>
+                    <p className={`text-xs font-bold ${game === 'Oz Lotto' ? 'text-emerald-300' : 'text-indigo-300'}`}>Return on Investment</p>
+                    <p className="text-2xl font-black">{stats.roi.toFixed(1)}%</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white p-10 rounded-[3rem] shadow-xl border border-gray-100 text-left">
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-6">{realWorldValue.label}</p>
+                <div className="space-y-4">
+                  {realWorldValue.items.map((item, i) => (
+                    <div key={i} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl">
+                      <span className="font-bold text-gray-600">{item.name}</span>
+                      <span className="text-xl font-black text-gray-900">{item.qty.toLocaleString()}x</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
             {/* Stats Dashboard */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border border-gray-100 text-left relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-2 h-full bg-indigo-500 opacity-20" />
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Total Invested</p>
+                <div className={`absolute top-0 right-0 w-2 h-full opacity-20 ${game === 'Oz Lotto' ? 'bg-emerald-500' : 'bg-indigo-500'}`} />
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Total Simulated Cost</p>
                 <p className="text-4xl font-black text-gray-900 tracking-tighter">{formatCurrency(stats.totalSpent)}</p>
-                <p className="text-[10px] font-bold text-gray-400 mt-2 italic">{allComparisonResults.length} Simulated Tickets</p>
+                <p className="text-[10px] font-bold text-gray-400 mt-2 italic">{allComparisonResults.length} Tickets Simulated</p>
               </div>
               <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border border-gray-100 text-left relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-2 h-full bg-emerald-500 opacity-20" />
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Total Winnings</p>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Simulated Winnings</p>
                 <p className="text-4xl font-black text-emerald-600 tracking-tighter">{formatCurrency(stats.totalWon)}</p>
                 <p className="text-[10px] font-bold text-emerald-500 mt-2 italic">{stats.winCount} Winning Sets Found</p>
               </div>
               <div className={`p-8 rounded-[2.5rem] shadow-2xl border text-left relative overflow-hidden transition-colors duration-500 ${stats.profit >= 0 ? 'bg-emerald-600 border-emerald-700 text-white' : 'bg-rose-600 border-rose-700 text-white'}`}>
                 <p className="text-[10px] font-black text-white/60 uppercase tracking-widest mb-2">Net Profit/Loss</p>
                 <p className="text-4xl font-black tracking-tighter">{formatCurrency(stats.profit)}</p>
-                <p className="text-[10px] font-bold text-white/60 mt-2 uppercase tracking-tighter">{stats.profit >= 0 ? 'Incredible Luck' : 'The House Always Wins'}</p>
+                <p className="text-[10px] font-bold text-white/60 mt-2 uppercase tracking-tighter">{stats.profit >= 0 ? 'Beating the Odds' : 'Math Always Wins'}</p>
               </div>
             </div>
 
@@ -354,7 +426,7 @@ export default function SimulatorPage() {
                 <div className="flex gap-2">
                   <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 rounded-full border border-emerald-100">
                     <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
-                    <span className="text-[9px] font-black text-emerald-600 uppercase">Verified</span>
+                    <span className="text-[9px] font-black text-emerald-600 uppercase">Verified Logic</span>
                   </div>
                 </div>
               </div>

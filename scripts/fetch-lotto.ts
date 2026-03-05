@@ -31,8 +31,12 @@ async function notifyUsers(game: string, drawDate: string, winningNumbers: numbe
     .eq('draw_date', drawDate)
     .eq('game', game);
 
-  if (ticketError || !tickets?.length) return;
+  if (ticketError || !tickets?.length) {
+    console.log(`No tickets found for ${game} on ${drawDate}.`);
+    return;
+  }
 
+  // 1. Group results by user
   const userResults = new Map<string, { won: boolean }>();
   for (const ticket of tickets) {
     const result = compareNumbers(ticket.numbers, winningNumbers, bonusNumbers, game as any);
@@ -40,25 +44,46 @@ async function notifyUsers(game: string, drawDate: string, winningNumbers: numbe
     userResults.set(ticket.user_id, { won: current.won || result.prizeTier !== "No Prize" });
   }
 
-  for (const [userId, status] of userResults.entries()) {
+  const userIds = Array.from(userResults.keys());
+  const emailBatch: any[] = [];
+
+  // 2. Fetch user emails and prepare batch
+  // Note: We process in small chunks to avoid Supabase Auth rate limits
+  const chunkSize = 20;
+  for (let i = 0; i < userIds.length; i += chunkSize) {
+    const chunk = userIds.slice(i, i + chunkSize);
+    const userPromises = chunk.map(id => supabase.auth.admin.getUserById(id));
+    const results = await Promise.all(userPromises);
+
+    for (let j = 0; j < results.length; j++) {
+      const { data: { user } } = results[j];
+      const userId = chunk[j];
+      const status = userResults.get(userId);
+
+      if (user?.email && status) {
+        const subject = status.won ? `🎉 You are a ${game} winner!` : `${game} Results are Out!`;
+        const message = status.won 
+          ? `Great news! One of your tickets for the ${drawDate} ${game} draw has won a prize. Visit WhatIFLotto to check your division!`
+          : `The ${game} results for ${drawDate} are now available. Visit WhatIFLotto to see how your tickets performed.`;
+
+        emailBatch.push({
+          from: 'WhatIFLotto <notifications@whatiflotto.com>',
+          to: user.email,
+          subject: subject,
+          text: message,
+        });
+      }
+    }
+  }
+
+  // 3. Send emails in batches of 100 (Resend limit)
+  for (let i = 0; i < emailBatch.length; i += 100) {
+    const batch = emailBatch.slice(i, i + 100);
     try {
-      const { data: { user } } = await supabase.auth.admin.getUserById(userId);
-      if (!user?.email) continue;
-
-      const subject = status.won ? `🎉 You are a ${game} winner!` : `${game} Results are Out!`;
-      const message = status.won 
-        ? `Great news! One of your tickets for the ${drawDate} ${game} draw has won a prize. Visit WhatIFLotto to check your division!`
-        : `The ${game} results for ${drawDate} are now available. Visit WhatIFLotto to see how your tickets performed.`;
-
-      await resend.emails.send({
-        from: 'WhatIFLotto <notifications@whatiflotto.com>',
-        to: user.email,
-        subject: subject,
-        text: message,
-      });
-      console.log(`Sent ${game} notification to ${user.email}`);
+      await resend.batch.send(batch);
+      console.log(`Successfully sent batch of ${batch.length} ${game} notifications.`);
     } catch (e) {
-      console.error(`Failed to notify ${userId}:`, e);
+      console.error(`Failed to send email batch:`, e);
     }
   }
 }

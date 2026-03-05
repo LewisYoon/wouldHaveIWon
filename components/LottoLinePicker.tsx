@@ -26,6 +26,14 @@ export default function LottoLinePicker({
   const mainMax = isOz ? 47 : 35;
   const totalRequired = isOz ? 7 : 8; // 7 main + 1 powerball for PB
 
+  // Dynamic colors based on game
+  const primaryColor = isOz ? 'bg-emerald-600' : 'bg-indigo-600';
+  const ringColor = isOz ? 'ring-emerald-400' : 'ring-indigo-400';
+  const shadowColor = isOz ? 'shadow-emerald-100' : 'shadow-indigo-100';
+  const hoverBg = isOz ? 'hover:bg-emerald-600' : 'hover:bg-indigo-600';
+  const lightBg = isOz ? 'bg-emerald-50' : 'bg-indigo-50';
+  const textColor = isOz ? 'text-emerald-600' : 'text-indigo-600';
+
   const [internalSelectedNumbers, setInternalSelectedNumbers] = useState<number[]>(selectedNumbers);
 
   useEffect(() => {
@@ -73,7 +81,7 @@ export default function LottoLinePicker({
     <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 transition-all hover:shadow-md">
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-3">
-          <span className="w-8 h-8 bg-indigo-600 text-white rounded-lg flex items-center justify-center font-black text-xs shadow-lg shadow-indigo-100 italic">#{displayIndex}</span>
+          <span className={`w-8 h-8 ${primaryColor} text-white rounded-lg flex items-center justify-center font-black text-xs shadow-lg ${shadowColor} italic`}>#{displayIndex}</span>
           <h3 className="font-black text-gray-900 uppercase tracking-tighter text-sm">{game} Selection</h3>
         </div>
         <button onClick={() => onDeleteLine(lineId)} className="text-gray-300 hover:text-red-500 transition-colors p-1">🗑️</button>
@@ -82,7 +90,7 @@ export default function LottoLinePicker({
       {/* Main Grid */}
       <div className="space-y-6">
         <div>
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Main Numbers (Pick 7)</p>
+          <p className={`text-[10px] font-black ${isOz ? 'text-emerald-600' : 'text-gray-400'} uppercase tracking-widest mb-3`}>Main Numbers (Pick 7)</p>
           <div className="grid grid-cols-7 sm:grid-cols-10 gap-1.5">
             {Array.from({ length: mainMax }, (_, i) => i + 1).map(num => {
               const isSelected = (isOz ? internalSelectedNumbers : internalSelectedNumbers.slice(0, 7)).includes(num);
@@ -91,7 +99,7 @@ export default function LottoLinePicker({
                   key={num}
                   onClick={() => handleMainClick(num)}
                   className={`aspect-square rounded-full flex items-center justify-center font-black text-[10px] transition-all duration-300 ${
-                    isSelected ? 'bg-indigo-600 text-white shadow-lg ring-2 ring-indigo-400 scale-110' : 'bg-gray-50 text-gray-400 hover:bg-gray-100'
+                    isSelected ? `${primaryColor} text-white shadow-lg ring-2 ${ringColor} scale-110` : 'bg-gray-50 text-gray-400 hover:bg-gray-100'
                   }`}
                 >
                   {num}
@@ -127,7 +135,7 @@ export default function LottoLinePicker({
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-8 pt-4 border-t border-gray-50">
         <div className="flex items-center gap-2">
           {internalSelectedNumbers.filter(n => n > 0).length === totalRequired ? (
-            <span className="flex items-center gap-1.5 text-[10px] font-black text-emerald-500 uppercase bg-emerald-50 px-3 py-1.5 rounded-full ring-1 ring-emerald-100">
+            <span className={`flex items-center gap-1.5 text-[10px] font-black text-emerald-500 uppercase bg-emerald-50 px-3 py-1.5 rounded-full ring-1 ring-emerald-100`}>
               <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
               Set Ready
             </span>
@@ -140,7 +148,7 @@ export default function LottoLinePicker({
 
         <div className="flex gap-2">
           <button onClick={() => onNumbersChange(lineId, [])} className="text-[10px] font-black text-gray-400 hover:text-red-500 uppercase tracking-widest px-4 py-2">Clear</button>
-          <button onClick={handleQuickPick} className="text-[10px] font-black bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white uppercase tracking-widest px-6 py-2 rounded-xl transition-all shadow-sm">Quick Pick</button>
+          <button onClick={handleQuickPick} className={`text-[10px] font-black ${lightBg} ${textColor} ${hoverBg} hover:text-white uppercase tracking-widest px-6 py-2 rounded-xl transition-all shadow-sm`}>Quick Pick</button>
         </div>
       </div>
     </div>

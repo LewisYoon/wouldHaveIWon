@@ -9,31 +9,41 @@ export function getNextDrawDates(count: number = 5, game: 'Oz Lotto' | 'Powerbal
   const today = new Date();
   const targetDay = game === 'Oz Lotto' ? 2 : 4; // 2 = Tuesday, 4 = Thursday
   
-  let nextDraw = new Date(today);
-  nextDraw.setHours(0, 0, 0, 0);
+  // 1. Calculate the MOST RECENT past draw date for testing/logging
+  let lastDraw = new Date(today);
+  lastDraw.setHours(0, 0, 0, 0);
+  // Calculate difference to last target day
+  let diffToLast = (today.getDay() - targetDay + 7) % 7;
   
-  // Find the next occurrence of the target day
-  nextDraw.setDate(today.getDate() + ((7 - today.getDay() + targetDay) % 7));
-  
-  // If today is the draw day, check if it's past draw time (approx 8:30 PM)
+  // If today is draw day but before 8:30 PM, the "last" draw was 7 days ago
   const isDrawDay = today.getDay() === targetDay;
   const isPastDrawTime = today.getHours() > 20 || (today.getHours() === 20 && today.getMinutes() >= 30);
   
-  if (isDrawDay && isPastDrawTime) {
-    nextDraw.setDate(nextDraw.getDate() + 7);
-  } else if (isDrawDay && !isPastDrawTime) {
-    nextDraw = new Date(today);
-    nextDraw.setHours(0, 0, 0, 0);
+  if (isDrawDay && !isPastDrawTime) {
+    diffToLast = 7;
+  } else if (diffToLast === 0 && isPastDrawTime) {
+    // It's currently draw day and results are out, so "last draw" is today
+    diffToLast = 0;
   }
 
-  for (let i = 0; i < count; i++) {
-    const d = new Date(nextDraw);
-    d.setDate(nextDraw.getDate() + (i * 7));
-    
+  lastDraw.setDate(today.getDate() - diffToLast);
+  
+  const formatDate = (d: Date) => {
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
-    dates.push(`${year}-${month}-${day}`);
+    return `${year}-${month}-${day}`;
+  };
+
+  // Add the last draw first
+  dates.push(formatDate(lastDraw));
+
+  // 2. Add future draws
+  let nextDraw = new Date(lastDraw);
+  for (let i = 1; i <= count; i++) {
+    const d = new Date(nextDraw);
+    d.setDate(nextDraw.getDate() + (i * 7));
+    dates.push(formatDate(d));
   }
   
   return dates;
