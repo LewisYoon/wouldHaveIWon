@@ -4,9 +4,9 @@ import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import Navbar from '../../components/Navbar';
 import LottoLinePicker from '../../components/LottoLinePicker';
+import DivisionRules from '../../components/DivisionRules';
 import { getNextDrawDates, compareNumbers, generateQuickPick } from '../../lib/lotto-utils';
 import { supabase } from '../../lib/supabase';
-import Link from 'next/link';
 
 interface Ticket {
   id: string;
@@ -27,7 +27,7 @@ const TICKET_COST = 1.45;
 
 export default function LuckPage() {
   const { user, isLoading: isAuthLoading } = useAuth();
-  const [game, setGame] = useState<'Oz Lotto' | 'Powerball'>('Oz Lotto');
+  const [game, setGame] = useState<'Oz Lotto' | 'Powerball' | 'Tatts Lotto'>('Oz Lotto');
   const upcomingDates = useMemo(() => getNextDrawDates(5, game), [game]);
   const [selectedDate, setSelectedDate] = useState(upcomingDates[0]);
   const [currentNumbers, setCurrentNumbers] = useState<number[]>([]);
@@ -36,8 +36,8 @@ export default function LuckPage() {
   const [drawResultsList, setDrawResultsList] = useState<DrawResult[]>([]);
   const [expandedDates, setExpandedDates] = useState<Set<string>>(new Set());
   const [isDataLoading, setIsDataLoading] = useState(true);
+  const [isRulesModalOpen, setIsRulesModalOpen] = useState(false);
 
-  // Stats for "Luck Analysis Dashboard"
   const stats = useMemo(() => {
     let totalMissedPrize = 0;
     let totalTicketsChecked = 0;
@@ -61,11 +61,9 @@ export default function LuckPage() {
     });
 
     const totalInvested = myTickets.length * TICKET_COST;
-
     return { totalMissedPrize, totalTicketsChecked, totalWins, bestDivision, totalInvested };
   }, [myTickets, drawResultsList]);
 
-  // Sync selected date when game changes
   useEffect(() => {
     setSelectedDate(upcomingDates[0]);
     setCurrentNumbers([]);
@@ -110,7 +108,7 @@ export default function LuckPage() {
   };
 
   const handleSaveTicket = async () => {
-    const required = game === 'Oz Lotto' ? 7 : 8;
+    const required = game === 'Oz Lotto' ? 7 : game === 'Powerball' ? 8 : 6;
     if (currentNumbers.filter(n => n > 0).length !== required) { alert(`Select ${required} numbers`); return; }
     
     if (user) {
@@ -143,91 +141,54 @@ export default function LuckPage() {
 
   const formatCurrency = (val: number) => new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(val);
 
-  if (isAuthLoading) return <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-950 font-black text-indigo-600 animate-pulse uppercase tracking-widest">Initialising...</div>;
+  if (isAuthLoading) return <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-950 font-black text-indigo-600 animate-pulse uppercase tracking-widest">Loading...</div>;
 
   return (
     <div className="flex min-h-screen flex-col bg-gray-50 dark:bg-gray-950 pb-24 transition-colors duration-500 text-gray-900 dark:text-gray-100 overflow-x-hidden">
       <Navbar />
 
-      <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-white/5 py-16 px-6 mb-16 shadow-sm transition-all duration-500 relative overflow-hidden">
+      <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-white/5 py-16 px-6 mb-16 shadow-sm transition-all duration-500 relative overflow-hidden text-left">
         <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.07] bg-[radial-gradient(#4f46e5_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none" />
-        
         <div className="max-w-7xl mx-auto relative z-10 animate-in fade-in slide-in-from-left-8 duration-700">
           <h1 className="text-5xl md:text-7xl font-black text-gray-900 dark:text-white tracking-tighter uppercase mb-8">
-            Luck <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 italic">Tracking</span>
+            Track My <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 italic">Luck</span>
           </h1>
-          <div className="flex gap-3">
-            {['Oz Lotto', 'Powerball'].map((g) => (
+          <div className="flex items-center gap-3">
+            {['Oz Lotto', 'Powerball', 'Tatts Lotto'].map((g) => (
               <button
                 key={g}
                 onClick={() => setGame(g as any)}
-                className={`px-10 py-3.5 rounded-2xl text-sm font-black uppercase tracking-widest transition-all duration-300 transform active:scale-95 ${
+                className={`px-10 py-3 rounded-2xl text-sm font-black uppercase tracking-widest transition-all duration-300 transform active:scale-95 ${
                   game === g 
-                    ? (g === 'Oz Lotto' ? 'bg-emerald-600 text-white shadow-xl shadow-emerald-500/20' : 'bg-indigo-600 text-white shadow-xl shadow-indigo-500/20')
+                    ? (g === 'Oz Lotto' ? 'bg-emerald-600 text-white shadow-xl shadow-emerald-500/20' : g === 'Tatts Lotto' ? 'bg-red-600 text-white shadow-xl shadow-red-500/20' : 'bg-indigo-600 text-white shadow-xl shadow-indigo-500/20')
                     : 'bg-white dark:bg-white/5 text-gray-400 dark:text-gray-500 hover:bg-gray-50 dark:hover:bg-white/10 border border-gray-100 dark:border-white/5'
                 }`}
               >
                 {g}
               </button>
             ))}
+            <button onClick={() => setIsRulesModalOpen(true)} className="ml-auto bg-gray-100 dark:bg-white/5 text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors w-12 h-12 rounded-full flex items-center justify-center font-black text-lg">?</button>
           </div>
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-16 px-6 relative z-10">
         
-        {/* Left Column: Input & Luck Stats */}
-        <div className="lg:col-span-5 space-y-10 animate-in fade-in slide-in-from-bottom-8 duration-1000">
-          
-          {/* Luck Dashboard */}
-          <div className={`rounded-[3rem] p-10 border transition-all duration-700 shadow-2xl hover:scale-[1.02] group relative overflow-hidden ${
-            game === 'Oz Lotto' 
-              ? 'bg-emerald-50/50 dark:bg-emerald-950/30 border-emerald-100 dark:border-emerald-500/10' 
-              : 'bg-indigo-50/50 dark:bg-indigo-950/30 border-indigo-100 dark:border-indigo-500/10'
-          }`}>
-            <div className={`absolute top-0 right-0 w-32 h-32 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-700 ${game === 'Oz Lotto' ? 'bg-emerald-500/5' : 'bg-indigo-500/5'}`} />
-            
-            <p className={`text-[11px] font-black uppercase tracking-[0.3em] mb-8 ${game === 'Oz Lotto' ? 'text-emerald-600 dark:text-emerald-400' : 'text-indigo-600 dark:text-indigo-400'}`}>Luck Engine Diagnostics</p>
-            <div className="space-y-10 relative z-10">
-              <div className="grid grid-cols-2 gap-8">
-                <div className="animate-in fade-in zoom-in-95 duration-700">
-                  <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase mb-2">Missed Potential</p>
-                  <p className={`text-4xl font-black tracking-tighter ${game === 'Oz Lotto' ? 'text-emerald-600 dark:text-emerald-400' : 'text-indigo-600 dark:text-indigo-400'}`}>{formatCurrency(stats.totalMissedPrize)}</p>
-                </div>
-                <div className="animate-in fade-in zoom-in-95 duration-700 delay-100">
-                  <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase mb-2">Theoretical Spend</p>
-                  <p className="text-4xl font-black tracking-tighter text-gray-700 dark:text-gray-200">{formatCurrency(stats.totalInvested)}</p>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-8 pt-8 border-t border-gray-200 dark:border-white/5">
-                <div>
-                  <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1">Check Cycles</p>
-                  <p className="text-2xl font-black text-gray-900 dark:text-white">{stats.totalTicketsChecked}</p>
-                </div>
-                <div>
-                  <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1">Elite Division</p>
-                  <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{stats.bestDivision}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-gray-900 p-10 rounded-[3rem] border border-gray-100 dark:border-white/5 shadow-[0_30px_80px_rgba(0,0,0,0.05)] transition-all duration-500">
-            <label className="block text-[11px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em] mb-6 ml-2">1. Select Deployment Date</label>
+        {/* Left Column */}
+        <div className="lg:col-span-5 space-y-10 animate-in fade-in slide-in-from-bottom-8 duration-1000 text-left">
+          <div className="bg-white dark:bg-gray-900 p-10 rounded-[3rem] border border-gray-100 dark:border-white/5 shadow-xl transition-all duration-500">
+            <label className="block text-[11px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em] mb-6 ml-2">1. Pick Draw Date</label>
             <div className="relative group mb-10">
               <select 
                 value={selectedDate} 
                 onChange={(e) => setSelectedDate(e.target.value)}
-                className={`w-full appearance-none bg-gray-50 dark:bg-gray-800/50 border-2 border-gray-100 dark:border-white/5 rounded-2xl p-5 font-black text-gray-800 dark:text-white outline-none transition-all cursor-pointer ${game === 'Oz Lotto' ? 'focus:border-emerald-500' : 'focus:border-indigo-500'}`}
+                className={`w-full appearance-none bg-gray-50 dark:bg-gray-800/50 border-2 border-gray-100 dark:border-white/5 rounded-2xl p-5 font-black text-gray-800 dark:text-white outline-none transition-all cursor-pointer ${game === 'Oz Lotto' ? 'focus:border-emerald-500' : game === 'Tatts Lotto' ? 'focus:border-red-500' : 'focus:border-indigo-500'}`}
               >
-                {upcomingDates.map(date => <option key={date} value={date}>{date} ({game === 'Oz Lotto' ? 'Tuesday' : 'Thursday'})</option>)}
+                {upcomingDates.map(date => <option key={date} value={date}>{date} ({game === 'Oz Lotto' ? 'Tuesday' : game === 'Powerball' ? 'Thursday' : 'Saturday'})</option>)}
               </select>
-              <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none opacity-30 group-hover:translate-y-[-40%] transition-transform duration-300">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
-              </div>
             </div>
 
-            <label className="block text-[11px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em] mb-6 ml-2">2. Configure Sequences</label>
+            <label className="block text-[11px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em] mb-6 ml-2">2. Choose Your Numbers</label>
             <LottoLinePicker 
               lineId="luck-picker"
               displayIndex={1}
@@ -238,45 +199,37 @@ export default function LuckPage() {
             />
 
             <div className="grid grid-cols-1 gap-5 mt-12">
-              <button onClick={handleSaveTicket} className={`py-6 text-white font-black rounded-3xl transition-all uppercase tracking-[0.2em] text-sm active:scale-95 shadow-xl hover:brightness-110 ${game === 'Oz Lotto' ? 'bg-emerald-600 shadow-emerald-500/20' : 'bg-indigo-600 shadow-indigo-500/20'}`}>Authorize Single Set</button>
+              <button onClick={handleSaveTicket} className={`py-6 text-white font-black rounded-3xl transition-all uppercase tracking-[0.2em] text-sm active:scale-95 shadow-xl hover:brightness-110 ${game === 'Oz Lotto' ? 'bg-emerald-600 shadow-emerald-500/20' : game === 'Tatts Lotto' ? 'bg-red-600 shadow-red-500/20' : 'bg-indigo-600 shadow-indigo-500/20'}`}>Save This Ticket</button>
               <div className="flex gap-4">
-                <div className="bg-gray-100 dark:bg-gray-800 rounded-3xl p-1 flex items-center border border-transparent dark:border-white/5">
-                  <select value={quickPickQty} onChange={(e) => setQuickPickQuantity(Number(e.target.value))} className="bg-transparent px-5 font-black text-xs outline-none text-gray-700 dark:text-gray-300 cursor-pointer">
-                    {[10, 25, 50, 100].map(q => <option key={q} value={q}>x{q}</option>)}
-                  </select>
-                </div>
-                <button onClick={handleMultiQuickPick} className="flex-1 py-6 bg-emerald-500 text-white font-black rounded-3xl transition-all uppercase tracking-[0.2em] text-sm shadow-xl shadow-emerald-500/20 hover:brightness-110 active:scale-95">Sequence Burst</button>
+                <select value={quickPickQty} onChange={(e) => setQuickPickQuantity(Number(e.target.value))} className="bg-gray-100 dark:bg-gray-800 rounded-3xl p-5 font-black text-xs outline-none text-gray-700 dark:text-gray-300 w-24 border-none cursor-pointer">
+                  {[10, 25, 50, 100].map(q => <option key={q} value={q}>x{q}</option>)}
+                </select>
+                <button onClick={handleMultiQuickPick} className="flex-1 py-6 bg-emerald-500 text-white font-black rounded-3xl transition-all uppercase tracking-[0.2em] text-sm shadow-xl shadow-emerald-500/20 hover:brightness-110 active:scale-95">Quick Pick Burst</button>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Right Column: History Section */}
-        <div className="lg:col-span-7 space-y-10 animate-in fade-in slide-in-from-right-8 duration-1000">
+        {/* Right Column */}
+        <div className="lg:col-span-7 space-y-10 animate-in fade-in slide-in-from-right-8 duration-1000 text-left">
           <div className="flex items-center justify-between px-6">
-            <div className="flex flex-col">
-              <h2 className="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tighter italic">Archive</h2>
-              <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mt-1 italic">Personal ${game} Record</p>
-            </div>
-            <span className="text-[11px] font-black text-gray-400 dark:text-gray-500 bg-gray-200 dark:bg-white/5 px-5 py-2 rounded-full uppercase tracking-widest">{myTickets.length} Sequences</span>
+            <h2 className="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tighter italic">My History</h2>
+            <span className="text-[11px] font-black text-gray-400 dark:text-gray-500 bg-gray-200 dark:bg-white/5 px-5 py-2 rounded-full uppercase tracking-widest">{myTickets.length} Tickets</span>
           </div>
 
           <div className="space-y-6">
             {isDataLoading ? (
               <div className="py-40 flex flex-col items-center gap-6 animate-pulse">
                 <div className="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-                <p className="text-gray-400 font-black uppercase tracking-[0.3em] text-xs italic">Syncing Database...</p>
+                <p className="text-gray-400 font-black uppercase tracking-[0.3em] text-xs italic">Loading history...</p>
               </div>
             ) : Object.keys(ticketsByDate).length === 0 ? (
               <div className="bg-white dark:bg-gray-900 p-32 rounded-[4rem] border-2 border-dashed border-gray-100 dark:border-white/5 text-center transition-all duration-700 group hover:border-indigo-500/30">
-                <div className="w-24 h-24 bg-gray-50 dark:bg-white/5 rounded-full flex items-center justify-center mx-auto mb-10 group-hover:scale-110 transition-transform">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-300 dark:text-gray-600"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                </div>
-                <p className="text-gray-400 dark:text-gray-500 font-bold italic mb-8">No sequences tracked in the archive.</p>
-                <button onClick={handleMultiQuickPick} className="text-[11px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-[0.3em] border-b-2 border-indigo-600/20 hover:border-indigo-600 transition-all pb-1">Deploy initial sequence</button>
+                <p className="text-gray-400 dark:text-gray-500 font-bold italic mb-8">No tickets saved in your history.</p>
+                <button onClick={handleMultiQuickPick} className="text-[11px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-[0.3em] border-b-2 border-indigo-600/20 hover:border-indigo-600 transition-all pb-1">Create my first tickets</button>
               </div>
             ) : (
-              Object.entries(ticketsByDate).sort((a, b) => b[0].localeCompare(a[0])).map(([date, tickets], groupIdx) => {
+              Object.entries(ticketsByDate).sort((a, b) => b[0].localeCompare(a[0])).map(([date, tickets], idx) => {
                 const isExpanded = expandedDates.has(date);
                 const res = drawResultsList.find(r => r.drawDate === date);
                 let totalPrize = 0;
@@ -294,41 +247,33 @@ export default function LuckPage() {
                 const isWinner = res && (totalPrize > 0 || div1Win);
 
                 return (
-                  <div key={date} className={`bg-white dark:bg-gray-900 rounded-[3rem] border transition-all duration-500 ${isWinner ? 'border-emerald-200 dark:border-emerald-500 shadow-2xl' : 'border-gray-100 dark:border-white/5 shadow-sm hover:shadow-xl'} animate-in fade-in slide-in-from-bottom-4`} style={{ transitionDelay: `${groupIdx * 100}ms` }}>
+                  <div key={date} className={`bg-white dark:bg-gray-900 rounded-[3rem] border transition-all duration-500 ${isWinner ? 'border-emerald-200 dark:border-emerald-500 shadow-2xl' : 'border-gray-100 dark:border-white/5 shadow-sm hover:shadow-xl'} animate-in fade-in slide-in-from-bottom-4`} style={{ transitionDelay: `${idx * 100}ms` }}>
                     <div className="flex items-center pr-6">
                       <button onClick={() => { const next = new Set(expandedDates); if (next.has(date)) next.delete(date); else next.add(date); setExpandedDates(next); }} className="flex-1 p-10 flex items-center justify-between text-left group">
                         <div className="flex items-center gap-10">
                           <div className={`w-16 h-16 rounded-2xl flex items-center justify-center font-black text-xl transition-all duration-500 group-hover:rotate-12 ${isWinner ? 'bg-emerald-500 text-white' : 'bg-gray-100 dark:bg-white/5 text-gray-400 dark:text-gray-500'}`}>{tickets.length}</div>
                           <div>
-                            <p className={`text-[11px] font-black uppercase tracking-[0.2em] mb-2 ${isWinner ? 'text-emerald-600 dark:text-emerald-400' : 'text-indigo-600 dark:text-indigo-400'}`}>Draw: {date}</p>
-                            <p className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">{res ? (isWinner ? 'WINNER DETECTED' : 'ANALYSIS COMPLETE') : 'PENDING DRAW'}</p>
+                            <p className="text-[11px] font-black text-indigo-600 dark:text-indigo-400 uppercase mb-2">Draw: {date}</p>
+                            <p className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">{res ? (isWinner ? 'WINNER DETECTED' : 'RESULTS IN') : 'AWAITING DRAW'}</p>
                           </div>
                         </div>
                         {res ? (
                           <div className="text-right mr-6">
-                            <p className={`text-3xl font-black tracking-tighter ${isWinner ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-300 dark:text-gray-700'}`}>{div1Win ? 'JACKPOT!' : formatCurrency(totalPrize)}</p>
-                            {bestMatchForDate >= 5 && !div1Win && <p className="text-[9px] font-black text-orange-500 uppercase tracking-widest mt-1 animate-pulse italic">Critical Near-Miss</p>}
+                            <p className={`text-3xl font-black tracking-tighter ${isWinner ? 'text-emerald-600' : 'text-gray-300 dark:text-gray-700'}`}>{div1Win ? 'JACKPOT!' : formatCurrency(totalPrize)}</p>
+                            {bestMatchForDate >= 5 && !div1Win && <p className="text-[9px] font-black text-orange-500 uppercase tracking-widest mt-1 animate-pulse italic">So Close!</p>}
                           </div>
                         ) : (
-                          <div className="text-right mr-6">
-                             <div className="flex items-center justify-end gap-2 text-gray-300 dark:text-gray-700 uppercase italic font-black text-xs tracking-widest">
-                               <span className="w-1.5 h-1.5 bg-gray-300 dark:bg-gray-700 rounded-full animate-bounce" />
-                               Waiting...
-                             </div>
-                          </div>
+                          <div className="text-right mr-6 text-gray-300 dark:text-gray-700 italic font-black text-xs uppercase animate-pulse tracking-widest">Checking...</div>
                         )}
                       </button>
-                      <button onClick={() => handleDeleteDateGroup(date)} className="text-gray-300 dark:text-gray-700 hover:text-red-500 p-3 transition-colors transform hover:scale-125 duration-300">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
-                      </button>
+                      <button onClick={() => handleDeleteDateGroup(date)} className="text-gray-300 dark:text-gray-700 hover:text-red-500 p-3 transition-colors transform hover:scale-125 duration-300">🗑️</button>
                     </div>
 
                     {isExpanded && (
                       <div className={`p-10 border-t dark:border-white/5 animate-in slide-in-from-top-4 duration-500 ${isWinner ? 'bg-emerald-50/20 dark:bg-emerald-500/5' : 'bg-gray-50/50 dark:bg-white/5'}`}>
                         {res && (
                           <div className="mb-12 bg-white dark:bg-gray-800 p-10 rounded-[3rem] border border-gray-100 dark:border-white/5 flex flex-col items-center shadow-inner relative overflow-hidden group">
-                            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
-                            <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase mb-8 tracking-[0.4em] relative z-10">Official Target Numbers</p>
+                            <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase mb-8 tracking-[0.4em] relative z-10">Winning Numbers</p>
                             <div className="flex flex-wrap gap-4 justify-center relative z-10">
                               {res.numbers.map((n, i) => (
                                 <span key={n} className="w-14 h-14 rounded-full bg-emerald-500 text-white flex items-center justify-center font-black border-b-[6px] border-emerald-700 shadow-xl text-xl transform hover:-translate-y-1 transition-transform" style={{ transitionDelay: `${i * 50}ms` }}>{n}</span>
@@ -341,7 +286,7 @@ export default function LuckPage() {
                           </div>
                         )}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          {tickets.map((t, idx) => {
+                          {tickets.map((t, tidx) => {
                             const c = res ? compareNumbers(t.numbers, res.numbers, res.bonus, game) : null;
                             const prize = (c && res) ? (res.prizes[c.prizeTier] || 0) : 0;
                             const ticketWon = prize > 0 || c?.prizeTier === 'Division 1';
@@ -350,8 +295,8 @@ export default function LuckPage() {
                             return (
                               <div key={t.id} className={`p-8 rounded-[2.5rem] border transition-all duration-500 hover:-translate-y-1 ${ticketWon ? 'bg-white dark:bg-gray-800 border-emerald-300 dark:border-emerald-500 shadow-2xl scale-[1.02] z-10' : 'bg-white/60 dark:bg-white/5 border-gray-100 dark:border-white/5 opacity-70 hover:opacity-100'}`}>
                                 <div className="flex justify-between items-center mb-8">
-                                  <span className="text-[11px] font-black text-gray-300 dark:text-gray-600 uppercase italic">Sequence #{String(idx + 1).padStart(2, '0')}</span>
-                                  {c && <span className={`text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest ${ticketWon ? 'bg-emerald-500 text-white' : nearMiss ? 'bg-orange-500 text-white animate-pulse shadow-[0_0_15px_rgba(249,115,22,0.4)]' : 'bg-gray-100 dark:bg-white/10 text-gray-400 dark:text-gray-500'}`}>{nearMiss ? 'CRITICAL NEAR-MISS' : c.prizeTier}</span>}
+                                  <span className="text-[11px] font-black text-gray-300 dark:text-gray-600 uppercase italic">Ticket #{tidx + 1}</span>
+                                  {c && <span className={`text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest ${ticketWon ? 'bg-emerald-500 text-white' : nearMiss ? 'bg-orange-500 text-white animate-pulse' : 'bg-gray-100 dark:bg-white/10 text-gray-400 dark:text-gray-500'}`}>{nearMiss ? 'SO CLOSE' : c.prizeTier}</span>}
                                 </div>
                                 <div className="flex flex-wrap gap-2.5 mb-2">
                                   {t.numbers.slice(0, 7).map(n => {
@@ -376,6 +321,8 @@ export default function LuckPage() {
           </div>
         </div>
       </main>
+
+      <DivisionRules game={game} isOpen={isRulesModalOpen} onClose={() => setIsRulesModalOpen(false)} />
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { User } from '@supabase/supabase-js';
 
 interface AuthContextType {
   user: User | null;
+  signInWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
   isLoading: boolean;
 }
@@ -37,12 +38,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  const signInWithGoogle = async () => {
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+  };
+
   const logout = async () => {
     await supabase.auth.signOut();
   };
 
   return (
-    <AuthContext.Provider value={{ user, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, signInWithGoogle, logout, isLoading }}>
       {children}
     </AuthContext.Provider>
   );
