@@ -8,8 +8,8 @@ interface LottoLinePickerProps {
   lineId: string;
   displayIndex: number;
   selectedNumbers: number[];
-  onNumbersChange: (lineId: string, numbers: number[]) => void;
-  onDeleteLine: (lineId: string) => void;
+  onNumbersChange: (id: string, numbers: number[]) => void;
+  onDeleteLine: (id: string) => void;
   game?: 'Oz Lotto' | 'Powerball' | 'Tatts Lotto';
 }
 
@@ -21,135 +21,97 @@ export default function LottoLinePicker({
   onDeleteLine,
   game = 'Oz Lotto'
 }: LottoLinePickerProps) {
+  const [activeNumbers, setActiveNumbers] = useState<number[]>([]);
   
-  const isOz = game === 'Oz Lotto';
-  const isTatts = game === 'Tatts Lotto';
-  const isPowerball = game === 'Powerball';
-
-  const mainMax = isPowerball ? 35 : isTatts ? 45 : 47;
-  const mainRequired = isTatts ? 6 : 7;
-  const totalRequired = isPowerball ? 8 : mainRequired;
-
-  const [internalSelectedNumbers, setInternalSelectedNumbers] = useState<number[]>(selectedNumbers);
+  const OZ_MAX = 47;
+  const PB_MAX = 35;
+  const PB_BALL_MAX = 20;
+  const TATTS_MAX = 45;
 
   useEffect(() => {
-    setInternalSelectedNumbers(selectedNumbers);
+    const required = game === 'Oz Lotto' ? 7 : game === 'Powerball' ? 8 : 6;
+    if (selectedNumbers.length === required) {
+      setActiveNumbers(selectedNumbers);
+    } else {
+      setActiveNumbers(new Array(required).fill(0));
+    }
   }, [selectedNumbers, game]);
 
-  const handleMainClick = (num: number) => {
-    let newSelection: number[] = [...internalSelectedNumbers];
-    const mainNumbers = isPowerball ? internalSelectedNumbers.slice(0, mainRequired) : internalSelectedNumbers;
-    const powerball = isPowerball ? internalSelectedNumbers[mainRequired] : undefined;
-
-    if (mainNumbers.includes(num)) {
-      newSelection = newSelection.filter((n, i) => isPowerball ? (i < mainRequired ? n !== num : true) : n !== num);
-    } else if (mainNumbers.length < mainRequired) {
-      if (isPowerball) {
-        const updatedMain = [...mainNumbers, num].sort((a,b) => a-b);
-        newSelection = powerball !== undefined ? [...updatedMain, powerball] : updatedMain;
-      } else {
-        newSelection = [...mainNumbers, num].sort((a,b) => a-b);
-      }
-    } else {
-      return;
-    }
-    onNumbersChange(lineId, newSelection);
-  };
-
-  const handlePBClick = (num: number) => {
-    if (!isPowerball) return;
-    const newSelection = [...internalSelectedNumbers];
-    if (newSelection.length < mainRequired) {
-      while (newSelection.length < mainRequired) newSelection.push(0);
-    }
-    newSelection[mainRequired] = num;
-    onNumbersChange(lineId, newSelection);
-  };
-
   const handleQuickPick = () => {
-    const newQuickPick = generateQuickPick(game);
-    onNumbersChange(lineId, newQuickPick);
+    const pick = generateQuickPick(game);
+    onNumbersChange(lineId, pick);
   };
-  
-  const brandBg = isOz ? 'bg-emerald-600' : isTatts ? 'bg-red-600' : 'bg-indigo-600';
-  const brandText = isOz ? 'text-emerald-600' : isTatts ? 'text-red-600' : 'text-gray-400 dark:text-gray-500';
-  const brandHoverBg = isOz ? 'hover:bg-emerald-600' : isTatts ? 'hover:bg-red-600' : 'hover:bg-indigo-600';
-  const brandBgLight = isOz ? 'bg-emerald-50 dark:bg-emerald-500/10' : isTatts ? 'bg-red-50 dark:bg-red-500/10' : 'bg-indigo-50 dark:bg-indigo-500/10';
-  const brandTextLight = isOz ? 'text-emerald-600 dark:text-emerald-400' : isTatts ? 'text-red-600 dark:text-red-400' : 'text-indigo-600 dark:text-indigo-400';
+
+  const toggleNumber = (idx: number, val: number) => {
+    const newNumbers = [...activeNumbers];
+    newNumbers[idx] = val;
+    onNumbersChange(lineId, newNumbers);
+  };
+
+  const isOz = game === 'Oz Lotto';
+  const isTatts = game === 'Tatts Lotto';
+  const brandColor = isOz ? 'text-emerald-600' : isTatts ? 'text-red-600' : 'text-indigo-600';
+  const brandBg = isOz ? 'bg-emerald-50 dark:bg-emerald-500/10' : isTatts ? 'bg-red-50 dark:bg-red-500/10' : 'bg-indigo-50 dark:bg-indigo-500/10';
+  const brandBall = isOz ? 'bg-emerald-500' : isTatts ? 'bg-red-500' : 'bg-indigo-600';
+
+  const TrashIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+  );
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-white/10 transition-all hover:shadow-md">
-      <div className="flex justify-between items-center mb-6">
-        <div className="flex items-center gap-3">
-          <span className={`w-8 h-8 ${brandBg} text-white rounded-lg flex items-center justify-center font-black text-xs shadow-lg italic`}>#{displayIndex}</span>
-          <h3 className="font-black text-gray-900 dark:text-white uppercase tracking-tighter text-sm">{game} Selection</h3>
-        </div>
-        <button onClick={() => onDeleteLine(lineId)} className="text-gray-300 dark:text-gray-600 hover:text-red-500 transition-colors p-1">🗑️</button>
-      </div>
-
-      <div className="space-y-6">
-        <div>
-          <p className={`text-[10px] font-black ${brandText} uppercase tracking-widest mb-3`}>Main Numbers (Pick {mainRequired})</p>
-          <div className={`grid gap-1.5 ${isTatts ? 'grid-cols-9' : 'grid-cols-7 sm:grid-cols-10'}`}>
-            {Array.from({ length: mainMax }, (_, i) => i + 1).map(num => {
-              const isSelected = (isPowerball ? internalSelectedNumbers.slice(0, mainRequired) : internalSelectedNumbers).includes(num);
-              return (
-                <button
-                  key={num}
-                  onClick={() => handleMainClick(num)}
-                  className={`aspect-square rounded-full flex items-center justify-center font-black text-[10px] transition-all duration-300 ${
-                    isSelected 
-                      ? `${brandBg} text-white shadow-sm` 
-                      : 'bg-gray-50 dark:bg-gray-800 text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700'
-                  }`}
-                >
-                  {num}
-                </button>
-              );
-            })}
-          </div>
+    <div className="group relative bg-white dark:bg-gray-900 border border-gray-100 dark:border-white/5 p-6 rounded-[2.5rem] shadow-sm hover:shadow-xl transition-all duration-500 animate-in fade-in zoom-in-95">
+      <div className="flex flex-wrap items-center gap-4">
+        {/* Index Badge */}
+        <div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-black text-xs shadow-inner ${brandBg} ${brandColor} border border-black/5`}>
+          {displayIndex}
         </div>
 
-        {isPowerball && (
-          <div className="animate-in fade-in slide-in-from-left-2">
-            <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-3">Powerball (Pick 1)</p>
-            <div className="flex flex-wrap gap-1.5 justify-center sm:justify-start">
-              {Array.from({ length: 20 }, (_, i) => i + 1).map(num => {
-                const isSelected = internalSelectedNumbers[mainRequired] === num;
-                return (
-                  <button
-                    key={num}
-                    onClick={() => handlePBClick(num)}
-                    className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-[10px] transition-all duration-300 ${
-                      isSelected ? 'bg-amber-400 text-amber-950 shadow-lg ring-2 ring-amber-300 scale-110' : 'bg-amber-50 dark:bg-amber-900/20 text-amber-600/40 dark:text-amber-400/40 hover:bg-amber-100 dark:hover:bg-amber-900/40'
-                    }`}
-                  >
-                    {num}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-      </div>
-
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-8 pt-4 border-t border-gray-50 dark:border-white/5">
-        <div className="flex items-center gap-2">
-          {internalSelectedNumbers.filter(n => n > 0).length === totalRequired ? (
-            <span className="flex items-center gap-1.5 text-[10px] font-black text-emerald-500 uppercase bg-emerald-50 dark:bg-emerald-500/10 px-3 py-1.5 rounded-full ring-1 ring-emerald-100 dark:ring-emerald-500/20">
-              <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-              Set Ready
-            </span>
-          ) : (
-            <span className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest bg-gray-50 dark:bg-gray-800 px-3 py-1.5 rounded-full">
-              Complete your set
-            </span>
-          )}
+        {/* Numbers Row */}
+        <div className="flex flex-wrap gap-2.5 items-center flex-grow">
+          {activeNumbers.map((num, idx) => {
+            const isPowerballSlot = game === 'Powerball' && idx === 7;
+            const max = isPowerballSlot ? PB_BALL_MAX : (game === 'Oz Lotto' ? OZ_MAX : game === 'Powerball' ? PB_MAX : TATTS_MAX);
+            
+            return (
+              <div key={idx} className="relative group/ball">
+                <input
+                  type="number"
+                  min="1"
+                  max={max}
+                  value={num || ''}
+                  placeholder={isPowerballSlot ? "PB" : "-"}
+                  onChange={(e) => {
+                    let v = parseInt(e.target.value) || 0;
+                    if (v > max) v = max;
+                    toggleNumber(idx, v);
+                  }}
+                  className={`w-11 h-11 rounded-full text-center font-black text-sm transition-all focus:ring-4 focus:outline-none shadow-md border-b-4 border-black/10
+                    ${num > 0 
+                      ? (isPowerballSlot ? 'bg-amber-400 text-amber-950 border-amber-600 focus:ring-amber-200' : `${brandBall} text-white border-black/20 focus:ring-indigo-200`)
+                      : 'bg-gray-100 dark:bg-white/5 text-gray-400 dark:text-gray-600 border-gray-200 dark:border-white/10 focus:ring-gray-200'
+                    }
+                  `}
+                />
+              </div>
+            );
+          })}
         </div>
 
-        <div className="flex gap-2">
-          <button onClick={() => onNumbersChange(lineId, [])} className="text-[10px] font-black text-gray-400 dark:text-gray-500 hover:text-red-500 uppercase tracking-widest px-4 py-2">Clear</button>
-          <button onClick={handleQuickPick} className={`text-[10px] font-black ${brandBgLight} ${brandTextLight} ${brandHoverBg} hover:text-white uppercase tracking-widest px-6 py-2 rounded-xl transition-all shadow-sm`}>Quick Pick</button>
+        {/* Actions */}
+        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+          <button 
+            onClick={handleQuickPick}
+            className={`p-2.5 rounded-xl ${brandBg} ${brandColor} hover:brightness-95 transition-all text-[10px] font-black uppercase tracking-widest border border-black/5 shadow-sm`}
+          >
+            Auto
+          </button>
+          <button 
+            onClick={() => onDeleteLine(lineId)}
+            className="p-2.5 rounded-xl bg-red-50 dark:bg-red-500/10 text-red-500 hover:bg-red-100 transition-all border border-red-100 dark:border-red-500/20 shadow-sm"
+            title="Delete Set"
+          >
+            <TrashIcon />
+          </button>
         </div>
       </div>
     </div>

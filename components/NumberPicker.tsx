@@ -44,6 +44,10 @@ interface NumberPickerProps {
   game?: 'Oz Lotto' | 'Powerball' | 'Tatts Lotto';
 }
 
+const TrashIcon = ({ size = 18 }: { size?: number }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+);
+
 export default function NumberPicker({ 
   onCheckAllResults, 
   onClearAll, 
@@ -239,7 +243,7 @@ export default function NumberPicker({
           </div>
 
           <button onClick={() => { if(window.confirm('Clear all current sets?')) { setLines([]); handleAddLine(); onClearAll(); } }} className="p-3 rounded-xl bg-red-50 dark:bg-red-500/10 text-red-500 border border-red-100 dark:border-red-500/20 hover:bg-red-100 transition-all">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+            <TrashIcon size={20} />
           </button>
 
           <button onClick={handleCheckAllResultsClick} className="flex-1 py-4 px-8 rounded-2xl bg-emerald-500 text-white font-black text-sm hover:bg-emerald-600 transition-all uppercase tracking-widest">Check Results</button>
@@ -268,7 +272,9 @@ export default function NumberPicker({
                       <p className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">Draw Date: {item.drawDate}</p>
                       <p className="text-xl font-black text-gray-900 dark:text-white">{item.prizeTier}</p>
                     </div>
-                    <button onClick={() => setWinningHistory(winningHistory.filter(w => w.id !== item.id))} className="text-gray-300 dark:text-gray-600 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100">🗑️</button>
+                    <button onClick={() => setWinningHistory(winningHistory.filter(w => w.id !== item.id))} className="text-gray-300 dark:text-gray-600 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100">
+                      <TrashIcon size={16} />
+                    </button>
                   </div>
                   <div className="flex justify-between items-end">
                     <div className="flex flex-wrap gap-2">

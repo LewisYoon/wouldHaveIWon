@@ -1,52 +1,81 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface CountdownProps {
-  targetDate: string; // YYYY-MM-DD
-  game: string;
+  targetDate: string; // ISO format: YYYY-MM-DD
 }
 
-export default function Countdown({ targetDate, game }: CountdownProps) {
-  const [timeLeft, setTimeLeft] = useState<{ d: number; h: number; m: number; s: number } | null>(null);
+export default function Countdown({ targetDate }: CountdownProps) {
+  const [timeLeft, setTimeLeft] = useState<{ days: number; hours: number; minutes: number; seconds: number } | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      const now = new Date().getTime();
-      const drawTime = new Date(`${targetDate}T20:30:00+11:00`).getTime(); // 8:30 PM AEDT
-      const difference = drawTime - now;
+    const calculateTimeLeft = () => {
+      // Results usually available by 9:00 PM Sydney Time
+      const target = new Date(`${targetDate}T21:00:00`);
+      const now = new Date();
+      const difference = target.getTime() - now.getTime();
 
       if (difference <= 0) {
+        const drawDay = new Date(targetDate).setHours(0,0,0,0);
+        const today = new Date().setHours(0,0,0,0);
+        if (today >= drawDay) {
+          setIsProcessing(true);
+        }
         setTimeLeft(null);
-        clearInterval(timer);
-      } else {
-        setTimeLeft({
-          d: Math.floor(difference / (1000 * 60 * 60 * 24)),
-          h: Math.floor((difference / (1000 * 60 * 60)) % 24),
-          m: Math.floor((difference / 1000 / 60) % 60),
-          s: Math.floor((difference / 1000) % 60),
-        });
+        return;
       }
-    }, 1000);
+
+      const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((difference / (1000 * 60 * 60)) % 24);
+      const totalHours = Math.floor(difference / (1000 * 60 * 60)); // For fallback
+      const minutes = Math.floor((difference / 1000 / 60) % 60);
+      const seconds = Math.floor((difference / 1000) % 60);
+
+      setTimeLeft({ days, hours, minutes, seconds });
+      setIsProcessing(false);
+    };
+
+    const timer = setInterval(calculateTimeLeft, 1000);
+    calculateTimeLeft();
 
     return () => clearInterval(timer);
   }, [targetDate]);
 
-  if (!timeLeft) return null;
+  if (isProcessing) {
+    return (
+      <div className="flex items-center gap-2 text-indigo-500 animate-pulse font-black text-[10px] uppercase tracking-widest">
+        <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce" />
+        Fetching Result...
+      </div>
+    );
+  }
+
+  if (!timeLeft) return (
+    <div className="text-gray-300 dark:text-gray-700 italic font-black text-[10px] uppercase tracking-widest">
+      Awaiting Draw
+    </div>
+  );
+
+  const { days, hours, minutes, seconds } = timeLeft;
 
   return (
-    <div className="flex items-center gap-3 bg-indigo-900 text-white px-6 py-3 rounded-2xl shadow-xl border-indigo-700/50">
-      <div className="flex flex-col">
-        <span className="text-[8px] font-black uppercase tracking-[0.2em] text-indigo-300">Next {game} Draw</span>
-        <div className="flex items-baseline gap-2">
-          <span className="text-xl font-black tracking-tighter">
-            {timeLeft.d > 0 && `${timeLeft.d}d `}{timeLeft.h}h {timeLeft.m}m <span className="text-indigo-400 w-8 inline-block">{timeLeft.s}s</span>
-          </span>
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
-          </span>
-        </div>
+    <div className="flex flex-col items-end">
+      <span className="text-[8px] font-black text-gray-400 uppercase tracking-tighter mb-1">Result In</span>
+      <div className="flex gap-1 font-black text-indigo-600 dark:text-indigo-400 tracking-tighter text-xs tabular-nums bg-indigo-50 dark:bg-indigo-500/10 px-2.5 py-1 rounded-lg border border-indigo-100 dark:border-indigo-500/20">
+        {days > 0 ? (
+          <>
+            <span>{days}d</span>
+            <span>{hours}h</span>
+          </>
+        ) : (
+          <>
+            <span>{hours}h</span>
+            <span>{minutes}m</span>
+            <span>{seconds}s</span>
+          </>
+        )}
       </div>
     </div>
   );
