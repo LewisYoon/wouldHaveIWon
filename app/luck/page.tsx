@@ -18,6 +18,7 @@ interface Ticket {
 interface DrawResult {
   game: string;
   drawDate: string;
+  drawNumber?: number;
   numbers: number[];
   bonus: number[];
   prizes: Record<string, number>;
@@ -34,6 +35,7 @@ export default function LuckPage() {
   const [quickPickQty, setQuickPickQuantity] = useState(10);
   const [myTickets, setMyTickets] = useState<Ticket[]>([]);
   const [drawResultsList, setDrawResultsList] = useState<DrawResult[]>([]);
+  const [upcomingLedger, setUpcomingLedger] = useState<any[]>([]);
   const [expandedDates, setExpandedDates] = useState<Set<string>>(new Set());
   const [isDataLoading, setIsDataLoading] = useState(true);
   const [isRulesModalOpen, setIsRulesModalOpen] = useState(false);
@@ -50,7 +52,18 @@ export default function LuckPage() {
       if (res) {
         totalTicketsChecked++;
         const c = compareNumbers(t.numbers, res.numbers, res.bonus, t.game as any);
-        const prize = res.prizes[c.prizeTier] || 0;
+        
+        let prize = res.prizes[c.prizeTier] || 0;
+        
+        // Bridge Logic: If Div 1 is 0, check ledger
+        if (c.prizeTier === 'Division 1' && prize === 0) {
+          const ledgerMatch = upcomingLedger.find(l => 
+            l.game?.toLowerCase().includes(t.game.toLowerCase().split(' ')[0]) && 
+            l.draw_date === t.drawDate
+          );
+          if (ledgerMatch) prize = ledgerMatch.jackpot;
+        }
+
         totalMissedPrize += prize;
         if (c.prizeTier !== 'No Prize') {
           totalWins++;
@@ -63,46 +76,69 @@ export default function LuckPage() {
 
     const totalInvested = myTickets.length * TICKET_COST;
     return { totalMissedPrize, totalTicketsChecked, totalWins, bestDivision, totalInvested };
-  }, [myTickets, drawResultsList]);
+  }, [myTickets, drawResultsList, upcomingLedger]);
 
   useEffect(() => {
     setSelectedDate(upcomingDates[0]);
     setCurrentNumbers([]);
   }, [game, upcomingDates]);
 
+  // Load upcoming draws ledger for bridging
+  useEffect(() => {
+    const loadLedger = async () => {
+      const { data } = await supabase.from('upcoming_draws').select('*');
+      if (data) setUpcomingLedger(data);
+    };
+    loadLedger();
+  }, []);
+
   // Fetch jackpot for selected date
   useEffect(() => {
     const fetchJackpot = async () => {
       setSelectedJackpot(null);
       
-      // 1. Check upcoming_draws first
-      const { data: upcoming } = await supabase
-        .from('upcoming_draws')
-        .select('jackpot')
-        .eq('game', game)
-        .eq('draw_date', selectedDate)
-        .maybeSingle();
+      const gameSearchTerm = game.toLowerCase().split(' ')[0]; // 'oz', 'powerball', 'tatts'
+
+      // 1. Check ledger first (Use robust partial match)
+      const ledgerMatch = upcomingLedger.find(l => 
+        l.game?.toLowerCase().includes(gameSearchTerm) && 
+        l.draw_date === selectedDate
+      );
       
-      if (upcoming) {
-        setSelectedJackpot(upcoming.jackpot);
+      if (ledgerMatch) {
+        setSelectedJackpot(ledgerMatch.jackpot);
         return;
       }
 
-      // 2. Check draw_results for past prizes
+      // 2. Direct query fallback
+      const { data: upcoming } = await supabase
+        .from('upcoming_draws')
+        .select('jackpot')
+        .ilike('game', `%${gameSearchTerm}%`)
+        .eq('draw_date', selectedDate)
+        .limit(1);
+      
+      if (upcoming && upcoming.length > 0) {
+        setSelectedJackpot(upcoming[0].jackpot);
+        return;
+      }
+
+      // 3. Check draw_results for past prizes
       const { data: past } = await supabase
         .from('draw_results')
         .select('prizes')
-        .eq('game', game)
+        .ilike('game', `%${gameSearchTerm}%`)
         .eq('draw_date', selectedDate)
         .maybeSingle();
       
-      if (past && past.prizes && past.prizes['Division 1']) {
-        setSelectedJackpot(past.prizes['Division 1']);
+      if (past && past.prizes) {
+        const div1 = past.prizes['Division 1'];
+        setSelectedJackpot(div1 !== undefined ? div1 : null);
       }
     };
 
     fetchJackpot();
-  }, [game, selectedDate]);
+  }, [game, selectedDate, upcomingLedger]);
 
   useEffect(() => {
     const loadTickets = async () => {
@@ -123,7 +159,14 @@ export default function LuckPage() {
   useEffect(() => {
     const fetchResults = async () => {
       const { data } = await supabase.from('draw_results').select('*').eq('game', game).order('draw_date', { ascending: false });
-      if (data) setDrawResultsList(data.map(r => ({ game: r.game, drawDate: r.draw_date, numbers: r.numbers, bonus: r.bonus, prizes: r.prizes })));
+      if (data) setDrawResultsList(data.map(r => ({ 
+        game: r.game, 
+        drawDate: r.draw_date, 
+        drawNumber: r.draw_number,
+        numbers: r.numbers, 
+        bonus: r.bonus, 
+        prizes: r.prizes 
+      })));
     };
     fetchResults();
   }, [game]);
@@ -178,6 +221,7 @@ export default function LuckPage() {
   
   const formatJackpot = (val: number) => {
     if (val >= 1000000) return `$${(val / 1000000).toFixed(0)} Million`;
+    if (val === 0) return "Jackpot Pending";
     return formatCurrency(val);
   };
 
@@ -288,12 +332,33 @@ export default function LuckPage() {
                 if (res) {
                   tickets.forEach(t => {
                     const c = compareNumbers(t.numbers, res.numbers, res.bonus, game);
-                    totalPrize += res.prizes[c.prizeTier] || 0;
+                    
+                    let prize = res.prizes[c.prizeTier] || 0;
+                    // Bridge Logic for History List
+                    if (c.prizeTier === 'Division 1' && prize === 0) {
+                      const ledgerMatch = upcomingLedger.find(l => 
+                        l.game?.toLowerCase().includes(game.toLowerCase().split(' ')[0]) && 
+                        l.draw_date === date
+                      );
+                      if (ledgerMatch) prize = ledgerMatch.jackpot;
+                    }
+
+                    totalPrize += prize;
                     if (c.prizeTier === 'Division 1') div1Win = true;
                     if (c.mainMatchesCount > bestMatchForDate) bestMatchForDate = c.mainMatchesCount;
                   });
                 }
                 const isWinner = res && (totalPrize > 0 || div1Win);
+                
+                // Get the display amount for the card
+                let displayDiv1Amount = res?.prizes?.['Division 1'] || 0;
+                if (displayDiv1Amount === 0) {
+                  const ledgerMatch = upcomingLedger.find(l => 
+                    l.game?.toLowerCase().includes(game.toLowerCase().split(' ')[0]) && 
+                    l.draw_date === date
+                  );
+                  if (ledgerMatch) displayDiv1Amount = ledgerMatch.jackpot;
+                }
 
                 return (
                   <div key={date} className={`bg-white dark:bg-gray-900 rounded-[3rem] border transition-all duration-500 ${isWinner ? 'border-emerald-200 dark:border-emerald-500 shadow-2xl' : 'border-gray-100 dark:border-white/5 shadow-sm hover:shadow-xl'} animate-in fade-in slide-in-from-bottom-4`} style={{ transitionDelay: `${idx * 100}ms` }}>
@@ -308,7 +373,9 @@ export default function LuckPage() {
                         </div>
                         {res ? (
                           <div className="text-right mr-6">
-                            <p className={`text-3xl font-black tracking-tighter ${isWinner ? 'text-emerald-600' : 'text-gray-300 dark:text-gray-700'}`}>{div1Win ? 'JACKPOT!' : formatCurrency(totalPrize)}</p>
+                            <p className={`text-3xl font-black tracking-tighter ${isWinner ? 'text-emerald-600' : 'text-gray-300 dark:text-gray-700'}`}>
+                              {div1Win ? formatJackpot(displayDiv1Amount) : formatCurrency(totalPrize)}
+                            </p>
                             {bestMatchForDate >= 5 && !div1Win && <p className="text-[9px] font-black text-orange-500 uppercase tracking-widest mt-1 animate-pulse italic">So Close!</p>}
                           </div>
                         ) : (
@@ -337,7 +404,17 @@ export default function LuckPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                           {tickets.map((t, tidx) => {
                             const c = res ? compareNumbers(t.numbers, res.numbers, res.bonus, game) : null;
-                            const prize = (c && res) ? (res.prizes[c.prizeTier] || 0) : 0;
+                            
+                            let prize = (c && res) ? (res.prizes[c.prizeTier] || 0) : 0;
+                            // Bridge Logic for individual sets
+                            if (c?.prizeTier === 'Division 1' && prize === 0) {
+                              const ledgerMatch = upcomingLedger.find(l => 
+                                l.game?.toLowerCase().includes(game.toLowerCase().split(' ')[0]) && 
+                                l.draw_date === date
+                              );
+                              if (ledgerMatch) prize = ledgerMatch.jackpot;
+                            }
+
                             const ticketWon = prize > 0 || c?.prizeTier === 'Division 1';
                             const nearMiss = c && c.mainMatchesCount >= 5 && !ticketWon;
 
@@ -353,7 +430,7 @@ export default function LuckPage() {
                                     return <span key={n} className={`w-10 h-10 flex items-center justify-center rounded-full text-[12px] font-black border-b-2 transition-all duration-500 ${match ? 'bg-emerald-500 text-white border-emerald-700 shadow-lg scale-110' : 'bg-gray-100 dark:bg-white/10 text-gray-400 dark:text-gray-500 border-gray-200 dark:border-white/5'}`}>{n}</span>;
                                   })}
                                   {game === 'Powerball' && t.numbers[7] && (
-                                    <span className={`w-10 h-10 flex items-center justify-center rounded-full text-[12px] font-black border-b-2 transition-all duration-500 ${res && res.bonus.includes(t.numbers[7]) ? 'bg-amber-400 text-amber-950 border-amber-600 shadow-lg scale-110' : 'bg-amber-50 dark:bg-amber-500/5 text-amber-600/40 dark:text-amber-400/20 border-amber-100 dark:border-white/5'}`}>{t.numbers[7]}</span>
+                                    <span className={`w-10 h-10 flex items-center justify-center rounded-full text-[12px] font-black border-b-2 transition-all duration-500 ${res && res.bonus.includes(t.numbers[7]) ? 'bg-amber-400 text-amber-950 border-amber-600 shadow-lg scale-110' : 'bg-amber-50 dark:bg-amber-500/5 text-amber-600/40 dark:text-amber-400/40 border-amber-100 dark:border-white/5'}`}>{t.numbers[7]}</span>
                                   )}
                                 </div>
                                 {ticketWon && <p className="mt-8 text-lg font-black text-emerald-600 dark:text-emerald-400 italic">+{formatCurrency(prize)} MISSING</p>}

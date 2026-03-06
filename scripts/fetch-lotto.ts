@@ -21,6 +21,9 @@ if (!supabaseUrl || !serviceRoleKey) {
 const supabase = createClient(supabaseUrl, serviceRoleKey);
 const resend = resendApiKey ? new Resend(resendApiKey) : null;
 
+// Global cache for upcoming jackpot amounts
+const jackpotCache = new Map<string, number>();
+
 function getEmailTemplate(game: string, drawDate: string, status: { won: boolean }) {
   const isOz = game === 'Oz Lotto';
   const isTatts = game === 'Tatts Lotto';
@@ -122,7 +125,7 @@ async function notifyUsers(game: string, drawDate: string, winningNumbers: numbe
 }
 
 async function fetchUpcomingDraws() {
-  console.log('Fetching upcoming draws...');
+  console.log('Fetching all upcoming draws...');
   try {
     const response = await fetch('https://data.api.thelott.com/sales/vmax/web/data/lotto/opendraws', {
       method: 'POST',
@@ -139,31 +142,37 @@ async function fetchUpcomingDraws() {
     const data: any = await response.json();
     if (!data.Success || !data.Draws?.length) return;
 
-    // Filter for only the next immediate draw for each game
     const games = ['OzLotto', 'Powerball', 'TattsLotto'];
-    const upcoming = games.map(g => {
-      const draw = data.Draws.find((d: any) => d.ProductId === g);
-      if (!draw) return null;
-      
-      const displayName = g === 'OzLotto' ? 'Oz Lotto' : g === 'Powerball' ? 'Powerball' : 'Tatts Lotto';
-      return {
-        game: displayName,
-        draw_number: draw.DrawNumber,
-        draw_date: draw.DrawDate.split('T')[0],
-        jackpot: draw.Div1Amount,
-        is_estimated: draw.IsDiv1Estimated
-      };
-    }).filter(Boolean);
+    const upcomingToStore: any[] = [];
 
-    // Upsert upcoming draws
-    for (const draw of upcoming) {
+    // Capture ALL draws returned by the API for each game
+    games.forEach(g => {
+      const draws = data.Draws.filter((d: any) => d.ProductId === g);
+      draws.forEach((draw: any) => {
+        const displayName = g === 'OzLotto' ? 'Oz Lotto' : g === 'Powerball' ? 'Powerball' : 'Tatts Lotto';
+        
+        // Cache jackpot for current process run
+        jackpotCache.set(`${g}-${draw.DrawNumber}`, draw.Div1Amount);
+
+        upcomingToStore.push({
+          game: displayName,
+          draw_number: draw.DrawNumber,
+          draw_date: draw.DrawDate.split('T')[0],
+          jackpot: draw.Div1Amount,
+          is_estimated: draw.IsDiv1Estimated
+        });
+      });
+    });
+
+    // Upsert the entire ledger
+    for (const draw of upcomingToStore) {
       const { error } = await supabase
         .from('upcoming_draws')
-        .upsert(draw, { onConflict: 'game' });
+        .upsert(draw, { onConflict: 'game,draw_number' });
       
-      if (error) console.error(`Error upserting upcoming draw for ${draw?.game}:`, error.message);
+      if (error) console.error(`Error upserting upcoming draw for ${draw.game} #${draw.draw_number}:`, error.message);
     }
-    console.log('Synchronized upcoming draw info.');
+    console.log(`Successfully synchronized ${upcomingToStore.length} upcoming draws across all games.`);
 
   } catch (error: any) {
     console.error('Upcoming Draw Sync Error:', error.message);
@@ -172,7 +181,7 @@ async function fetchUpcomingDraws() {
 
 async function fetchGame(game: 'OzLotto' | 'Powerball' | 'TattsLotto') {
   const displayName = game === 'OzLotto' ? 'Oz Lotto' : game === 'Powerball' ? 'Powerball' : 'Tatts Lotto';
-  console.log(`Checking ${displayName} results...`);
+  console.log(`Processing ${displayName} results...`);
   
   try {
     const response = await fetch('https://data.api.thelott.com/sales/vmax/web/data/lotto/latestresults', {
@@ -192,7 +201,7 @@ async function fetchGame(game: 'OzLotto' | 'Powerball' | 'TattsLotto') {
     try {
       data = JSON.parse(text);
     } catch (e) {
-      console.error(`Block Sync Error: Received non-JSON response from node.`);
+      console.error(`Result Parsing Error: Non-JSON response received.`);
       return;
     }
 
@@ -204,13 +213,39 @@ async function fetchGame(game: 'OzLotto' | 'Powerball' | 'TattsLotto') {
 
     const { data: existing } = await supabase.from('draw_results').select('id').eq('draw_number', drawNumber).eq('game', displayName).maybeSingle();
     if (existing) {
-      console.log(`${displayName} Block #${drawNumber} already in sync.`);
+      console.log(`${displayName} Block #${drawNumber} already exists in history.`);
       return;
     }
 
     const prizes: Record<string, number> = {};
-    latest.Dividends.forEach((div: any) => prizes[`Division ${div.Division}`] = div.BlocDividend);
+    latest.Dividends.forEach((div: any) => {
+      let amount = div.BlocDividend;
+      // Bridge Jackpot if needed
+      if (div.Division === 1 && amount === 0) {
+        const cachedAmount = jackpotCache.get(`${game}-${drawNumber}`);
+        if (cachedAmount) {
+          amount = cachedAmount;
+          console.log(`Jackpot found in memory: $${amount.toLocaleString()}`);
+        }
+      }
+      prizes[`Division ${div.Division}`] = amount;
+    });
     prizes['No Prize'] = 0;
+
+    // Second level bridge check: query DB ledger if memory cache missed
+    if (prizes['Division 1'] === 0) {
+      const { data: dbEntry } = await supabase
+        .from('upcoming_draws')
+        .select('jackpot')
+        .eq('game', displayName)
+        .eq('draw_number', drawNumber)
+        .maybeSingle();
+      
+      if (dbEntry) {
+        prizes['Division 1'] = dbEntry.jackpot;
+        console.log(`Jackpot retrieved from DB Ledger: $${dbEntry.jackpot.toLocaleString()}`);
+      }
+    }
 
     await supabase.from('draw_results').insert({
       draw_number: drawNumber,
@@ -222,10 +257,14 @@ async function fetchGame(game: 'OzLotto' | 'Powerball' | 'TattsLotto') {
     });
 
     console.log(`Sync Complete: ${displayName} Block #${drawNumber}`);
+    
+    // Cleanup ledger
+    await supabase.from('upcoming_draws').delete().eq('game', displayName).eq('draw_number', drawNumber);
+
     await notifyUsers(displayName, drawDate, latest.PrimaryNumbers, latest.SecondaryNumbers);
 
   } catch (error: any) {
-    console.error(`Sync Failure:`, error.message);
+    console.error(`Processing Failure:`, error.message);
   }
 }
 

@@ -65,6 +65,13 @@ export default function Home() {
     return new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', maximumFractionDigits: 0 }).format(amount);
   };
 
+  const getGameBranding = (name: string) => {
+    const n = name?.toLowerCase() || '';
+    if (n.includes('oz')) return { color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-500/10', ball: 'bg-emerald-600' };
+    if (n.includes('tatts') || n.includes('sat')) return { color: 'text-red-600', bg: 'bg-red-50 dark:bg-red-500/10', ball: 'bg-red-600' };
+    return { color: 'text-indigo-600', bg: 'bg-indigo-50 dark:bg-indigo-500/10', ball: 'bg-indigo-600' };
+  };
+
   return (
     <div className="flex flex-col min-h-screen selection:bg-indigo-500 selection:text-white overflow-x-hidden">
       <Navbar />
@@ -132,18 +139,15 @@ export default function Home() {
               <h2 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter italic">Next Big Wins</h2>
               <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Upcoming Estimated Jackpots</p>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {upcomingDraws.map((draw, i) => {
-                const isOz = draw.game === 'Oz Lotto';
-                const isTatts = draw.game === 'Tatts Lotto';
-                const brandColor = isOz ? 'text-emerald-600' : isTatts ? 'text-red-600' : 'text-indigo-600';
-                const brandBg = isOz ? 'bg-emerald-50 dark:bg-emerald-500/10' : isTatts ? 'bg-red-50 dark:bg-red-500/10' : 'bg-indigo-50 dark:bg-indigo-500/10';
+                const brand = getGameBranding(draw.game);
                 
                 return (
                   <div key={i} className={`p-8 rounded-[2.5rem] border border-gray-100 dark:border-white/5 shadow-xl transition-all duration-500 hover:-translate-y-1 group bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl`}>
                     <div className="flex flex-col h-full">
                       <div className="flex justify-between items-start mb-6">
-                        <span className={`text-[10px] font-black uppercase tracking-widest ${brandColor}`}>{draw.game}</span>
+                        <span className={`text-[10px] font-black uppercase tracking-widest ${brand.color}`}>{draw.game}</span>
                         <span className="text-[9px] font-black text-gray-400 uppercase bg-gray-100 dark:bg-white/5 px-2.5 py-1 rounded-full">{draw.draw_date}</span>
                       </div>
                       <div className="flex-grow">
@@ -152,7 +156,7 @@ export default function Home() {
                         </p>
                         <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase">Estimated Div 1</p>
                       </div>
-                      <Link href="/luck" className={`mt-8 text-[10px] font-black uppercase tracking-[0.2em] py-3 rounded-xl text-center transition-all ${brandBg} ${brandColor} hover:brightness-95`}>
+                      <Link href="/luck" className={`mt-8 text-[10px] font-black uppercase tracking-[0.2em] py-3 rounded-xl text-center transition-all ${brand.bg} ${brand.color} hover:brightness-95`}>
                         Track This Draw
                       </Link>
                     </div>
@@ -171,16 +175,13 @@ export default function Home() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {latestResults.length > 0 ? latestResults.map((res, i) => {
-              const isOz = res.game === 'Oz Lotto';
-              const isTatts = res.game === 'Tatts Lotto';
-              const ballBg = isOz ? 'bg-emerald-600' : isTatts ? 'bg-red-600' : 'bg-indigo-600';
-              const gameTextColor = isOz ? 'text-emerald-600' : isTatts ? 'text-red-600' : 'text-indigo-600';
+              const brand = getGameBranding(res.game);
 
               return (
                 <div key={i} className="bg-white/95 dark:bg-gray-900/95 p-8 rounded-[2.5rem] shadow-xl border border-gray-100 dark:border-white/5 backdrop-blur-2xl transition-all duration-500 hover:-translate-y-1.5 group overflow-hidden text-left">
                   <div className="flex justify-between items-center mb-10 relative z-10">
                     <div className="flex flex-col">
-                      <span className={`text-[11px] font-black ${gameTextColor} uppercase tracking-[0.2em]`}>{res.game}</span>
+                      <span className={`text-[11px] font-black ${brand.color} uppercase tracking-[0.2em]`}>{res.game}</span>
                       <p className="text-2xl font-black text-gray-900 dark:text-white mt-1 tracking-tighter">Results</p>
                     </div>
                     <span className="text-[10px] font-black text-gray-400 bg-gray-100 dark:bg-white/5 px-4 py-1.5 rounded-full uppercase tracking-widest">{res.draw_date}</span>
@@ -188,7 +189,7 @@ export default function Home() {
 
                   <div className="flex flex-wrap gap-2.5 justify-center md:justify-start relative z-10">
                     {res.numbers.map((n: number) => (
-                      <span key={n} className={`w-11 h-11 rounded-full ${ballBg} text-white flex items-center justify-center font-black shadow-md border-b-4 border-black/20 text-lg group-hover:scale-105 transition-transform`}>
+                      <span key={n} className={`w-11 h-11 rounded-full ${brand.ball} text-white flex items-center justify-center font-black shadow-md border-b-4 border-black/20 text-lg group-hover:scale-105 transition-transform`}>
                         {n}
                       </span>
                     ))}
