@@ -1,9 +1,12 @@
 name: Send Draw Day Reminders
 on:
   schedule:
-    # 10:00 PM UTC Sun/Tue is 9:00 AM Mon/Wed Sydney time (AEDT)
-    # 0 = Sunday (Remind Mon for Tue Oz Lotto), 2 = Tuesday (Remind Wed for Thu Powerball)
-    - cron: '0 8 * * *' #'0 22 * * 0,2'
+    # Oz Lotto Reminder: Monday 9:00 AM Sydney (Tuesday Draw)
+    - cron: '0 23 * * 1' # Monday at 11:00 PM UTC (9:00 AM Sydney on Tuesday if AEDT)
+    # Powerball Reminder: Wednesday 9:00 AM Sydney (Thursday Draw)
+    - cron: '0 23 * * 3' # Wednesday at 11:00 PM UTC (9:00 AM Sydney on Thursday if AEDT)
+    # Tatts Lotto Reminder: Friday 9:00 AM Sydney (Saturday Draw)
+    - cron: '0 23 * * 5' # Friday at 11:00 PM UTC (9:00 AM Sydney on Saturday if AEDT)
   workflow_dispatch:
 
 jobs:
@@ -17,7 +20,7 @@ jobs:
       - run: npm install
       - name: Run Reminder
         env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
-        run: npm run remind-draw
+        run: npx tsx scripts/remind-draw.ts
