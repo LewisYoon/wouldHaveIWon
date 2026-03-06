@@ -20,7 +20,6 @@ export default function Home() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        // Fetch stats
         const { count: ticketCount } = await supabase
           .from('tickets')
           .select('*', { count: 'exact', head: true });
@@ -31,34 +30,36 @@ export default function Home() {
         
         const uniqueUsers = new Set(users?.map(u => u.user_id)).size;
 
-        // Fetch latest results
-  // Fetch latest results
-const { data: resultsData } = await supabase
-  .from('draw_results')
-  .select('*')
-  .order('draw_date', { ascending: false });
+        const { data: resultsData } = await supabase
+          .from('draw_results')
+          .select('*')
+          .order('draw_date', { ascending: false });
 
-const latestByGame: Record<string, any> = {};
+        const latestByGame: Record<string, any> = {};
+        resultsData?.forEach((draw) => {
+          if (!latestByGame[draw.game]) {
+            latestByGame[draw.game] = draw;
+          }
+        });
+        const latestResultsArray = Object.values(latestByGame);
 
-resultsData?.forEach((draw) => {
-  if (!latestByGame[draw.game]) {
-    latestByGame[draw.game] = draw;
-  }
-});
+        const today = new Date().toISOString().split('T')[0];
+        const { data: upcomingData } = await supabase
+          .from('upcoming_draws')
+          .select('*')
+          .gte('draw_date', today)
+          .order('draw_date', { ascending: true });
+        
+        const nearestByGame: Record<string, any> = {};
+        upcomingData?.forEach((draw) => {
+          if (!nearestByGame[draw.game]) {
+            nearestByGame[draw.game] = draw;
+          }
+        });
+        const upcomingDrawsArray = Object.values(nearestByGame);
 
-const latestResults = Object.values(latestByGame);
-
-        // Fetch upcoming draws
-const today = new Date().toISOString().split('T')[0];
-
-const { data: upcomingData } = await supabase
-  .from('upcoming_draws')
-  .select('*')
-  .gte('draw_date', today)
-  .order('draw_date', { ascending: true });
-
-        setLatestResults(resultsData || []);
-        setUpcomingDraws(upcomingData || []);
+        setLatestResults(latestResultsArray);
+        setUpcomingDraws(upcomingDrawsArray);
         setLiveStats({
           totalTickets: ticketCount || 0,
           activeTrackers: uniqueUsers || 0,
@@ -242,7 +243,7 @@ const { data: upcomingData } = await supabase
                     <path d={feature.icon}/>
                   </svg>
                 </div>
-                <h3 className="text-2xl font-black mb-4 text-gray-900 dark:text-white uppercase tracking-tight italic transition-colors">{feature.title}</h3>
+                <h3 className="text-2xl font-black mb-4 text-gray-900 dark:text-white uppercase tracking-tighter italic transition-colors">{feature.title}</h3>
                 <p className="text-gray-500 dark:text-gray-400 font-medium leading-relaxed max-w-xs mx-auto text-sm">{feature.desc}</p>
               </div>
             ))}
