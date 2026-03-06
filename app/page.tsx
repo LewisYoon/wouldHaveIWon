@@ -32,17 +32,30 @@ export default function Home() {
         const uniqueUsers = new Set(users?.map(u => u.user_id)).size;
 
         // Fetch latest results
-        const { data: resultsData } = await supabase
-          .from('draw_results')
-          .select('*')
-          .order('draw_date', { ascending: false })
-          .limit(6);
+  // Fetch latest results
+const { data: resultsData } = await supabase
+  .from('draw_results')
+  .select('*')
+  .order('draw_date', { ascending: false });
+
+const latestByGame: Record<string, any> = {};
+
+resultsData?.forEach((draw) => {
+  if (!latestByGame[draw.game]) {
+    latestByGame[draw.game] = draw;
+  }
+});
+
+const latestResults = Object.values(latestByGame);
 
         // Fetch upcoming draws
-        const { data: upcomingData } = await supabase
-          .from('upcoming_draws')
-          .select('*')
-          .order('draw_date', { ascending: true });
+const today = new Date().toISOString().split('T')[0];
+
+const { data: upcomingData } = await supabase
+  .from('upcoming_draws')
+  .select('*')
+  .gte('draw_date', today)
+  .order('draw_date', { ascending: true });
 
         setLatestResults(resultsData || []);
         setUpcomingDraws(upcomingData || []);
