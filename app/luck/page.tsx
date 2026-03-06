@@ -298,11 +298,6 @@ export default function LuckPage() {
                   });
                 }
                 const isWinner = res && (totalPrize > 0 || div1Win);
-                let displayDiv1Amount = res?.prizes?.['Division 1'] || 0;
-                if (displayDiv1Amount === 0) {
-                  const ledgerMatch = upcomingLedger.find(l => l.game?.toLowerCase().includes(game.toLowerCase().split(' ')[0]) && l.draw_date === date);
-                  if (ledgerMatch) displayDiv1Amount = ledgerMatch.jackpot;
-                }
 
                 return (
                   <div key={date} className={`bg-white dark:bg-gray-900 rounded-[3rem] border transition-all duration-500 ${isWinner ? 'border-emerald-200 dark:border-emerald-500 shadow-2xl' : 'border-gray-100 dark:border-white/5 shadow-sm hover:shadow-xl'} animate-in fade-in slide-in-from-bottom-4`} style={{ transitionDelay: `${idx * 100}ms` }}>
@@ -317,7 +312,9 @@ export default function LuckPage() {
                         </div>
                         {res ? (
                           <div className="text-right mr-6">
-                            <p className={`text-3xl font-black tracking-tighter ${isWinner ? 'text-emerald-600' : 'text-gray-300 dark:text-gray-700'}`}>{div1Win ? formatJackpot(displayDiv1Amount) : formatCurrency(totalPrize)}</p>
+                            <p className={`text-3xl font-black tracking-tighter ${isWinner ? 'text-emerald-600' : 'text-gray-300 dark:text-gray-700'}`}>
+                              {formatJackpot(totalPrize)}
+                            </p>
                             {bestMatchForDate >= 5 && !div1Win && <p className="text-[9px] font-black text-orange-500 uppercase tracking-widest mt-1 animate-pulse italic">So Close!</p>}
                           </div>
                         ) : (
