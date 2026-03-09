@@ -23,6 +23,7 @@ export default function LottoLinePicker({
 }: LottoLinePickerProps) {
   const [activeNumbers, setActiveNumbers] = useState<number[]>([]);
   const [showGrid, setShowGrid] = useState(false);
+  const [errorIndex, setErrorIndex] = useState<number | null>(null);
   
   const OZ_MAX = 47;
   const PB_MAX = 35;
@@ -45,25 +46,29 @@ export default function LottoLinePicker({
 
   const updateNumberAt = (idx: number, val: number) => {
     const newNumbers = [...activeNumbers];
+    const mainNumbers = game === 'Powerball' ? newNumbers.slice(0, 7) : newNumbers;
+    
+    // Prevent duplicate in main numbers
+    if (val !== 0 && mainNumbers.includes(val) && mainNumbers.indexOf(val) !== idx) {
+      setErrorIndex(idx);
+      setTimeout(() => setErrorIndex(null), 500);
+      return; // Abort update
+    }
+
     newNumbers[idx] = val;
     onNumbersChange(lineId, newNumbers);
   };
 
   const handleGridClick = (val: number) => {
-    const existingIdx = activeNumbers.indexOf(val);
+    const mainNumbers = game === 'Powerball' ? activeNumbers.slice(0, 7) : activeNumbers;
+    const existingIdx = mainNumbers.indexOf(val);
     
-    // If number already selected, remove it
     if (existingIdx !== -1) {
       updateNumberAt(existingIdx, 0);
       return;
     }
 
-    // Find first empty slot
-    // Special handling for Powerball (don't auto-fill PB slot from main grid)
-    const isPowerball = game === 'Powerball';
-    const limit = isPowerball ? 7 : activeNumbers.length;
-    
-    const firstEmpty = activeNumbers.findIndex((n, i) => n === 0 && i < limit);
+    const firstEmpty = mainNumbers.findIndex(n => n === 0);
     if (firstEmpty !== -1) {
       updateNumberAt(firstEmpty, val);
     }
@@ -87,12 +92,10 @@ export default function LottoLinePicker({
   return (
     <div className="group relative bg-white dark:bg-gray-900 border border-gray-100 dark:border-white/5 p-6 rounded-[2.5rem] shadow-sm hover:shadow-xl transition-all duration-500 animate-in fade-in zoom-in-95">
       <div className="flex flex-wrap items-center gap-4">
-        {/* Index Badge */}
         <div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-black text-xs shadow-inner ${brandBg} ${brandColor} border border-black/5`}>
           {displayIndex}
         </div>
 
-        {/* Numbers Row */}
         <div className="flex flex-wrap gap-2.5 items-center flex-grow">
           {activeNumbers.map((num, idx) => {
             const isPowerballSlot = game === 'Powerball' && idx === 7;
@@ -106,6 +109,11 @@ export default function LottoLinePicker({
                   max={max}
                   value={num || ''}
                   placeholder={isPowerballSlot ? "PB" : "-"}
+                  onBlur={(e) => {
+                    let v = parseInt(e.target.value) || 0;
+                    if (v > max) v = max;
+                    updateNumberAt(idx, v);
+                  }}
                   onChange={(e) => {
                     let v = parseInt(e.target.value) || 0;
                     if (v > max) v = max;
@@ -116,6 +124,7 @@ export default function LottoLinePicker({
                       ? (isPowerballSlot ? 'bg-amber-400 text-amber-950 border-amber-600 focus:ring-amber-200' : `${brandBall} text-white border-black/20 focus:ring-indigo-200`)
                       : 'bg-gray-100 dark:bg-white/5 text-gray-400 dark:text-gray-600 border-gray-200 dark:border-white/10 focus:ring-gray-200'
                     }
+                    ${errorIndex === idx ? 'animate-bounce !bg-red-500' : ''}
                   `}
                 />
               </div>
@@ -123,81 +132,36 @@ export default function LottoLinePicker({
           })}
         </div>
 
-        {/* Actions */}
         <div className="flex items-center gap-2">
-          <button 
-            onClick={() => setShowGrid(!showGrid)}
-            className={`p-2.5 rounded-xl border font-black text-[10px] uppercase tracking-widest transition-all ${showGrid ? `${brandBall} text-white border-transparent shadow-lg` : 'bg-gray-50 dark:bg-white/5 text-gray-400 border-gray-100 dark:border-white/10 hover:bg-gray-100'}`}
-          >
-            {showGrid ? 'Close Grid' : 'Tap to Pick'}
+          <button onClick={() => setShowGrid(!showGrid)} className={`p-2.5 rounded-xl border font-black text-[10px] uppercase tracking-widest transition-all ${showGrid ? `${brandBall} text-white border-transparent shadow-lg` : 'bg-gray-50 dark:bg-white/5 text-gray-400 border-gray-100 dark:border-white/10 hover:bg-gray-100'}`}>
+            {showGrid ? 'Close' : 'Pick'}
           </button>
-          
           <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-            <button 
-              onClick={handleQuickPick}
-              className={`p-2.5 rounded-xl ${brandBg} ${brandColor} hover:brightness-95 transition-all text-[10px] font-black uppercase tracking-widest border border-black/5 shadow-sm`}
-            >
-              Auto
-            </button>
-            <button 
-              onClick={() => onDeleteLine(lineId)}
-              className="p-2.5 rounded-xl bg-red-50 dark:bg-red-500/10 text-red-500 hover:bg-red-100 transition-all border border-red-100 dark:border-red-500/20 shadow-sm"
-              title="Delete Set"
-            >
-              <TrashIcon />
-            </button>
+            <button onClick={handleQuickPick} className={`p-2.5 rounded-xl ${brandBg} ${brandColor} hover:brightness-95 transition-all text-[10px] font-black uppercase tracking-widest border border-black/5 shadow-sm`}>Auto</button>
+            <button onClick={() => onDeleteLine(lineId)} className="p-2.5 rounded-xl bg-red-50 dark:bg-red-500/10 text-red-500 hover:bg-red-100 transition-all border border-red-100 dark:border-red-500/20 shadow-sm" title="Delete Set"><TrashIcon /></button>
           </div>
         </div>
       </div>
 
-      {/* Expandable Grid */}
       {showGrid && (
         <div className="mt-8 pt-8 border-t border-gray-100 dark:border-white/5 animate-in slide-in-from-top-4 duration-300">
           <div className="mb-4 flex justify-between items-center px-2">
             <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Select Numbers</p>
-            <button onClick={() => onNumbersChange(lineId, new Array(activeNumbers.length).fill(0))} className="text-[9px] font-black text-red-400 hover:text-red-500 uppercase tracking-widest">Clear Line</button>
+            <button onClick={() => onNumbersChange(lineId, new Array(activeNumbers.length).fill(0))} className="text-[9px] font-black text-red-400 hover:text-red-500 uppercase tracking-widest">Clear</button>
           </div>
-          
           <div className="grid grid-cols-7 sm:grid-cols-10 gap-2">
             {gridNumbers.map(n => {
               const isSelected = activeNumbers.slice(0, game === 'Powerball' ? 7 : undefined).includes(n);
-              return (
-                <button
-                  key={n}
-                  onClick={() => handleGridClick(n)}
-                  className={`aspect-square rounded-xl text-xs font-black transition-all transform active:scale-90 shadow-sm border-b-2
-                    ${isSelected 
-                      ? `${brandBall} text-white border-black/20 scale-105 shadow-md` 
-                      : 'bg-gray-50 dark:bg-white/5 text-gray-400 dark:text-gray-500 border-gray-100 dark:border-white/5 hover:bg-gray-100 dark:hover:bg-white/10'
-                    }
-                  `}
-                >
-                  {n}
-                </button>
-              );
+              return <button key={n} onClick={() => handleGridClick(n)} className={`aspect-square rounded-xl text-xs font-black transition-all transform active:scale-90 shadow-sm border-b-2 ${isSelected ? `${brandBall} text-white border-black/20 scale-105 shadow-md` : 'bg-gray-50 dark:bg-white/5 text-gray-400 dark:text-gray-500 border-gray-100 dark:border-white/5 hover:bg-gray-100 dark:hover:bg-white/10'}`}>{n}</button>;
             })}
           </div>
-
           {game === 'Powerball' && (
             <div className="mt-8">
               <p className="text-[10px] font-black text-amber-500 uppercase tracking-[0.2em] mb-4 px-2">Select Powerball</p>
               <div className="grid grid-cols-7 sm:grid-cols-10 gap-2">
                 {pbNumbers.map(n => {
                   const isSelected = activeNumbers[7] === n;
-                  return (
-                    <button
-                      key={`pb-${n}`}
-                      onClick={() => updateNumberAt(7, n)}
-                      className={`aspect-square rounded-xl text-xs font-black transition-all transform active:scale-90 shadow-sm border-b-2
-                        ${isSelected 
-                          ? 'bg-amber-400 text-amber-950 border-amber-600 scale-105 shadow-md' 
-                          : 'bg-amber-50/50 dark:bg-amber-500/5 text-amber-600/40 dark:text-amber-400/40 border-amber-100/50 dark:border-white/5 hover:bg-amber-100/50'
-                        }
-                      `}
-                    >
-                      {n}
-                    </button>
-                  );
+                  return <button key={`pb-${n}`} onClick={() => updateNumberAt(7, n)} className={`aspect-square rounded-xl text-xs font-black transition-all transform active:scale-90 shadow-sm border-b-2 ${isSelected ? 'bg-amber-400 text-amber-950 border-amber-600 scale-105 shadow-md' : 'bg-amber-50/50 dark:bg-amber-500/5 text-amber-600/40 dark:text-amber-400/40 border-amber-100/50 dark:border-white/5 hover:bg-amber-100/50'}`}>{n}</button>;
                 })}
               </div>
             </div>

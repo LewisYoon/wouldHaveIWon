@@ -13,7 +13,6 @@ export function getNextDrawDates(count: number = 5, game: 'Oz Lotto' | 'Powerbal
   if (game === 'Powerball') targetDay = 4; // Thursday
   if (game === 'Tatts Lotto') targetDay = 6; // Saturday
   
-  // 1. Calculate the MOST RECENT past draw date for testing/logging
   let lastDraw = new Date(today);
   lastDraw.setHours(0, 0, 0, 0);
   
@@ -78,6 +77,36 @@ export function generateQuickPick(game: 'Oz Lotto' | 'Powerball' | 'Tatts Lotto'
   }
 }
 
+/**
+ * Generates a full random draw (Main + Bonus) for simulation
+ */
+export function generateRandomDraw(game: 'Oz Lotto' | 'Powerball' | 'Tatts Lotto'): { numbers: number[], bonus: number[] } {
+  if (game === 'Oz Lotto') {
+    const pool = Array.from({ length: 47 }, (_, i) => i + 1);
+    const shuffled = pool.sort(() => Math.random() - 0.5);
+    return {
+      numbers: shuffled.slice(0, 7).sort((a, b) => a - b),
+      bonus: shuffled.slice(7, 10).sort((a, b) => a - b) // 3 Supps
+    };
+  } else if (game === 'Tatts Lotto') {
+    const pool = Array.from({ length: 45 }, (_, i) => i + 1);
+    const shuffled = pool.sort(() => Math.random() - 0.5);
+    return {
+      numbers: shuffled.slice(0, 6).sort((a, b) => a - b),
+      bonus: shuffled.slice(6, 8).sort((a, b) => a - b) // 2 Supps
+    };
+  } else {
+    // Powerball
+    const pool = Array.from({ length: 35 }, (_, i) => i + 1);
+    const shuffled = pool.sort(() => Math.random() - 0.5);
+    const pb = Math.floor(Math.random() * 20) + 1;
+    return {
+      numbers: shuffled.slice(0, 7).sort((a, b) => a - b),
+      bonus: [pb]
+    };
+  }
+}
+
 export interface ComparisonResult {
   mainMatchesCount: number;
   bonusMatchesCount: number;
@@ -139,7 +168,7 @@ export function compareNumbers(
     else if (mainMatchesCount === 5) prizeTier = "Division 3";
     else if (mainMatchesCount === 4) prizeTier = "Division 4";
     else if (mainMatchesCount === 3 && bonusMatchesCount >= 1) prizeTier = "Division 5";
-    else if (mainMatchesCount === 3) prizeTier = "Division 6"; // Note: Some variations require 1 or 2 supps for Div 6, but usually 3 main is standard.
+    else if (mainMatchesCount === 3) prizeTier = "Division 6";
 
     return { mainMatchesCount, bonusMatchesCount, matchedBonusNumbers: matchedBonusNumbers.sort((a, b) => a - b), prizeTier };
   } else {
@@ -162,3 +191,37 @@ export function compareNumbers(
     return { mainMatchesCount, bonusMatchesCount: isPowerballMatched ? 1 : 0, matchedBonusNumbers: isPowerballMatched ? [userPB] : [], prizeTier, isPowerballMatched };
   }
 }
+
+/**
+ * Mock estimated average prizes for simulation mode
+ */
+export const ESTIMATED_PRIZES: Record<string, Record<string, number>> = {
+  'Oz Lotto': {
+    'Division 1': 10000000,
+    'Division 2': 45000,
+    'Division 3': 5000,
+    'Division 4': 400,
+    'Division 5': 50,
+    'Division 6': 25,
+    'Division 7': 15
+  },
+  'Powerball': {
+    'Division 1': 20000000,
+    'Division 2': 100000,
+    'Division 3': 10000,
+    'Division 4': 500,
+    'Division 5': 150,
+    'Division 6': 75,
+    'Division 7': 45,
+    'Division 8': 20,
+    'Division 9': 12
+  },
+  'Tatts Lotto': {
+    'Division 1': 1000000,
+    'Division 2': 10000,
+    'Division 3': 800,
+    'Division 4': 30,
+    'Division 5': 20,
+    'Division 6': 10
+  }
+};

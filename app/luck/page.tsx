@@ -283,7 +283,7 @@ export default function LuckPage() {
                 const res = drawResultsList.find(r => r.drawDate === date);
                 let totalPrize = 0;
                 let div1Win = false;
-                let bestMatchForDate = 0;
+                let bestMatchForDate = 'No Prize';
                 if (res) {
                   tickets.forEach(t => {
                     const c = compareNumbers(t.numbers, res.numbers, res.bonus, game);
@@ -294,7 +294,12 @@ export default function LuckPage() {
                     }
                     totalPrize += prize;
                     if (c.prizeTier === 'Division 1') div1Win = true;
-                    if (c.mainMatchesCount > bestMatchForDate) bestMatchForDate = c.mainMatchesCount;
+                    // Update bestMatchForDate
+                    const currentDivisionRank = c.prizeTier === 'No Prize' ? 99 : parseInt(c.prizeTier.replace('Division ', ''));
+                    const bestDivisionRank = bestMatchForDate === 'No Prize' ? 99 : parseInt(bestMatchForDate.replace('Division ', ''));
+                    if (currentDivisionRank < bestDivisionRank) {
+                        bestMatchForDate = c.prizeTier;
+                    }
                   });
                 }
                 const isWinner = res && (totalPrize > 0 || div1Win);
@@ -307,7 +312,7 @@ export default function LuckPage() {
                           <div className={`w-16 h-16 rounded-2xl flex items-center justify-center font-black text-xl transition-all duration-500 group-hover:rotate-12 ${isWinner ? 'bg-emerald-500 text-white' : 'bg-gray-100 dark:bg-white/5 text-gray-400 dark:text-gray-500'}`}>{tickets.length}</div>
                           <div>
                             <p className="text-[11px] font-black text-indigo-600 dark:text-indigo-400 uppercase mb-2">Draw: {date}</p>
-                            <p className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">{res ? (isWinner ? 'WINNER DETECTED' : 'RESULTS IN') : 'AWAITING RESULTS'}</p>
+                            <p className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">{res ? (isWinner ? 'WINNER DETECTED' : (totalPrize === 0 ? 'NO WINNERS' : 'RESULTS IN')) : 'AWAITING RESULTS'}</p>
                           </div>
                         </div>
                         {res ? (
@@ -315,7 +320,7 @@ export default function LuckPage() {
                             <p className={`text-3xl font-black tracking-tighter ${isWinner ? 'text-emerald-600' : 'text-gray-300 dark:text-gray-700'}`}>
                               {formatJackpot(totalPrize)}
                             </p>
-                            {bestMatchForDate >= 5 && !div1Win && <p className="text-[9px] font-black text-orange-500 uppercase tracking-widest mt-1 animate-pulse italic">So Close!</p>}
+                            {bestMatchForDate !== 'No Prize' && !div1Win && <p className="text-[9px] font-black text-orange-500 uppercase tracking-widest mt-1 animate-pulse italic">So Close!</p>}
                           </div>
                         ) : (
                           <div className="text-right mr-6">
@@ -363,7 +368,9 @@ export default function LuckPage() {
                                 <div className="flex flex-wrap gap-2.5 mb-2">
                                   {t.numbers.slice(0, 7).map(n => { 
                                     const isMainMatch = res && res.numbers.includes(n);
-                                    const isSuppMatch = res && res.bonus.includes(n);
+                                    const isPowerballMatch = game === 'Powerball' && res && res.bonus.includes(n); // Check if it's the Powerball itself
+                                    const isSuppMatch = res && !isPowerballMatch && res.bonus.includes(n); // Other supplementary numbers
+
                                     return <span key={n} className={`w-10 h-10 flex items-center justify-center rounded-full text-[12px] font-black border-b-2 transition-all duration-500 ${isMainMatch ? 'bg-emerald-500 text-white border-emerald-700 shadow-lg scale-110' : isSuppMatch ? 'bg-amber-400 text-amber-950 border-amber-600 shadow-lg scale-110' : 'bg-gray-100 dark:bg-white/10 text-gray-400 dark:text-gray-500 border-gray-200 dark:border-white/5'}`}>{n}</span>; 
                                   })}
                                   {game === 'Powerball' && t.numbers[7] && (
