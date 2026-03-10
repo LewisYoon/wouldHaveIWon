@@ -23,6 +23,11 @@ export const metadata: Metadata = {
   description: "The most accurate Australian Lotto Simulator. Track Oz Lotto, Powerball, and Tatts Lotto results risk-free. Simulate years of draws in seconds and test your luck.",
   keywords: ["Lotto Simulator", "Australian Lotto Simulator", "Powerball Simulator", "Oz Lotto Simulator", "Lotto Tracker", "Risk-free gambling simulation", "Lottery odds calculator"],
   authors: [{ name: "WhatIFLotto Australia" }],
+  icons: {
+    icon: "/icon.png",
+    shortcut: "/icon.png",
+    apple: "/apple-icon.png",
+  },
   openGraph: {
     title: "WhatIFLotto | Australian Lottery Tracker",
     description: "What if you actually won? Track your numbers against real draws without the risk.",
@@ -30,6 +35,14 @@ export const metadata: Metadata = {
     siteName: "WhatIFLotto",
     locale: "en_AU",
     type: "website",
+    images: [
+      {
+        url: '/icon.png',
+        width: 512,
+        height: 512,
+        alt: 'WhatIFLotto Logo',
+      },
+    ],
   },
   robots: {
     index: true,
