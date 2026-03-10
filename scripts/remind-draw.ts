@@ -75,8 +75,16 @@ async function sendRemindersForGame(game: 'Oz Lotto' | 'Powerball') {
   const targetDrawDate = getNextDrawDates(1, game)[0];
   console.log(`Preparing reminder batch for ${game} (${targetDrawDate})...`);
 
+  // Fetch all users from Auth
   const { data: { users }, error: authError } = await supabase.auth.admin.listUsers();
   if (authError || !users) return;
+
+  // Fetch preferences from public schema
+  const { data: prefs, error: prefsError } = await supabase
+    .from('user_preferences')
+    .select('user_id, email_notifications');
+  
+  const prefMap = new Map(prefs?.map(p => [p.user_id, p.email_notifications]) || []);
 
   const { data: ticketsForTargetDate } = await supabase
     .from('tickets')
@@ -89,6 +97,14 @@ async function sendRemindersForGame(game: 'Oz Lotto' | 'Powerball') {
 
   for (const user of users) {
     if (!user.email) continue;
+    
+    // Check preference (default to true if not found)
+    const isEnabled = prefMap.has(user.id) ? prefMap.get(user.id) : true;
+    if (!isEnabled) {
+      console.log(`Skipping ${user.email} (opted out of reminders)`);
+      continue;
+    }
+
     const alreadyHasTicket = usersWithTickets.has(user.id);
 
     const subject = alreadyHasTicket 

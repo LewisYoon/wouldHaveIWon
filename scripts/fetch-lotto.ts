@@ -84,8 +84,19 @@ async function notifyUsers(game: string, drawDate: string, winningNumbers: numbe
 
   if (!tickets?.length) return;
 
+  // Fetch results preferences
+  const { data: prefs } = await supabase
+    .from('user_preferences')
+    .select('user_id, email_results');
+  
+  const prefMap = new Map(prefs?.map(p => [p.user_id, p.email_results]) || []);
+
   const userResults = new Map<string, { won: boolean }>();
   for (const ticket of tickets) {
+    // Skip if user opted out
+    const isEnabled = prefMap.has(ticket.user_id) ? prefMap.get(ticket.user_id) : true;
+    if (!isEnabled) continue;
+
     const result = compareNumbers(ticket.numbers, winningNumbers, bonusNumbers, game as any);
     const current = userResults.get(ticket.user_id) || { won: false };
     userResults.set(ticket.user_id, { won: current.won || result.prizeTier !== "No Prize" });
