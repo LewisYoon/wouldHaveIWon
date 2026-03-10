@@ -2,11 +2,15 @@
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 import path from 'path';
+import fs from 'fs';
 import { Resend } from 'resend';
 import { compareNumbers } from '../lib/lotto-utils';
 
-// Load environment variables
-dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
+// Load local environment variables if the file exists (for local development)
+const envPath = path.resolve(process.cwd(), '.env.local');
+if (fs.existsSync(envPath)) {
+  dotenv.config({ path: envPath });
+}
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
@@ -14,7 +18,7 @@ const resendApiKey = process.env.RESEND_API_KEY || '';
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://whatiflotto.com';
 
 if (!supabaseUrl || !serviceRoleKey) {
-  console.error('ERROR: Missing required environment variables!');
+  console.error('ERROR: Missing required environment variables (NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY)!');
   process.exit(1);
 }
 
