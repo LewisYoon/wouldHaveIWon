@@ -1,95 +1,100 @@
+'use client';
+
 import Navbar from '../../components/Navbar';
 import Link from 'next/link';
 
-export default function ResponsiblePlayPage() {
+export default function ResponsiblePlay() {
   return (
-    <div className="bg-white dark:bg-gray-950 min-h-screen text-gray-900 dark:text-gray-100">
+    <div className="bg-white dark:bg-gray-950 min-h-screen text-gray-900 dark:text-gray-100 selection:bg-indigo-500 selection:text-white">
       <Navbar />
+      
       <main className="max-w-4xl mx-auto px-6 py-24">
-        <div className="text-center mb-20">
-          <h1 className="text-5xl md:text-7xl font-black uppercase tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-amber-600 to-red-600 dark:from-amber-400 dark:to-red-400">
-            Responsible Play
+        {/* Header */}
+        <section className="text-center mb-20 animate-in fade-in slide-in-from-top-8 duration-1000">
+          <h1 className="text-5xl md:text-7xl font-black uppercase tracking-tighter mb-6 leading-tight">
+            Responsible <span className="text-indigo-600 dark:text-indigo-400 italic">Play</span>
           </h1>
-          <p className="mt-6 text-xl text-gray-500 dark:text-gray-400 max-w-2xl mx-auto">
-            WhatIFLotto is a simulation tool built for fun and education. We advocate for a healthy, balanced approach to gaming.
+          <p className="text-xl text-gray-500 dark:text-gray-400 max-w-2xl mx-auto font-medium">
+            At WhatIFLotto, we believe that simulation should be a tool for awareness, not an encouragement for excessive risk.
           </p>
-        </div>
+        </section>
 
-        <div className="space-y-16">
+        {/* Content Body */}
+        <div className="space-y-16 text-left">
           
-          <section className="bg-gray-50 dark:bg-gray-900 p-10 rounded-[3rem] shadow-xl border border-gray-100 dark:border-white/5">
-            <div className="flex flex-col md:flex-row gap-10 items-center">
-              <div className="w-24 h-24 bg-amber-100 dark:bg-amber-500/10 rounded-3xl flex items-center justify-center shrink-0">
-                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-              </div>
-              <div>
-                <h2 className="text-3xl font-black mb-4 tracking-tight">The Reality of the Odds</h2>
-                <p className="text-lg text-gray-600 dark:text-gray-300 leading-relaxed mb-4">
-                  Winning a major lottery prize is a high-impact, extremely low-probability event. For example, the odds of winning Division 1 in Oz Lotto are approximately 1 in 62 million. To put that in perspective, you are statistically more likely to be struck by lightning than to win the jackpot.
-                </p>
-                <p className="text-lg text-gray-600 dark:text-gray-300 leading-relaxed">
-                  Our simulator is a powerful educational tool designed to visualize these probabilities. By running hundreds or thousands of simulations instantly, you can see firsthand how the "house edge" works and why lottery play should never be considered a financial strategy.
-                </p>
-              </div>
+          <section className="bg-gray-50 dark:bg-white/5 p-10 rounded-[3rem] border border-gray-100 dark:border-white/5 shadow-inner">
+            <h2 className="text-3xl font-black mb-6 tracking-tight uppercase italic">Our Stance on Simulation</h2>
+            <div className="space-y-6 text-lg text-gray-600 dark:text-gray-300 leading-relaxed font-medium">
+              <p>
+                WhatIFLotto is strictly a <strong>non-gambling platform</strong>. We do not accept real money wagers, nor do we facilitate any form of actual betting. Our simulation technology is designed to help you understand the sheer mathematical scale of lottery odds by allowing you to "play" without financial consequence.
+              </p>
+              <p>
+                We hope that by seeing your simulated "lifetime spend" compared to your "simulated winnings," you will gain a clearer, more grounded perspective on the reality of lottery games.
+              </p>
             </div>
           </section>
 
-          <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="bg-emerald-50 dark:bg-emerald-500/5 p-8 rounded-[2.5rem] border border-emerald-100 dark:border-emerald-500/10">
-              <h3 className="text-2xl font-black mb-6 text-emerald-700 dark:text-emerald-400 flex items-center gap-3">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                Healthy Habits
-              </h3>
-              <ul className="space-y-4 text-emerald-900 dark:text-emerald-300 font-medium">
-                <li className="flex gap-3"><span>•</span> <span>Treat lottery spend as a fixed entertainment cost, like a movie ticket.</span></li>
-                <li className="flex gap-3"><span>•</span> <span>Only play with money you can afford to lose.</span></li>
-                <li className="flex gap-3"><span>•</span> <span>Never use funds intended for essentials (rent, food, bills).</span></li>
-                <li className="flex gap-3"><span>•</span> <span>Take regular breaks and keep your play in perspective.</span></li>
-              </ul>
-            </div>
-            
-            <div className="bg-rose-50 dark:bg-rose-500/5 p-8 rounded-[2.5rem] border border-rose-100 dark:border-rose-500/10">
-              <h3 className="text-2xl font-black mb-6 text-rose-700 dark:text-rose-400 flex items-center gap-3">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                Warning Signs
-              </h3>
-              <ul className="space-y-4 text-rose-900 dark:text-rose-300 font-medium">
-                <li className="flex gap-3"><span>•</span> <span>Feeling stressed or anxious about your lottery play.</span></li>
-                <li className="flex gap-3"><span>•</span> <span>Borrowing money or selling items to buy more tickets.</span></li>
-                <li className="flex gap-3"><span>•</span> <span>Chasing losses or spending more than you planned.</span></li>
-                <li className="flex gap-3"><span>•</span> <span>Hiding the amount of time or money you spend on gaming.</span></li>
-              </ul>
+          <section className="space-y-8">
+            <h2 className="text-3xl font-black tracking-tight uppercase">Signs of Risky Play</h2>
+            <p className="text-lg text-gray-600 dark:text-gray-400 font-medium">
+              If you or someone you know chooses to participate in real-world lotteries or gambling, it is important to recognize the signs of problematic behavior:
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {[
+                "Spending more money on gambling than you can afford to lose.",
+                "Feeling the need to gamble with larger amounts of money to get the same excitement.",
+                "Borrowing money or selling assets to fund gambling.",
+                "Neglecting personal responsibilities, work, or family to gamble.",
+                "Feeling anxious, irritable, or depressed when not gambling.",
+                "Chasing losses by gambling more to win back what was lost."
+              ].map((sign, i) => (
+                <div key={i} className="flex gap-4 items-start p-6 bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-white/5 shadow-sm">
+                  <span className="w-6 h-6 flex-shrink-0 bg-red-500 rounded-full mt-1" />
+                  <p className="font-medium text-gray-700 dark:text-gray-300">{sign}</p>
+                </div>
+              ))}
             </div>
           </section>
 
-          <section className="bg-gray-950 text-white p-12 rounded-[3rem] shadow-2xl relative overflow-hidden group">
-            <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/20 to-transparent opacity-50" />
-            <div className="relative z-10 text-center">
-              <h2 className="text-4xl font-black mb-8 italic uppercase tracking-tighter">Professional Support</h2>
-              <p className="text-gray-400 text-xl mb-12 max-w-2xl mx-auto">
-                If you or someone you care about is experiencing difficulties with gambling, free and confidential support is available 24/7 across Australia.
+          <section className="bg-indigo-600 rounded-[3rem] p-12 text-white shadow-2xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32 blur-3xl" />
+            <div className="relative z-10">
+              <h2 className="text-3xl font-black mb-8 uppercase italic">Where to Find Help</h2>
+              <p className="text-lg text-indigo-100 mb-10 font-medium leading-relaxed">
+                If you are struggling with gambling, there are free, confidential support services available across Australia 24/7. You are not alone.
               </p>
               
-              <div className="flex flex-col sm:flex-row gap-6 justify-center">
-                <a 
-                  href="https://www.gamblinghelponline.org.au" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="px-10 py-5 bg-white text-gray-900 font-black rounded-2xl hover:bg-gray-100 transition shadow-xl uppercase tracking-widest text-sm"
-                >
-                  Gambling Help Online
-                </a>
-                <div className="flex items-center justify-center gap-4 text-2xl font-black">
-                  <span className="text-gray-500 uppercase text-xs tracking-widest">Or Call</span>
-                  <span className="text-indigo-400">1800 858 858</span>
+              <div className="space-y-6">
+                <div className="bg-white/10 p-8 rounded-3xl border border-white/20 backdrop-blur-md">
+                  <h4 className="text-2xl font-black mb-2 uppercase">Gambling Help Online</h4>
+                  <p className="font-medium text-indigo-50 mb-4 text-lg">National 24/7 Support Service</p>
+                  <div className="flex flex-wrap gap-4">
+                    <a href="tel:1800858858" className="px-8 py-3 bg-white text-indigo-600 rounded-xl font-black text-sm uppercase tracking-widest hover:brightness-110 transition-all">Call 1800 858 858</a>
+                    <a href="https://www.gamblinghelponline.org.au" target="_blank" className="px-8 py-3 bg-indigo-950/30 text-white border-2 border-white/20 rounded-xl font-black text-sm uppercase tracking-widest hover:bg-indigo-950/50 transition-all">Visit Website</a>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <div className="bg-white/10 p-6 rounded-3xl border border-white/10">
+                    <h5 className="font-black uppercase mb-2">Lifeline</h5>
+                    <p className="text-sm font-medium text-indigo-100 mb-4">Crisis Support & Suicide Prevention</p>
+                    <a href="tel:131114" className="text-lg font-black underline hover:text-white">Call 13 11 14</a>
+                  </div>
+                  <div className="bg-white/10 p-6 rounded-3xl border border-white/10">
+                    <h5 className="font-black uppercase mb-2">Beyond Blue</h5>
+                    <p className="text-sm font-medium text-indigo-100 mb-4">Anxiety, depression and suicide prevention</p>
+                    <a href="tel:1300224636" className="text-lg font-black underline hover:text-white">Call 1300 22 4636</a>
+                  </div>
                 </div>
               </div>
-              
-              <p className="mt-12 text-gray-500 text-sm font-medium">
-                Lifeline Australia: 13 11 14 (24/7 Crisis Support)
-              </p>
             </div>
           </section>
+
+          <footer className="text-center pt-10">
+            <p className="text-gray-400 font-bold italic text-sm uppercase tracking-widest">
+              Play for fun. Play for imagination. But always play within your limits.
+            </p>
+          </footer>
 
         </div>
       </main>

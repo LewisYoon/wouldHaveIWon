@@ -42,6 +42,21 @@ export default function LuckPage() {
   const [isRulesModalOpen, setIsRulesModalOpen] = useState(false);
   const [selectedJackpot, setSelectedJackpot] = useState<number | null>(null);
 
+  // Branding Helpers
+  const isOz = game === 'Oz Lotto';
+  const isTatts = game === 'Tatts Lotto';
+  const brandColor = isOz ? 'emerald' : isTatts ? 'red' : 'indigo';
+  const brandHex = isOz ? '#10b981' : isTatts ? '#ef4444' : '#4f46e5';
+  
+  const brandStyles = {
+    text: isOz ? 'text-emerald-600 dark:text-emerald-400' : isTatts ? 'text-red-600 dark:text-red-400' : 'text-indigo-600 dark:text-indigo-400',
+    bg: isOz ? 'bg-emerald-600' : isTatts ? 'bg-red-600' : 'bg-indigo-600',
+    bgLight: isOz ? 'bg-emerald-50 dark:bg-emerald-950/30' : isTatts ? 'bg-red-50 dark:bg-red-950/30' : 'bg-indigo-50 dark:bg-indigo-950/30',
+    border: isOz ? 'border-emerald-100 dark:border-emerald-500/20' : isTatts ? 'border-red-100 dark:border-red-500/20' : 'border-indigo-100 dark:border-indigo-500/20',
+    shadow: isOz ? 'shadow-emerald-500/20' : isTatts ? 'shadow-red-500/20' : 'shadow-indigo-500/20',
+    focus: isOz ? 'focus:border-emerald-500' : isTatts ? 'focus:border-red-500' : 'focus:border-indigo-500'
+  };
+
   const stats = useMemo(() => {
     let totalMissedPrize = 0;
     let totalTicketsChecked = 0;
@@ -63,7 +78,7 @@ export default function LuckPage() {
         totalMissedPrize += prize;
         if (c.prizeTier !== 'No Prize') {
           totalWins++;
-          if (bestDivision === 'No Prize' || c.prizeTier < bestDivision) {
+          if (bestDivision === 'No Prize' || parseInt(c.prizeTier.replace('Division ', '')) < (bestDivision === 'No Prize' ? 99 : parseInt(bestDivision.replace('Division ', '')))) {
             bestDivision = c.prizeTier;
           }
         }
@@ -206,7 +221,7 @@ export default function LuckPage() {
     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
   );
 
-  if (isAuthLoading) return <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-950 font-black text-indigo-600 animate-pulse uppercase tracking-widest">Loading...</div>;
+  if (isAuthLoading) return <div className={`min-h-screen flex items-center justify-center bg-white dark:bg-gray-950 font-black ${brandStyles.text} animate-pulse uppercase tracking-widest`}>Loading...</div>;
 
   return (
     <div className="flex min-h-screen flex-col bg-gray-50 dark:bg-gray-950 pb-24 transition-colors duration-500 text-gray-900 dark:text-gray-100 overflow-x-hidden">
@@ -216,11 +231,21 @@ export default function LuckPage() {
         <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.07] bg-[radial-gradient(#4f46e5_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none" />
         <div className="max-w-7xl mx-auto relative z-10 animate-in fade-in slide-in-from-left-8 duration-700">
           <h1 className="text-5xl md:text-7xl font-black text-gray-900 dark:text-white tracking-tighter uppercase mb-8">
-            Track My <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 italic">Luck</span>
+            Track My <span className={`text-transparent bg-clip-text bg-gradient-to-r from-${brandColor}-600 to-purple-600 dark:from-${brandColor}-400 dark:to-purple-400 italic`}>Luck</span>
           </h1>
           <div className="flex items-center gap-3">
             {['Oz Lotto', 'Powerball', 'Tatts Lotto'].map((g) => (
-              <button key={g} onClick={() => setGame(g as any)} className={`px-10 py-3 rounded-2xl text-sm font-black uppercase tracking-widest transition-all duration-300 transform active:scale-95 ${game === g ? (g === 'Oz Lotto' ? 'bg-emerald-600 text-white shadow-xl shadow-emerald-500/20' : g === 'Tatts Lotto' ? 'bg-red-600 text-white shadow-xl shadow-red-500/20' : 'bg-indigo-600 text-white shadow-xl shadow-indigo-500/20') : 'bg-white dark:bg-white/5 text-gray-400 dark:text-gray-500 hover:bg-gray-50 dark:hover:bg-white/10 border border-gray-100 dark:border-white/5'}`}>{g}</button>
+              <button 
+                key={g} 
+                onClick={() => setGame(g as any)} 
+                className={`px-10 py-3 rounded-2xl text-sm font-black uppercase tracking-widest transition-all duration-300 transform active:scale-95 ${
+                  game === g 
+                    ? (g === 'Oz Lotto' ? 'bg-emerald-600 text-white shadow-xl shadow-emerald-500/20' : g === 'Tatts Lotto' ? 'bg-red-600 text-white shadow-xl shadow-red-500/20' : 'bg-indigo-600 text-white shadow-xl shadow-indigo-500/20') 
+                    : 'bg-white dark:bg-white/5 text-gray-400 dark:text-gray-500 hover:bg-gray-50 dark:hover:bg-white/10 border border-gray-100 dark:border-white/5'
+                }`}
+              >
+                {g}
+              </button>
             ))}
             <button onClick={() => setIsRulesModalOpen(true)} className="ml-auto bg-gray-100 dark:bg-white/5 text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors w-12 h-12 rounded-full flex items-center justify-center font-black text-lg shadow-sm border border-gray-200 dark:border-white/10">?</button>
           </div>
@@ -229,17 +254,17 @@ export default function LuckPage() {
 
       <main className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-16 px-6 relative z-10">
         <div className="lg:col-span-5 space-y-10 animate-in fade-in slide-in-from-bottom-8 duration-1000 text-left">
-          <div className={`rounded-[3rem] p-10 border transition-all duration-700 shadow-2xl hover:scale-[1.02] group relative overflow-hidden ${game === 'Oz Lotto' ? 'bg-emerald-50/50 dark:bg-emerald-950/30 border-emerald-100 dark:border-emerald-500/10' : game === 'Tatts Lotto' ? 'bg-red-50/50 dark:bg-red-950/30 border-red-100 dark:border-red-500/10' : 'bg-indigo-50/50 dark:bg-indigo-950/30 border-indigo-100 dark:border-indigo-500/10'}`}>
+          <div className={`rounded-[3rem] p-10 border transition-all duration-700 shadow-2xl hover:scale-[1.02] group relative overflow-hidden ${brandStyles.bgLight} ${brandStyles.border}`}>
             <div className={`absolute top-0 right-0 w-32 h-32 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-700 ${game === 'Oz Lotto' ? 'bg-emerald-500/5' : game === 'Tatts Lotto' ? 'bg-red-500/5' : 'bg-indigo-500/5'}`} />
-            <p className={`text-[11px] font-black uppercase tracking-[0.3em] mb-8 ${game === 'Oz Lotto' ? 'text-emerald-600 dark:text-emerald-400' : game === 'Tatts Lotto' ? 'text-red-600 dark:text-red-400' : 'text-indigo-600 dark:text-indigo-400'}`}>Luck Dashboard</p>
+            <p className={`text-[11px] font-black uppercase tracking-[0.3em] mb-8 ${brandStyles.text}`}>Luck Dashboard</p>
             <div className="space-y-10 relative z-10">
               <div className="grid grid-cols-2 gap-8">
-                <div><p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase mb-2">Total Missed</p><p className={`text-4xl font-black tracking-tighter ${game === 'Oz Lotto' ? 'text-emerald-600 dark:text-emerald-400' : game === 'Tatts Lotto' ? 'text-red-600 dark:text-red-400' : 'text-indigo-600 dark:text-indigo-400'}`}>{formatCurrency(stats.totalMissedPrize)}</p></div>
+                <div><p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase mb-2">Total Missed</p><p className={`text-4xl font-black tracking-tighter ${brandStyles.text}`}>{formatCurrency(stats.totalMissedPrize)}</p></div>
                 <div><p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase mb-2">Money "Saved"</p><p className="text-4xl font-black tracking-tighter text-gray-700 dark:text-gray-200">{formatCurrency(stats.totalInvested)}</p></div>
               </div>
               <div className="grid grid-cols-2 gap-8 pt-8 border-t border-gray-200 dark:border-white/5">
                 <div><p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1">Tickets Checked</p><p className="text-2xl font-black text-gray-900 dark:text-white">{stats.totalTicketsChecked}</p></div>
-                <div><p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1">Best Win</p><p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{stats.bestDivision}</p></div>
+                <div><p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1">Best Win</p><p className={`text-2xl font-black ${brandStyles.text}`}>{stats.bestDivision}</p></div>
               </div>
             </div>
           </div>
@@ -247,17 +272,17 @@ export default function LuckPage() {
           <div className="bg-white dark:bg-gray-900 p-10 rounded-[3rem] border border-gray-100 dark:border-white/5 shadow-xl transition-all duration-500">
             <div className="flex justify-between items-end mb-6 ml-2">
               <label className="block text-[11px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em]">1. Pick Draw Date</label>
-              {selectedJackpot !== null && (<div className="text-right animate-in fade-in slide-in-from-right-4"><p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Div 1 Prize</p><p className="text-lg font-black text-emerald-600 dark:text-emerald-400 tracking-tighter leading-none">{formatJackpot(selectedJackpot)}</p></div>)}
+              {selectedJackpot !== null && (<div className="text-right animate-in fade-in slide-in-from-right-4"><p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Div 1 Prize</p><p className={`text-lg font-black ${brandStyles.text} tracking-tighter leading-none`}>{formatJackpot(selectedJackpot)}</p></div>)}
             </div>
             <div className="relative group mb-10">
-              <select value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className={`w-full appearance-none bg-gray-50 dark:bg-gray-800/50 border-2 border-gray-100 dark:border-white/5 rounded-2xl p-5 font-black text-gray-800 dark:text-white outline-none transition-all cursor-pointer ${game === 'Oz Lotto' ? 'focus:border-emerald-500' : game === 'Tatts Lotto' ? 'focus:border-red-500' : 'focus:border-indigo-500'}`}>
+              <select value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className={`w-full appearance-none bg-gray-50 dark:bg-gray-800/50 border-2 border-gray-100 dark:border-white/5 rounded-2xl p-5 font-black text-gray-800 dark:text-white outline-none transition-all cursor-pointer ${brandStyles.focus}`}>
                 {upcomingDates.map(date => <option key={date} value={date}>{date} ({game === 'Oz Lotto' ? 'Tuesday' : game === 'Powerball' ? 'Thursday' : 'Saturday'})</option>)}
               </select>
             </div>
             <label className="block text-[11px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em] mb-6 ml-2">2. Choose Your Numbers</label>
             <LottoLinePicker lineId="luck-picker" displayIndex={1} selectedNumbers={currentNumbers} onNumbersChange={(_, numbers) => setCurrentNumbers(numbers)} onDeleteLine={() => setCurrentNumbers([])} game={game} />
             <div className="grid grid-cols-1 gap-5 mt-12">
-              <button onClick={handleSaveTicket} className={`py-6 text-white font-black rounded-3xl transition-all uppercase tracking-[0.2em] text-sm active:scale-95 shadow-xl hover:brightness-110 ${game === 'Oz Lotto' ? 'bg-emerald-600 shadow-emerald-500/20' : game === 'Tatts Lotto' ? 'bg-red-600 shadow-red-500/20' : 'bg-indigo-600 shadow-indigo-500/20'}`}>Save This Ticket</button>
+              <button onClick={handleSaveTicket} className={`py-6 text-white font-black rounded-3xl transition-all uppercase tracking-[0.2em] text-sm active:scale-95 shadow-xl hover:brightness-110 ${brandStyles.bg} ${brandStyles.shadow}`}>Save This Ticket</button>
               <div className="flex gap-4">
                 <select value={quickPickQty} onChange={(e) => setQuickPickQuantity(Number(e.target.value))} className="bg-gray-100 dark:bg-gray-800 rounded-3xl p-5 font-black text-xs outline-none text-gray-700 dark:text-gray-300 w-24 border-none cursor-pointer">{[10, 25, 50, 100].map(q => <option key={q} value={q}>x{q}</option>)}</select>
                 <button onClick={handleMultiQuickPick} className="flex-1 py-6 bg-emerald-500 text-white font-black rounded-3xl transition-all uppercase tracking-[0.2em] text-sm shadow-xl shadow-emerald-500/20 hover:brightness-110 active:scale-95">Quick Pick Burst</button>
@@ -274,9 +299,9 @@ export default function LuckPage() {
 
           <div className="space-y-6">
             {isDataLoading ? (
-              <div className="py-40 flex flex-col items-center gap-6 animate-pulse"><div className="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" /><p className="text-gray-400 font-black uppercase tracking-[0.3em] text-xs italic">Loading history...</p></div>
+              <div className="py-40 flex flex-col items-center gap-6 animate-pulse"><div className={`w-16 h-16 border-4 ${brandStyles.text.replace('text-', 'border-')} border-t-transparent rounded-full animate-spin`} /><p className="text-gray-400 font-black uppercase tracking-[0.3em] text-xs italic">Loading history...</p></div>
             ) : Object.keys(ticketsByDate).length === 0 ? (
-              <div className="bg-white dark:bg-gray-900 p-32 rounded-[4rem] border-2 border-dashed border-gray-100 dark:border-white/5 text-center transition-all duration-700 group hover:border-indigo-500/30"><p className="text-gray-400 dark:text-gray-500 font-bold italic mb-8">No tickets saved in your history.</p><button onClick={handleMultiQuickPick} className="text-[11px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-[0.3em] border-b-2 border-indigo-600/20 hover:border-indigo-600 transition-all pb-1">Create my first tickets</button></div>
+              <div className="bg-white dark:bg-gray-900 p-32 rounded-[4rem] border-2 border-dashed border-gray-100 dark:border-white/5 text-center transition-all duration-700 group hover:border-indigo-500/30"><p className="text-gray-400 dark:text-gray-500 font-bold italic mb-8">No tickets saved in your history.</p><button onClick={handleMultiQuickPick} className={`text-[11px] font-black ${brandStyles.text} uppercase tracking-[0.3em] border-b-2 border-current hover:opacity-80 transition-all pb-1`}>Create my first tickets</button></div>
             ) : (
               Object.entries(ticketsByDate).sort((a, b) => b[0].localeCompare(a[0])).map(([date, tickets], idx) => {
                 const isExpanded = expandedDates.has(date);
@@ -294,7 +319,6 @@ export default function LuckPage() {
                     }
                     totalPrize += prize;
                     if (c.prizeTier === 'Division 1') div1Win = true;
-                    // Update bestMatchForDate
                     const currentDivisionRank = c.prizeTier === 'No Prize' ? 99 : parseInt(c.prizeTier.replace('Division ', ''));
                     const bestDivisionRank = bestMatchForDate === 'No Prize' ? 99 : parseInt(bestMatchForDate.replace('Division ', ''));
                     if (currentDivisionRank < bestDivisionRank) {
@@ -305,19 +329,19 @@ export default function LuckPage() {
                 const isWinner = res && (totalPrize > 0 || div1Win);
 
                 return (
-                  <div key={date} className={`bg-white dark:bg-gray-900 rounded-[3rem] border transition-all duration-500 ${isWinner ? 'border-emerald-200 dark:border-emerald-500 shadow-2xl' : 'border-gray-100 dark:border-white/5 shadow-sm hover:shadow-xl'} animate-in fade-in slide-in-from-bottom-4`} style={{ transitionDelay: `${idx * 100}ms` }}>
+                  <div key={date} className={`bg-white dark:bg-gray-900 rounded-[3rem] border transition-all duration-500 ${isWinner ? `border-${brandColor}-200 dark:border-${brandColor}-500 shadow-2xl` : 'border-gray-100 dark:border-white/5 shadow-sm hover:shadow-xl'} animate-in fade-in slide-in-from-bottom-4`} style={{ transitionDelay: `${idx * 100}ms` }}>
                     <div className="flex items-center pr-6">
                       <button onClick={() => { const next = new Set(expandedDates); if (next.has(date)) next.delete(date); else next.add(date); setExpandedDates(next); }} className="flex-1 p-10 flex items-center justify-between text-left group">
                         <div className="flex items-center gap-10">
-                          <div className={`w-16 h-16 rounded-2xl flex items-center justify-center font-black text-xl transition-all duration-500 group-hover:rotate-12 ${isWinner ? 'bg-emerald-500 text-white' : 'bg-gray-100 dark:bg-white/5 text-gray-400 dark:text-gray-500'}`}>{tickets.length}</div>
+                          <div className={`w-16 h-16 rounded-2xl flex items-center justify-center font-black text-xl transition-all duration-500 group-hover:rotate-12 ${isWinner ? brandStyles.bg + ' text-white' : 'bg-gray-100 dark:bg-white/5 text-gray-400 dark:text-gray-500'}`}>{tickets.length}</div>
                           <div>
-                            <p className="text-[11px] font-black text-indigo-600 dark:text-indigo-400 uppercase mb-2">Draw: {date}</p>
+                            <p className={`text-[11px] font-black ${brandStyles.text} uppercase mb-2`}>Draw: {date}</p>
                             <p className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">{res ? (isWinner ? 'WINNER DETECTED' : (totalPrize === 0 ? 'NO WINNERS' : 'RESULTS IN')) : 'AWAITING RESULTS'}</p>
                           </div>
                         </div>
                         {res ? (
                           <div className="text-right mr-6">
-                            <p className={`text-3xl font-black tracking-tighter ${isWinner ? 'text-emerald-600' : 'text-gray-300 dark:text-gray-700'}`}>
+                            <p className={`text-3xl font-black tracking-tighter ${isWinner ? brandStyles.text : 'text-gray-300 dark:text-gray-700'}`}>
                               {formatJackpot(totalPrize)}
                             </p>
                             {bestMatchForDate !== 'No Prize' && !div1Win && <p className="text-[9px] font-black text-orange-500 uppercase tracking-widest mt-1 animate-pulse italic">So Close!</p>}
@@ -333,12 +357,12 @@ export default function LuckPage() {
                       </button>
                     </div>
                     {isExpanded && (
-                      <div className={`p-10 border-t dark:border-white/5 animate-in slide-in-from-top-4 duration-500 ${isWinner ? 'bg-emerald-50/20 dark:bg-emerald-500/5' : 'bg-gray-50/50 dark:bg-white/5'}`}>
+                      <div className={`p-10 border-t dark:border-white/5 animate-in slide-in-from-top-4 duration-500 ${isWinner ? `${brandStyles.bgLight} dark:bg-${brandColor}-500/5` : 'bg-gray-50/50 dark:bg-white/5'}`}>
                         {res && (
                           <div className="mb-12 bg-white dark:bg-gray-800 p-10 rounded-[3rem] border border-gray-100 dark:border-white/5 flex flex-col items-center shadow-inner relative overflow-hidden group">
                             <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase mb-8 tracking-[0.4em] relative z-10">Winning Numbers</p>
                             <div className="flex flex-wrap gap-4 justify-center relative z-10">
-                              {res.numbers.map((n, i) => (<span key={n} className="w-14 h-14 rounded-full bg-emerald-500 text-white flex items-center justify-center font-black border-b-[6px] border-emerald-700 shadow-xl text-xl transform hover:-translate-y-1 transition-transform" style={{ transitionDelay: `${i * 50}ms` }}>{n}</span>))}
+                              {res.numbers.map((n, i) => (<span key={n} className={`w-14 h-14 rounded-full ${brandStyles.bg} text-white flex items-center justify-center font-black border-b-[6px] border-black/20 shadow-xl text-xl transform hover:-translate-y-1 transition-transform`} style={{ transitionDelay: `${i * 50}ms` }}>{n}</span>))}
                               <div className="w-px h-14 bg-gray-200 dark:bg-white/10 mx-2" />
                               {res.bonus.map((n, i) => (<span key={n} className="w-14 h-14 rounded-full bg-amber-400 text-amber-950 flex items-center justify-center font-black border-b-[6px] border-amber-600 shadow-xl text-xl transform hover:-translate-y-1 transition-transform" style={{ transitionDelay: `${(res.numbers.length + i) * 50}ms` }}>{n}</span>))}
                             </div>
@@ -355,11 +379,11 @@ export default function LuckPage() {
                             const ticketWon = prize > 0 || c?.prizeTier === 'Division 1';
                             const nearMiss = c && c.mainMatchesCount >= 5 && !ticketWon;
                             return (
-                              <div key={t.id} className={`p-8 rounded-[2.5rem] border transition-all duration-500 hover:-translate-y-1 ${ticketWon ? 'bg-white dark:bg-gray-800 border-emerald-300 dark:border-emerald-500 shadow-2xl scale-[1.02] z-10' : 'bg-white/60 dark:bg-white/5 border-gray-100 dark:border-white/5 opacity-70 hover:opacity-100'}`}>
+                              <div key={t.id} className={`p-8 rounded-[2.5rem] border transition-all duration-500 hover:-translate-y-1 ${ticketWon ? `bg-white dark:bg-gray-800 border-${brandColor}-300 dark:border-${brandColor}-500 shadow-2xl scale-[1.02] z-10` : 'bg-white/60 dark:bg-white/5 border-gray-100 dark:border-white/5 opacity-70 hover:opacity-100'}`}>
                                 <div className="flex justify-between items-center mb-8">
                                   <span className="text-[11px] font-black text-gray-300 dark:text-gray-600 uppercase italic">Ticket #{tidx + 1}</span>
                                   <div className="flex items-center gap-2">
-                                    {c && <span className={`text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest ${ticketWon ? 'bg-emerald-500 text-white' : nearMiss ? 'bg-orange-500 text-white animate-pulse' : 'bg-gray-100 dark:bg-white/10 text-gray-400 dark:text-gray-500'}`}>{nearMiss ? 'SO CLOSE' : c.prizeTier}</span>}
+                                    {c && <span className={`text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest ${ticketWon ? brandStyles.bg + ' text-white' : nearMiss ? 'bg-orange-500 text-white animate-pulse' : 'bg-gray-100 dark:bg-white/10 text-gray-400 dark:text-gray-500'}`}>{nearMiss ? 'SO CLOSE' : c.prizeTier}</span>}
                                     <button onClick={() => handleDeleteSingleTicket(t.id)} className="text-gray-300 dark:text-gray-600 hover:text-red-500 transition-colors p-1 transform hover:scale-110">
                                       <TrashIcon />
                                     </button>
@@ -368,16 +392,16 @@ export default function LuckPage() {
                                 <div className="flex flex-wrap gap-2.5 mb-2">
                                   {t.numbers.slice(0, 7).map(n => { 
                                     const isMainMatch = res && res.numbers.includes(n);
-                                    const isPowerballMatch = game === 'Powerball' && res && res.bonus.includes(n); // Check if it's the Powerball itself
-                                    const isSuppMatch = res && !isPowerballMatch && res.bonus.includes(n); // Other supplementary numbers
+                                    const isBonusMatch = res && res.bonus.includes(n);
+                                    const isSuppMatch = (isOz || isTatts) && isBonusMatch && !isMainMatch;
 
-                                    return <span key={n} className={`w-10 h-10 flex items-center justify-center rounded-full text-[12px] font-black border-b-2 transition-all duration-500 ${isMainMatch ? 'bg-emerald-500 text-white border-emerald-700 shadow-lg scale-110' : isSuppMatch ? 'bg-amber-400 text-amber-950 border-amber-600 shadow-lg scale-110' : 'bg-gray-100 dark:bg-white/10 text-gray-400 dark:text-gray-500 border-gray-200 dark:border-white/5'}`}>{n}</span>; 
+                                    return <span key={n} className={`w-10 h-10 flex items-center justify-center rounded-full text-[12px] font-black border-b-2 transition-all duration-500 ${isMainMatch ? brandStyles.bg + ' text-white border-black/20 shadow-lg scale-110' : isSuppMatch ? 'bg-amber-400 text-amber-950 border-amber-600 shadow-lg scale-110' : 'bg-gray-100 dark:bg-white/10 text-gray-400 dark:text-gray-500 border-gray-200 dark:border-white/5'}`}>{n}</span>; 
                                   })}
                                   {game === 'Powerball' && t.numbers[7] && (
-                                    <span className={`w-10 h-10 flex items-center justify-center rounded-full text-[12px] font-black border-b-2 transition-all duration-500 ${res && res.bonus.includes(t.numbers[7]) ? 'bg-amber-400 text-amber-950 border-amber-600 shadow-lg scale-110' : 'bg-amber-50 dark:bg-amber-500/5 text-amber-600/40 dark:text-amber-400/40 border-amber-100 dark:border-white/5'}`}>{t.numbers[7]}</span>
+                                    <span className={`w-10 h-10 flex items-center justify-center rounded-full text-[12px] font-black border-b-2 transition-all duration-500 ${res && res.bonus.includes(t.numbers[7]) ? 'bg-amber-400 text-amber-950 border-amber-600 shadow-lg scale-110' : 'bg-gray-100 dark:bg-white/10 text-gray-400 dark:text-gray-500 border-gray-200 dark:border-white/5'}`}>{t.numbers[7]}</span>
                                   )}
                                 </div>
-                                {ticketWon && <p className="mt-8 text-lg font-black text-emerald-600 dark:text-emerald-400 italic">+{formatCurrency(prize)} MISSING</p>}
+                                {ticketWon && <p className={`mt-8 text-lg font-black ${brandStyles.text} italic`}>+{formatCurrency(prize)} MISSING</p>}
                               </div>
                             );
                           })}

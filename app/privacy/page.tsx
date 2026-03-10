@@ -1,109 +1,78 @@
+'use client';
+
 import Navbar from '../../components/Navbar';
 
-export default function PrivacyPage() {
+export default function PrivacyPolicy() {
   return (
-    <div className="bg-white dark:bg-gray-950 min-h-screen text-gray-900 dark:text-gray-100">
+    <div className="bg-white dark:bg-gray-950 min-h-screen text-gray-900 dark:text-gray-100 selection:bg-indigo-500 selection:text-white">
       <Navbar />
-      <main className="max-w-4xl mx-auto px-6 py-24">
-        <div className="text-center mb-16">
-          <h1 className="text-5xl md:text-7xl font-black uppercase tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400">
-            Privacy Policy
-          </h1>
-          <p className="mt-4 text-xl text-gray-500 dark:text-gray-400 max-w-2xl mx-auto">
-            Your privacy is important to us. This policy outlines how we collect, use, and protect your information.
-          </p>
-          <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">Last updated: March 08, 2026</p>
-        </div>
+      
+      <main className="max-w-4xl mx-auto px-6 py-24 text-left">
+        <h1 className="text-5xl md:text-6xl font-black uppercase tracking-tighter mb-12">
+          Privacy <span className="text-indigo-600 dark:text-indigo-400 italic">Policy</span>
+        </h1>
 
-        <div className="space-y-12">
-          
-          <section className="bg-gray-50 dark:bg-gray-900 p-8 rounded-3xl shadow-lg border border-gray-100 dark:border-white/5">
-            <h2 className="text-3xl font-black mb-6 text-gray-900 dark:text-white flex items-center gap-3">
-              <span className="text-indigo-500">
-                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="M8 12h8"/><path d="M12 8v8"/></svg>
-              </span>
-              Introduction & Our Commitment
-            </h2>
-            <p className="text-lg text-gray-600 dark:text-gray-300 leading-relaxed">
-              At WhatIFLotto, we are deeply committed to protecting your personal privacy. This Privacy Policy is designed to clearly explain how we collect, use, process, and safeguard the information you provide when using our website and services. We handle your data with the utmost care and transparency, ensuring your trust is maintained.
+        <div className="prose prose-indigo dark:prose-invert max-w-none space-y-10 text-lg text-gray-600 dark:text-gray-300 font-medium leading-relaxed">
+          <section>
+            <p className="text-sm font-black text-gray-400 uppercase tracking-widest mb-4">Last Updated: March 6, 2026</p>
+            <p>
+              At WhatIFLotto, accessible from whatiflotto.com, one of our main priorities is the privacy of our visitors. This Privacy Policy document contains types of information that is collected and recorded by WhatIFLotto and how we use it.
             </p>
           </section>
 
-          <section className="bg-gray-50 dark:bg-gray-900 p-8 rounded-3xl shadow-lg border border-gray-100 dark:border-white/5">
-            <h2 className="text-3xl font-black mb-6 text-gray-900 dark:text-white flex items-center gap-3">
-              <span className="text-emerald-500">
-                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M12 12v6"/><path d="m15 15-3 3-3-3"/></svg>
-              </span>
-              Information We Collect & Why
-            </h2>
-            <div className="space-y-6 text-lg text-gray-600 dark:text-gray-300 leading-relaxed">
-              <p>We collect essential information to provide and enhance your WhatIFLotto experience:</p>
-              <ul>
-                <li>
-                  <strong>Information you provide directly:</strong> When you create an account, you provide your email address. When you use the "Luck Tracker," you provide your chosen lottery numbers and associated draw dates. This data is used solely to manage your account and perform the core service of comparing your numbers to official draw results.
-                </li>
-                <li>
-                  <strong>Automatically collected information:</strong> To maintain security and optimize performance, we log standard technical details such as your IP address, browser type, and operating system. Our backend provider, Supabase, assists in the collection of this operational data.
-                </li>
-                <li>
-                  <strong>Cookies for functionality:</strong> We utilize small text files called cookies to ensure basic website functions work correctly. These include keeping you securely logged in and remembering your preferences, such as your choice of light or dark mode. You can manage cookie preferences in your browser settings.
-                </li>
-              </ul>
-            </div>
-          </section>
-
-          <section className="bg-gray-50 dark:bg-gray-900 p-8 rounded-3xl shadow-lg border border-gray-100 dark:border-white/5">
-            <h2 className="text-3xl font-black mb-6 text-gray-900 dark:text-white flex items-center gap-3">
-              <span className="text-red-500">
-                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-              </span>
-              How & With Whom We Share Your Data
-            </h2>
-            <div className="space-y-6 text-lg text-gray-600 dark:text-gray-300 leading-relaxed">
-              <p>Your trust is paramount. We explicitly state:</p>
-              <ul>
-                <li><strong>We do NOT sell your personal data to anyone.</strong></li>
-                <li>
-                  <strong>Essential Service Providers:</strong> We collaborate with select third parties strictly for operational purposes:
-                  <ul>
-                    <li><strong>Supabase:</strong> Handles our secure user authentication and database management, storing your account details and tracked numbers.</li>
-                    <li><strong>Resend:</strong> Manages our transactional email system, delivering your draw reminders and result notifications. Your email is shared exclusively for this purpose.</li>
-                  </ul>
-                </li>
-              </ul>
-              <p>We ensure that all third-party partners adhere to strict data protection standards, maintaining the confidentiality and integrity of your information.</p>
-            </div>
-          </section>
-
-          <section className="bg-gray-50 dark:bg-gray-900 p-8 rounded-3xl shadow-lg border border-gray-100 dark:border-white/5">
-            <h2 className="text-3xl font-black mb-6 text-gray-900 dark:text-white flex items-center gap-3">
-              <span className="text-yellow-500">
-                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="M8 12h8"/><path d="M12 8v8"/></svg>
-              </span>
-              Your Privacy Rights & Choices
-            </h2>
-            <div className="space-y-6 text-lg text-gray-600 dark:text-gray-300 leading-relaxed">
-              <p>You have full control over your data on WhatIFLotto:</p>
-              <ul>
-                <li><strong>Access and Correction:</strong> You can view and update most of your personal information (like tracked numbers) directly within your account.</li>
-                <li><strong>Deletion:</strong> Should you wish to remove your data or close your account, please contact our support team. We will promptly process your request, subject to any legal obligations.</li>
-                <li><strong>Managing Communications:</strong> You can adjust your email notification preferences or unsubscribe from our transactional alerts at any time via links provided in our emails or within your account settings (if applicable).</li>
-              </ul>
-            </div>
-          </section>
-
-          <section className="bg-gray-50 dark:bg-gray-900 p-8 rounded-3xl shadow-lg border border-gray-100 dark:border-white/5">
-            <h2 className="text-3xl font-black mb-6 text-gray-900 dark:text-white flex items-center gap-3">
-              <span className="text-purple-500">
-                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
-              </span>
-              Contact Us
-            </h2>
-            <p className="text-lg text-gray-600 dark:text-gray-300 leading-relaxed">
-              If you have any questions or concerns regarding this Privacy Policy or your data, please don't hesitate to reach out. You can find our contact details on the dedicated contact page of our website. We're here to help.
+          <section className="space-y-4">
+            <h2 className="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tight">1. Information We Collect</h2>
+            <p>
+              If you create an account, we collect your email address and authentication data via Supabase/Google OAuth. For anonymous users, we may store simulation data locally on your device (Local Storage). We do not collect personal financial information as no real-money transactions occur on this platform.
             </p>
           </section>
 
+          <section className="space-y-4">
+            <h2 className="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tight">2. How We Use Your Information</h2>
+            <p>We use the information we collect in various ways, including to:</p>
+            <ul className="list-disc pl-6 space-y-2">
+              <li>Provide, operate, and maintain our website and lotto simulation engine.</li>
+              <li>Improve, personalize, and expand our website features.</li>
+              <li>Understand and analyze how you use our website.</li>
+              <li>Send you automated lottery result notifications if you have opted-in.</li>
+              <li>Detect and prevent fraudulent use of our simulation tools.</li>
+            </ul>
+          </section>
+
+          <section className="space-y-4">
+            <h2 className="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tight">3. Log Files & Cookies</h2>
+            <p>
+              WhatIFLotto follows a standard procedure of using log files. These files log visitors when they visit websites. The information collected by log files includes internet protocol (IP) addresses, browser type, Internet Service Provider (ISP), date and time stamp, referring/exit pages, and possibly the number of clicks. These are not linked to any information that is personally identifiable.
+            </p>
+          </section>
+
+          <section className="space-y-4">
+            <h2 className="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tight">4. Google DoubleClick DART Cookie</h2>
+            <p>
+              Google is one of a third-party vendor on our site. It also uses cookies, known as DART cookies, to serve ads to our site visitors based upon their visit to our site and other sites on the internet. However, visitors may choose to decline the use of DART cookies by visiting the Google ad and content network Privacy Policy.
+            </p>
+          </section>
+
+          <section className="space-y-4">
+            <h2 className="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tight">5. Third Party Privacy Policies</h2>
+            <p>
+              WhatIFLotto's Privacy Policy does not apply to other advertisers or websites. Thus, we are advising you to consult the respective Privacy Policies of these third-party ad servers for more detailed information.
+            </p>
+          </section>
+
+          <section className="space-y-4">
+            <h2 className="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tight">6. Data Protection Rights (GDPR/CPRA)</h2>
+            <p>
+              We would like to make sure you are fully aware of all of your data protection rights. Every user is entitled to the following: The right to access, the right to rectification, the right to erasure, the right to restrict processing, and the right to data portability.
+            </p>
+          </section>
+
+          <section className="p-8 bg-gray-50 dark:bg-white/5 rounded-3xl border border-gray-100 dark:border-white/5">
+            <h2 className="text-2xl font-black text-gray-900 dark:text-white uppercase mb-4">Contact Us</h2>
+            <p className="text-base">
+              If you have additional questions or require more information about our Privacy Policy, do not hesitate to contact us at support@whatiflotto.com.
+            </p>
+          </section>
         </div>
       </main>
     </div>

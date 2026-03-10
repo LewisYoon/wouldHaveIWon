@@ -10,6 +10,7 @@ export default function OddsPage() {
   const oddsData: Record<string, {
     title: string;
     desc: string;
+    history: string;
     mainNumbers: string;
     suppNumbers?: string;
     powerballNumbers?: string;
@@ -19,7 +20,8 @@ export default function OddsPage() {
   }> = {
     'Oz Lotto': {
       title: 'Oz Lotto Odds & Probabilities',
-      desc: 'Oz Lotto requires you to pick 7 numbers from 1 to 47. Three supplementary numbers are drawn from the remaining 40 balls, and these are used to determine Divisions 2, 4, and 7.',
+      desc: 'Oz Lotto is one of Australia’s most popular national lottery games, known for its massive jackpots and unique 7-number format.',
+      history: 'Launched in 1994, Oz Lotto was Australia’s first truly national lottery game. Originally, it required players to pick 6 numbers, similar to Tatts Lotto. However, in 2005, the format was changed to require 7 numbers, significantly increasing the jackpot sizes and creating the iconic emerald-branded game we know today. In 2022, the ball pool was further expanded from 45 to 47 to allow for even larger prizes.',
       mainNumbers: '7 from 47',
       suppNumbers: '3 from remaining 40',
       totalBalls: 47,
@@ -36,7 +38,8 @@ export default function OddsPage() {
     },
     'Powerball': {
       title: 'Powerball Odds & Probabilities',
-      desc: 'Powerball requires you to pick 7 numbers from 1 to 35, plus 1 Powerball number from 1 to 20. The Powerball number significantly impacts the odds across multiple divisions.',
+      desc: 'Powerball Australia is modeled after the famous American game but with its own distinct rules and massive multi-million dollar prize pools.',
+      history: 'Since its introduction in 1996, Powerball has consistently produced Australia’s largest individual lottery wins. The game underwent a major transformation in 2018, moving to its current format of picking 7 numbers from 35, plus the all-important Powerball from a separate pool of 20. This change was designed to create more winners across more divisions while allowing the Division 1 jackpot to reach record-breaking heights.',
       mainNumbers: '7 from 35',
       powerballNumbers: '1 from 20',
       totalBalls: 35,
@@ -55,7 +58,8 @@ export default function OddsPage() {
     },
     'Tatts Lotto': {
       title: 'Tatts Lotto (Saturday Lotto) Odds & Probabilities',
-      desc: 'Tatts Lotto, also known as Saturday Lotto, requires you to pick 6 numbers from 1 to 45. Two supplementary numbers are drawn from the remaining 39 balls to determine Divisions 2 and 5.',
+      desc: 'Tatts Lotto, or Saturday Lotto, is the traditional favorite for Australians, offering the best overall odds of winning any prize among the major games.',
+      history: 'Tatts Lotto has been a Saturday night staple since the 1970s. It is celebrated for its regular "Superdraws" and "Megadraws," which offer significantly boosted Division 1 prize pools. Unlike Oz Lotto or Powerball, Tatts Lotto maintains a consistent 6/45 format, making it the most mathematically accessible game for players seeking a balanced win-to-odds ratio.',
       mainNumbers: '6 from 45',
       suppNumbers: '2 from remaining 39',
       totalBalls: 45,
@@ -77,27 +81,27 @@ export default function OddsPage() {
   const brandBgLight = currentOdds.color === 'emerald' ? 'bg-emerald-100 dark:bg-emerald-500/10' : currentOdds.color === 'red' ? 'bg-red-100 dark:bg-red-500/10' : 'bg-indigo-100 dark:bg-indigo-500/10';
 
   return (
-    <div className="bg-white dark:bg-gray-950 min-h-screen text-gray-900 dark:text-gray-100">
+    <div className="bg-white dark:bg-gray-950 min-h-screen text-gray-900 dark:text-gray-100 selection:bg-indigo-500 selection:text-white">
       <Navbar />
-      <main className="max-w-4xl mx-auto px-6 py-24">
-        <div className="text-center mb-16">
-          <h1 className="text-5xl md:text-7xl font-black uppercase tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600 dark:from-purple-400 dark:to-pink-400">
-            Understand the Odds
+      <main className="max-w-5xl mx-auto px-6 py-24">
+        <div className="text-center mb-16 animate-in fade-in slide-in-from-top-8 duration-1000">
+          <h1 className="text-6xl md:text-8xl font-black uppercase tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-emerald-600 dark:from-indigo-400 dark:to-emerald-400 leading-none pb-4">
+            Odds & History
           </h1>
-          <p className="mt-4 text-xl text-gray-500 dark:text-gray-400 max-w-2xl mx-auto">
-            Demystifying the probabilities behind Australia's favorite lottery games.
+          <p className="mt-6 text-xl text-gray-500 dark:text-gray-400 max-w-3xl mx-auto font-medium">
+            Discover the mathematics and heritage behind Australia's most iconic games.
           </p>
         </div>
 
-        <div className="flex justify-center gap-3 mb-16">
+        <div className="flex justify-center flex-wrap gap-4 mb-16">
           {Object.keys(oddsData).map((g) => (
             <button
               key={g}
               onClick={() => setGame(g as any)}
-              className={`px-8 py-3 rounded-2xl text-sm font-black uppercase tracking-widest transition-all ${
+              className={`px-10 py-4 rounded-[2rem] text-sm font-black uppercase tracking-[0.2em] transition-all transform active:scale-95 ${
                 game === g 
-                  ? (oddsData[g as keyof typeof oddsData].color === 'emerald' ? 'bg-emerald-600 text-white shadow-lg' : oddsData[g as keyof typeof oddsData].color === 'red' ? 'bg-red-600 text-white shadow-lg' : 'bg-indigo-600 text-white shadow-lg')
-                  : 'bg-gray-100 dark:bg-white/5 text-gray-400 dark:text-gray-500 hover:bg-gray-200 dark:hover:bg-white/10'
+                  ? (oddsData[g as keyof typeof oddsData].color === 'emerald' ? 'bg-emerald-600 text-white shadow-xl scale-105' : oddsData[g as keyof typeof oddsData].color === 'red' ? 'bg-red-600 text-white shadow-xl scale-105' : 'bg-indigo-600 text-white shadow-xl scale-105')
+                  : 'bg-white dark:bg-white/5 text-gray-400 dark:text-gray-500 border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/10'
               }`}
             >
               {g}
@@ -105,79 +109,89 @@ export default function OddsPage() {
           ))}
         </div>
 
-        <section className={`p-8 rounded-3xl shadow-xl border border-gray-100 dark:border-white/5 ${brandBg} text-left`}>
-          <h2 className={`text-3xl font-black mb-4 ${brandColor}`}>{currentOdds.title}</h2>
-          <p className="text-lg text-gray-700 dark:text-gray-300 mb-8">{currentOdds.desc}</p>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 text-left">
+          
+          <div className="lg:col-span-2 space-y-12">
+            <section className={`p-10 md:p-16 rounded-[4rem] shadow-2xl border border-gray-100 dark:border-white/5 ${brandBg} relative overflow-hidden group`}>
+              <div className={`absolute top-0 right-0 w-64 h-64 rounded-full -mr-32 -mt-32 blur-3xl opacity-20 ${currentOdds.color === 'emerald' ? 'bg-emerald-500' : currentOdds.color === 'red' ? 'bg-red-500' : 'bg-indigo-500'}`} />
+              
+              <h2 className={`text-4xl font-black mb-8 tracking-tight uppercase italic ${brandColor}`}>{currentOdds.title}</h2>
+              <div className="space-y-8 text-lg text-gray-700 dark:text-gray-300 leading-relaxed font-medium">
+                <p>{currentOdds.desc}</p>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 py-8 border-y border-black/5 dark:border-white/5">
+                    <div className="flex items-center gap-5">
+                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shadow-inner ${brandBgLight}`}>🔢</div>
+                        <div><p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Main Pool</p><p className="text-xl font-black text-gray-900 dark:text-white">{currentOdds.mainNumbers}</p></div>
+                    </div>
+                    {currentOdds.powerballNumbers ? (
+                        <div className="flex items-center gap-5">
+                            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shadow-inner ${brandBgLight}`}>⚡</div>
+                            <div><p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Powerball</p><p className="text-xl font-black text-gray-900 dark:text-white">{currentOdds.powerballNumbers}</p></div>
+                        </div>
+                    ) : (
+                        <div className="flex items-center gap-5">
+                            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shadow-inner ${brandBgLight}`}>✨</div>
+                            <div><p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Supplementary</p><p className="text-xl font-black text-gray-900 dark:text-white">{currentOdds.suppNumbers}</p></div>
+                        </div>
+                    )}
+                </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 mb-10">
-            <div className="flex items-center gap-4">
-              <span className={`w-10 h-10 flex items-center justify-center rounded-full ${brandColor} bg-opacity-20 text-xl font-bold`}>
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/><line x1="20" y1="22" x2="20" y2="15"/></svg>
-              </span>
-              <div>
-                <p className="text-sm font-bold text-gray-500 dark:text-gray-400">Main Numbers</p>
-                <p className="text-lg font-black text-gray-900 dark:text-white">{currentOdds.mainNumbers}</p>
+                <h3 className="text-2xl font-black pt-4 uppercase tracking-tight italic">The Heritage</h3>
+                <p className="text-base text-gray-600 dark:text-gray-400">{currentOdds.history}</p>
               </div>
+            </section>
+
+            <section className="bg-white dark:bg-gray-900 p-10 md:p-16 rounded-[4rem] border border-gray-100 dark:border-white/5 shadow-2xl overflow-hidden">
+              <h3 className="text-3xl font-black mb-10 tracking-tight uppercase italic">Statistical Breakdown</h3>
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-left">
+                  <thead>
+                    <tr className="border-b-2 border-gray-100 dark:border-white/5">
+                      <th className="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Winning Tier</th>
+                      <th className="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Requirements</th>
+                      <th className="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Chances</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50 dark:divide-white/5">
+                    {currentOdds.breakdown.map((item) => (
+                      <tr key={item.div} className="group hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+                        <td className="px-6 py-6 font-black text-gray-900 dark:text-white">Division {item.div}</td>
+                        <td className="px-6 py-6 font-bold text-gray-600 dark:text-gray-400 text-sm">{item.matches}</td>
+                        <td className={`px-6 py-6 font-black text-lg tracking-tighter ${brandColor}`}>{item.odds}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+
+          <aside className="space-y-10">
+            <div className="p-8 rounded-[3rem] bg-gray-950 text-white shadow-2xl relative overflow-hidden border border-white/5">
+                <div className="absolute bottom-0 left-0 w-32 h-32 bg-indigo-600/20 rounded-full blur-3xl" />
+                <h4 className="text-xl font-black mb-6 uppercase tracking-tighter italic">Pro Tip</h4>
+                <p className="text-gray-400 text-sm leading-relaxed font-medium">
+                    Did you know that while the odds of winning Division 1 are slim, the overall odds of winning <strong>any</strong> prize in Tatts Lotto are approximately 1 in 42? Simulation helps you visualize these smaller frequent wins vs the rare big hits.
+                </p>
             </div>
-            {currentOdds.powerballNumbers && (
-              <div className="flex items-center gap-4">
-                <span className={`w-10 h-10 flex items-center justify-center rounded-full ${brandColor} bg-opacity-20 text-xl font-bold`}>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-                </span>
-                <div>
-                  <p className="text-sm font-bold text-gray-500 dark:text-gray-400">Powerball</p>
-                  <p className="text-lg font-black text-gray-900 dark:text-white">{currentOdds.powerballNumbers}</p>
-                </div>
-              </div>
-            )}
-            {currentOdds.suppNumbers && (
-              <div className="flex items-center gap-4">
-                <span className={`w-10 h-10 flex items-center justify-center rounded-full ${brandColor} bg-opacity-20 text-xl font-bold`}>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="M10 9.3l-2.6 3.9"/><path d="M14 9.3l2.6 3.9"/><path d="M12 16.5l-2.6-3.9h5.2z"/></svg>
-                </span>
-                <div>
-                  <p className="text-sm font-bold text-gray-500 dark:text-gray-400">Supplementary Numbers</p>
-                  <p className="text-lg font-black text-gray-900 dark:text-white">{currentOdds.suppNumbers}</p>
-                </div>
-              </div>
-            )}
-          </div>
 
-          <h3 className="text-2xl font-black mb-6 text-gray-900 dark:text-white">Winning Divisions</h3>
-          <div className="overflow-x-auto">
-            <table className="min-w-full bg-white dark:bg-gray-900 rounded-lg shadow-md">
-              <thead>
-                <tr className={`bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-white/10 ${brandBgLight}`}>
-                  <th className="px-6 py-3 text-left text-xs font-black text-gray-500 uppercase tracking-wider">Division</th>
-                  <th className="px-6 py-3 text-left text-xs font-black text-gray-500 uppercase tracking-wider">Matches Required</th>
-                  <th className="px-6 py-3 text-left text-xs font-black text-gray-500 uppercase tracking-wider">Odds</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 dark:divide-white/5">
-                {currentOdds.breakdown.map((item) => (
-                  <tr key={item.div} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">Division {item.div}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">{item.matches}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">{item.odds}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
+            <div className="p-8 rounded-[3rem] bg-indigo-600 text-white shadow-2xl group hover:scale-[1.02] transition-all">
+                <h4 className="text-xl font-black mb-6 uppercase tracking-tighter italic">Test Your Numbers</h4>
+                <p className="text-indigo-100 text-sm mb-8 font-medium">
+                    Curious how your favorite numbers would perform over 100 years of simulated draws?
+                </p>
+                <Link href="/simulator" className="w-full py-4 bg-white text-indigo-600 rounded-2xl font-black uppercase text-[10px] tracking-[0.3em] block text-center shadow-lg group-hover:brightness-110 transition-all">Launch Simulator</Link>
+            </div>
 
-        <section className="mt-20 p-8 rounded-3xl bg-gray-50 dark:bg-gray-900 shadow-lg border border-gray-100 dark:border-white/5">
-          <h2 className="text-3xl font-black mb-6 text-gray-900 dark:text-white flex items-center gap-3">
-              <span className="text-purple-500">
-                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M12 12c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/></svg>
-              </span>
-              Perspective is Key
-            </h2>
-          <p className="text-lg text-gray-600 dark:text-gray-300 leading-relaxed">
-            While it's exciting to play and imagine winning, remember that lotteries are designed as games of chance. The odds are stacked against winning the top prize. Our platform helps you visualize these odds without any financial risk, promoting a healthy understanding of probability. Always play responsibly. If you or someone you know needs help, please visit our <Link href="/responsible-play" className="text-indigo-500 font-bold underline">Responsible Play</Link> page.
-          </p>
-        </section>
+            <div className="p-10 border-2 border-dashed border-gray-200 dark:border-white/10 rounded-[3rem] text-center">
+                <p className="text-gray-400 text-xs font-bold uppercase tracking-widest leading-loose">
+                    Always play within your limits. Lottery simulation is for entertainment and awareness.
+                </p>
+            </div>
+          </aside>
 
+        </div>
       </main>
     </div>
   );

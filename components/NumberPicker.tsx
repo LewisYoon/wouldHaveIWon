@@ -91,6 +91,18 @@ export default function NumberPicker({
   const storageCurrentKey = `lottoLines_${game.replace(/\s/g, '')}`;
   const storageHistoryKey = `lottoWins_${game.replace(/\s/g, '')}`;
 
+  // Branding Helpers
+  const isOz = game === 'Oz Lotto';
+  const isTatts = game === 'Tatts Lotto';
+  const brandStyles = {
+    text: isOz ? 'text-emerald-600 dark:text-emerald-400' : isTatts ? 'text-red-600 dark:text-red-400' : 'text-indigo-600 dark:text-indigo-400',
+    bg: isOz ? 'bg-emerald-600' : isTatts ? 'bg-red-600' : 'bg-indigo-600',
+    ball: isOz ? 'bg-emerald-500' : isTatts ? 'bg-red-500' : 'bg-indigo-600',
+    accent: isOz ? 'accent-emerald-600' : isTatts ? 'accent-red-600' : 'accent-indigo-600',
+    border: isOz ? 'border-emerald-500' : isTatts ? 'border-red-500' : 'border-indigo-500',
+    shadow: isOz ? 'shadow-emerald-500/20' : isTatts ? 'shadow-red-500/20' : 'shadow-indigo-500/20'
+  };
+
   // Reset when game changes
   useEffect(() => {
     stopSimulation();
@@ -301,20 +313,15 @@ export default function NumberPicker({
     return "a Decent House Deposit";
   };
 
-  const isOz = game === 'Oz Lotto';
-  const isTatts = game === 'Tatts Lotto';
-  const brandBall = isOz ? 'bg-emerald-500' : isTatts ? 'bg-red-500' : 'bg-indigo-600';
-  const brandText = isOz ? 'text-emerald-600' : isTatts ? 'text-red-600' : 'text-indigo-600';
-
   return (
     <div className="w-full max-w-3xl mx-auto my-8 pb-48 px-4 relative">
       
-      {/* Visual Alerts */}
+      {/* Big Win Alerts */}
       {lastWinType && (
-        <div className="fixed inset-0 z-[200] pointer-events-none flex items-center justify-center bg-emerald-500/20 backdrop-blur-sm animate-in fade-in zoom-in duration-300">
-          <div className="bg-white dark:bg-gray-900 p-12 rounded-[4rem] shadow-2xl text-center border-4 border-emerald-500 animate-bounce pointer-events-auto">
+        <div className={`fixed inset-0 z-[200] pointer-events-none flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in zoom-in duration-300`}>
+          <div className={`bg-white dark:bg-gray-900 p-12 rounded-[4rem] shadow-2xl text-center border-4 ${brandStyles.border} animate-bounce pointer-events-auto`}>
             <h2 className="text-6xl font-black text-gray-900 dark:text-white uppercase tracking-tighter italic mb-8">{lastWinType}!</h2>
-            <button onClick={() => setLastWinType(null)} className="px-12 py-4 bg-emerald-500 text-white rounded-2xl font-black uppercase text-sm tracking-widest shadow-xl shadow-emerald-500/20 hover:bg-emerald-600 transition-all">Awesome!</button>
+            <button onClick={() => setLastWinType(null)} className={`px-12 py-4 ${brandStyles.bg} text-white rounded-2xl font-black uppercase text-sm tracking-widest shadow-xl ${brandStyles.shadow} hover:brightness-110 transition-all`}>Awesome!</button>
           </div>
         </div>
       )}
@@ -327,25 +334,25 @@ export default function NumberPicker({
       {/* Mode Toggle */}
       <div className="flex justify-center mb-12">
         <div className="bg-gray-100 dark:bg-white/5 p-1.5 rounded-[2rem] flex items-center shadow-inner border border-gray-200 dark:border-white/10">
-          <button onClick={() => handleModeToggle('classic')} className={`px-10 py-3 rounded-full font-black text-xs uppercase tracking-widest transition-all ${mode === 'classic' ? 'bg-white dark:bg-gray-800 text-indigo-600 shadow-xl' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'}`}>Classic</button>
-          <button onClick={() => handleModeToggle('auto')} className={`px-10 py-3 rounded-full font-black text-xs uppercase tracking-widest transition-all ${mode === 'auto' ? 'bg-white dark:bg-gray-800 text-indigo-600 shadow-xl' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'}`}>Turbo</button>
+          <button onClick={() => handleModeToggle('classic')} className={`px-10 py-3 rounded-full font-black text-xs uppercase tracking-widest transition-all ${mode === 'classic' ? `bg-white dark:bg-gray-800 ${brandStyles.text} shadow-xl` : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'}`}>Classic</button>
+          <button onClick={() => handleModeToggle('auto')} className={`px-10 py-3 rounded-full font-black text-xs uppercase tracking-widest transition-all ${mode === 'auto' ? `bg-white dark:bg-gray-800 ${brandStyles.text} shadow-xl` : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'}`}>Turbo</button>
         </div>
       </div>
 
       {/* Classic Mode Content */}
       {mode === 'classic' && (
         <div className="animate-in fade-in slide-in-from-left-4 duration-500">
-          <div className="flex items-center justify-between px-6 mb-8">
+          <div className="flex items-center justify-between px-6 mb-8 text-left">
             <div className="flex flex-col"><h3 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter italic">Lotto Ticket</h3><p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-1">Manual Number Selection</p></div>
             <div className="flex bg-gray-100 dark:bg-white/5 p-1 rounded-xl border border-gray-200 dark:border-white/10 shadow-sm">
-              <button onClick={() => setViewMode('detailed')} className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${viewMode === 'detailed' ? 'bg-white dark:bg-gray-800 text-indigo-600 shadow-sm' : 'text-gray-400'}`}>List</button>
-              <button onClick={() => setViewMode('compact')} className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${viewMode === 'compact' ? 'bg-white dark:bg-gray-800 text-indigo-600 shadow-sm' : 'text-gray-400'}`}>Grid</button>
+              <button onClick={() => setViewMode('detailed')} className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${viewMode === 'detailed' ? `bg-white dark:bg-gray-800 ${brandStyles.text} shadow-sm` : 'text-gray-400'}`}>List</button>
+              <button onClick={() => setViewMode('compact')} className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${viewMode === 'compact' ? `bg-white dark:bg-gray-800 ${brandStyles.text} shadow-sm` : 'text-gray-400'}`}>Grid</button>
             </div>
           </div>
 
           <div className="bg-gray-50 dark:bg-gray-900/50 rounded-[3.5rem] p-6 border border-gray-100 dark:border-white/5 min-h-[400px] mb-10">
             {isDataLoading ? (
-              <div className="py-40 flex flex-col items-center gap-4 animate-pulse"><div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" /></div>
+              <div className="py-40 flex flex-col items-center gap-4 animate-pulse"><div className={`w-12 h-12 border-4 ${brandStyles.text.replace('text-', 'border-')} border-t-transparent rounded-full animate-spin`} /></div>
             ) : (
               <div className={viewMode === 'detailed' ? "space-y-6" : "grid grid-cols-1 sm:grid-cols-2 gap-4"}>
                 {lines.map((line, index) => (
@@ -355,7 +362,7 @@ export default function NumberPicker({
                     <div key={line.id} className="bg-white dark:bg-gray-900 p-4 rounded-3xl border border-gray-100 dark:border-white/5 flex items-center justify-between group">
                       <div className="flex items-center gap-3">
                         <span className="w-7 h-7 bg-gray-100 dark:bg-white/5 rounded-lg flex items-center justify-center text-[9px] font-black text-gray-400">{lines.length - index}</span>
-                        <div className="flex gap-1">{line.numbers.map((n, ni) => (<div key={ni} className={`w-2 h-2 rounded-full ${n > 0 ? (game === 'Powerball' && ni === 7 ? 'bg-amber-400' : 'bg-indigo-500') : 'bg-gray-200 dark:bg-white/10'}`} />))}</div>
+                        <div className="flex gap-1">{line.numbers.map((n, ni) => (<div key={ni} className={`w-2 h-2 rounded-full ${n > 0 ? (game === 'Powerball' && ni === 7 ? 'bg-amber-400' : brandStyles.ball) : 'bg-gray-200 dark:bg-white/10'}`} />))}</div>
                       </div>
                       <button onClick={() => setLines(lines.filter(l => l.id !== line.id))} className="text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all p-1"><TrashIcon size={14} /></button>
                     </div>
@@ -367,13 +374,13 @@ export default function NumberPicker({
 
           <div className="fixed bottom-10 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-2xl z-[90]">
             <div className="bg-white/80 dark:bg-gray-950/80 backdrop-blur-2xl rounded-[2.5rem] p-5 shadow-2xl border border-gray-100 dark:border-white/10 flex flex-wrap items-center justify-center gap-4">
-              <button onClick={() => { handleAddLine(); setViewMode('detailed'); }} className="p-4 rounded-2xl bg-indigo-600 text-white hover:bg-indigo-500 shadow-lg transition-all active:scale-95"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+              <button onClick={() => { handleAddLine(); setViewMode('detailed'); }} className={`p-4 rounded-2xl ${brandStyles.bg} text-white hover:brightness-110 shadow-lg transition-all active:scale-95`}><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
               <div className="flex items-center gap-2 bg-gray-100 dark:bg-white/5 p-1.5 rounded-2xl border border-gray-200 dark:border-white/10">
                 <select value={quickPickQuantity} onChange={(e) => setQuickPickQuantity(Number(e.target.value))} className="bg-transparent px-3 font-black text-sm outline-none text-gray-700 dark:text-gray-300 cursor-pointer">{[10, 25, 50, 100].map(qty => <option key={qty} value={qty}>x{qty}</option>)}</select>
-                <button onClick={() => { const newPicks = Array.from({ length: quickPickQuantity }, () => ({ id: (uniqueIdCounter.current++).toString(), numbers: generateQuickPick(game) })); setLines(prev => [...newPicks, ...prev]); }} className="px-6 py-3 rounded-xl bg-indigo-600 text-white font-black text-xs uppercase tracking-widest active:scale-95">Burst</button>
+                <button onClick={() => { const newPicks = Array.from({ length: quickPickQuantity }, () => ({ id: (uniqueIdCounter.current++).toString(), numbers: generateQuickPick(game) })); setLines(prev => [...newPicks, ...prev]); }} className={`px-6 py-3 rounded-xl ${brandStyles.bg} text-white font-black text-xs uppercase tracking-widest active:scale-95 shadow-sm`}>Burst</button>
               </div>
-              <button onClick={() => { if(window.confirm('Clear all?')) { setLines([]); onClearAll(); } }} className="p-4 rounded-2xl bg-red-50 dark:bg-red-500/10 text-red-500 active:scale-95"><TrashIcon size={24} /></button>
-              <button onClick={handleManualCheck} className="flex-1 py-5 px-10 rounded-[1.5rem] bg-emerald-500 text-white font-black text-sm uppercase tracking-[0.2em] shadow-lg shadow-emerald-500/20 active:scale-95">Check Result</button>
+              <button onClick={() => { if(window.confirm('Clear all?')) { setLines([]); onClearAll(); } }} className="p-4 rounded-2xl bg-red-50 dark:bg-red-500/10 text-red-500 active:scale-95 hover:bg-red-100 transition-colors"><TrashIcon size={24} /></button>
+              <button onClick={handleManualCheck} className={`flex-1 py-5 px-10 rounded-[1.5rem] bg-emerald-500 text-white font-black text-sm uppercase tracking-[0.2em] shadow-lg shadow-emerald-500/20 active:scale-95 hover:brightness-110 transition-all`}>Check Result</button>
             </div>
           </div>
         </div>
@@ -385,10 +392,10 @@ export default function NumberPicker({
           
           {/* Detailed Summary */}
           {!isRunning && stats.draws > 0 && (
-            <div className="bg-white dark:bg-gray-900 rounded-[3rem] p-10 border-2 border-indigo-500 shadow-2xl mb-10 animate-in zoom-in-95 duration-500">
+            <div className={`bg-white dark:bg-gray-900 rounded-[3rem] p-10 border-2 ${brandStyles.border} shadow-2xl mb-10 animate-in zoom-in-95 duration-500 text-left`}>
                 <div className="flex justify-between items-center mb-8">
                     <h3 className="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tighter italic">Simulation Result</h3>
-                    <span className="bg-indigo-600 text-white text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest">Summary</span>
+                    <span className={`${brandStyles.bg} text-white text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest`}>Summary</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 mb-10">
                     <div className="space-y-4">
@@ -397,15 +404,15 @@ export default function NumberPicker({
                             {Object.entries(divisionStats).sort((a,b) => parseInt(a[0].replace(/\D/g,'')) - parseInt(b[0].replace(/\D/g,''))).map(([tier, count]) => (
                                 <div key={tier} className="flex justify-between items-center bg-gray-50 dark:bg-white/5 px-4 py-2 rounded-xl">
                                     <span className="text-xs font-bold text-gray-600 dark:text-gray-400">{tier}</span>
-                                    <span className="text-sm font-black text-gray-900 dark:text-white">{count}x</span>
+                                    <span className={`text-sm font-black text-gray-900 dark:text-white`}>{count}x</span>
                                 </div>
                             ))}
                         </div>
                     </div>
-                    <div className="bg-gray-50 dark:bg-indigo-500/5 p-6 rounded-[2rem] border border-gray-100 dark:border-indigo-500/10 flex flex-col justify-center text-center">
+                    <div className={`bg-gray-50 dark:bg-black/20 p-6 rounded-[2rem] border border-gray-100 dark:border-white/5 flex flex-col justify-center text-center`}>
                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Reality Check</p>
                         <p className="text-gray-500 dark:text-gray-400 text-sm font-medium leading-relaxed italic">
-                            Instead of spending <span className="text-red-500 font-black">{formatCurrency(stats.spent)}</span> on lotto, you could have bought <span className="text-indigo-600 dark:text-indigo-400 font-black">{getEquivalentItem(stats.spent)}</span>.
+                            Instead of spending <span className="text-red-500 font-black">{formatCurrency(stats.spent)}</span> on lotto, you could have bought <span className={`${brandStyles.text} font-black`}>{getEquivalentItem(stats.spent)}</span>.
                         </p>
                     </div>
                 </div>
@@ -414,31 +421,31 @@ export default function NumberPicker({
           )}
 
           {/* Simulation Configuration */}
-          <div className="bg-white dark:bg-gray-900 rounded-[3rem] p-10 border border-gray-100 dark:border-white/5 shadow-xl mb-10 space-y-10">
+          <div className="bg-white dark:bg-gray-900 rounded-[3rem] p-10 border border-gray-100 dark:border-white/5 shadow-xl mb-10 space-y-10 text-left">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                <div className="space-y-6 text-left">
+                <div className="space-y-6">
                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Simulation Settings</p>
                     <div>
                         <label className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Tickets per Week: {ticketsPerDraw}</label>
-                        <input type="range" min="1" max="100" value={ticketsPerDraw} onChange={(e) => setTicketsPerDraw(parseInt(e.target.value))} className="w-full accent-indigo-600 h-1.5 bg-gray-100 dark:bg-white/5 rounded-full appearance-none cursor-pointer" />
+                        <input type="range" min="1" max="100" value={ticketsPerDraw} onChange={(e) => setTicketsPerDraw(parseInt(e.target.value))} className={`w-full ${brandStyles.accent} h-1.5 bg-gray-100 dark:bg-white/5 rounded-full appearance-none cursor-pointer`} />
                     </div>
                 </div>
-                <div className="space-y-6 text-left">
+                <div className="space-y-6">
                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Warp Speed</p>
                     <div>
                         <label className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Speed: {drawsPerSec} draws/sec</label>
-                        <input type="range" min="1" max="50" value={drawsPerSec} onChange={(e) => { setDrawsPerSec(parseInt(e.target.value)); if (isRunning) stopSimulation(); }} className="w-full accent-emerald-500 h-1.5 bg-gray-100 dark:bg-white/5 rounded-full appearance-none cursor-pointer" />
+                        <input type="range" min="1" max="50" value={drawsPerSec} onChange={(e) => { setDrawsPerSec(parseInt(e.target.value)); if (isRunning) stopSimulation(); }} className={`w-full accent-emerald-500 h-1.5 bg-gray-100 dark:bg-white/5 rounded-full appearance-none cursor-pointer`} />
                     </div>
                 </div>
             </div>
-            <button onClick={isRunning ? stopSimulation : startSimulation} className={`w-full py-6 rounded-[2rem] font-black uppercase tracking-[0.3em] text-sm shadow-2xl transition-all active:scale-95 ${isRunning ? 'bg-red-500 text-white' : 'bg-indigo-600 text-white shadow-indigo-500/20'}`}>{isRunning ? 'Abort Simulation' : 'Enter Time Machine'}</button>
+            <button onClick={isRunning ? stopSimulation : startSimulation} className={`w-full py-6 rounded-[2rem] font-black uppercase tracking-[0.3em] text-sm shadow-2xl transition-all active:scale-95 ${isRunning ? 'bg-red-500 text-white' : `${brandStyles.bg} text-white ${brandStyles.shadow}`}`}>{isRunning ? 'Abort Simulation' : 'Enter Time Machine'}</button>
           </div>
 
-          <div className={`bg-gray-950 rounded-[3.5rem] p-10 text-white shadow-2xl border transition-all duration-500 mb-12 relative overflow-hidden ${isRunning ? 'border-indigo-500/50 shadow-indigo-500/20' : 'border-white/10'}`}>
+          <div className={`bg-gray-950 rounded-[3.5rem] p-10 text-white shadow-2xl border transition-all duration-500 mb-12 relative overflow-hidden ${isRunning ? `${brandStyles.border}/50 ${brandStyles.shadow}` : 'border-white/10'}`}>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-10 relative z-10 text-center md:text-left">
               <div><p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Time Traveled</p><p className="text-5xl font-black tabular-nums">{(stats.draws / 52).toFixed(1)}<span className="text-xl text-gray-600 ml-1 font-serif italic lowercase">yrs</span></p></div>
               <div><p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Total "Spent"</p><p className="text-5xl font-black text-red-500 tabular-nums tracking-tighter">{formatCurrency(stats.spent)}</p></div>
-              <div><p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Total Won</p><p className="text-5xl font-black text-emerald-400 tabular-nums tracking-tighter">{formatCurrency(stats.won)}</p></div>
+              <div><p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Total Won</p><p className={`text-5xl font-black text-emerald-400 tabular-nums tracking-tighter`}>{formatCurrency(stats.won)}</p></div>
             </div>
             <div className="mt-12 pt-10 border-t border-white/5 text-center relative z-10">
               <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em] mb-2">Temporal Balance</p>
@@ -452,42 +459,41 @@ export default function NumberPicker({
               <div>
                 <h3 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter italic">Winning Feed</h3>
                 <div className="flex gap-4 mt-2">
-                    <button onClick={() => setSortBy('latest')} className={`text-[9px] font-black uppercase tracking-widest border-b-2 transition-all ${sortBy === 'latest' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-400'}`}>Latest</button>
-                    <button onClick={() => setSortBy('division')} className={`text-[9px] font-black uppercase tracking-widest border-b-2 transition-all ${sortBy === 'division' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-400'}`}>Top Divisions</button>
+                    <button onClick={() => setSortBy('latest')} className={`text-[9px] font-black uppercase tracking-widest border-b-2 transition-all ${sortBy === 'latest' ? `${brandStyles.border} ${brandStyles.text}` : 'border-transparent text-gray-400'}`}>Latest</button>
+                    <button onClick={() => setSortBy('division')} className={`text-[9px] font-black uppercase tracking-widest border-b-2 transition-all ${sortBy === 'division' ? `${brandStyles.border} ${brandStyles.text}` : 'border-transparent text-gray-400'}`}>Top Divisions</button>
                 </div>
               </div>
               <button onClick={handleClearHistory} className="text-[9px] font-black text-red-500 hover:text-red-700 uppercase tracking-widest border border-red-100 dark:border-red-500/20 px-4 py-1.5 rounded-full">Clear History</button>
             </div>
             
             {currentFeed.length === 0 ? (
-              <div className="bg-white dark:bg-gray-900/50 p-32 rounded-[3.5rem] border-2 border-dashed border-gray-100 dark:border-white/5 text-center"><p className="text-gray-400 font-bold italic uppercase tracking-[0.3em] text-xs">{isRunning ? 'Searching the multi-verse...' : 'Simulation idle.'}</p></div>
+              <div className="bg-white dark:bg-gray-900/50 p-32 rounded-[3.5rem] border-2 border-dashed border-gray-100 dark:border-white/5 text-center transition-all"><p className="text-gray-400 font-bold italic uppercase tracking-[0.3em] text-xs">{isRunning ? 'Searching the multi-verse...' : 'Simulation idle.'}</p></div>
             ) : (
               <div className="grid grid-cols-1 gap-4 max-h-[800px] overflow-y-auto pr-2 custom-scrollbar">
                 {currentFeed.map((winner) => (
-                  <div key={winner.id} className={`bg-white dark:bg-gray-900 p-8 rounded-[3rem] border shadow-sm transition-all duration-500 border-l-8 border-l-indigo-500`}>
+                  <div key={winner.id} className={`bg-white dark:bg-gray-900 p-8 rounded-[3rem] border shadow-sm transition-all duration-500 border-l-8 ${brandStyles.border}`}>
                     <div className="flex flex-wrap justify-between items-start gap-6">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
-                          <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600`}>{winner.drawDate} {winner.weekNumber && `• Week ${winner.weekNumber}`}</span>
+                          <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-lg bg-gray-100 dark:bg-white/10 ${brandStyles.text}`}>{winner.drawDate} {winner.weekNumber && `• Week ${winner.weekNumber}`}</span>
                         </div>
                         <h4 className="text-3xl font-black text-gray-900 dark:text-white tracking-tighter mb-4">{winner.prizeTier}</h4>
                         <div className="flex flex-wrap gap-2">
                             {(winner.numbers || []).slice(0, 7).map((n, i) => {
                                 const isMatch = (winner.drawNumbers || []).includes(n);
                                 const isBonusMatch = (winner.drawBonus || []).includes(n);
-                                // Powerball specific fix: only highlight main numbers yellow if they match actual bonus balls
-                                const isSuppMatch = (game === 'Oz Lotto' || game === 'Tatts Lotto') && isBonusMatch && !isMatch;
+                                const isSuppMatch = (isOz || isTatts) && isBonusMatch && !isMatch;
                                 
-                                return <span key={i} className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-[10px] shadow-sm border ${isMatch ? `${brandBall} text-white border-transparent scale-110 shadow-md` : isSuppMatch ? 'bg-amber-400 text-amber-950 border-transparent scale-110' : 'bg-gray-50 dark:bg-white/5 text-gray-400 dark:text-gray-300 border-gray-100 dark:border-white/5'}`}>{n}</span>;
+                                return <span key={i} className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-[10px] shadow-sm border transition-all ${isMatch ? `${brandStyles.ball} text-white border-transparent scale-110 shadow-md` : isSuppMatch ? 'bg-amber-400 text-amber-950 border-transparent scale-110' : 'bg-gray-50 dark:bg-white/5 text-gray-400 dark:text-gray-300 border-gray-100 dark:border-white/5'}`}>{n}</span>;
                             })}
                             {game === 'Powerball' && (winner.numbers || [])[7] && (
-                                <span className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-[10px] shadow-sm border-b-2 ${(winner.drawBonus || []).includes((winner.numbers || [])[7]) ? 'bg-amber-400 text-amber-950 border-amber-600 scale-110 shadow-md' : 'bg-gray-50 dark:bg-white/5 text-gray-400 dark:text-gray-300 border-gray-100 dark:border-white/5'}`}>{winner.numbers[7]}</span>
+                                <span className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-[10px] shadow-sm border-b-2 transition-all ${(winner.drawBonus || []).includes((winner.numbers || [])[7]) ? 'bg-amber-400 text-amber-950 border-amber-600 scale-110 shadow-md' : 'bg-gray-50 dark:bg-white/5 text-gray-400 dark:text-gray-300 border-gray-100 dark:border-white/5'}`}>{winner.numbers[7]}</span>
                             )}
                         </div>
                       </div>
                       <div className="text-right">
                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Estimated Win</p>
-                        <p className={`text-3xl font-black tracking-tighter ${brandText}`}>{winner.prizeValue ? formatCurrency(winner.prizeValue) : 'Calculated in Results'}</p>
+                        <p className={`text-3xl font-black tracking-tighter ${brandStyles.text}`}>{winner.prizeValue ? formatCurrency(winner.prizeValue) : 'Calculated in Results'}</p>
                       </div>
                     </div>
                   </div>
