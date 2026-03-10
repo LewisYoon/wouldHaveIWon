@@ -48,20 +48,6 @@ export default function SimulatorPage() {
     totalSpent: 0, totalWon: 0, profit: 0, winCount: 0, jackpotHit: false, roi: 0
   });
 
-  useEffect(() => {
-    const fetchLatestResult = async () => {
-      setOfficialResult(null);
-      handleClearAllResults();
-      try {
-        const { data } = await supabase.from('draw_results').select('*').eq('game', game).order('draw_date', { ascending: false }).limit(1).maybeSingle();
-        if (data) setOfficialResult({ game: data.game, drawDate: data.draw_date, numbers: data.numbers, bonus: data.bonus, prizes: data.prizes });
-      } catch (err) { console.error("Failed to fetch result:", err); }
-    };
-    fetchLatestResult();
-  }, [game]);
-
-  const activeResult = drawMode === 'official' ? officialResult : customResult;
-
   const generateRandomResult = useCallback(() => {
     const main = generateQuickPick(game);
     if (game === 'Oz Lotto') {
@@ -84,6 +70,27 @@ export default function SimulatorPage() {
       setCustomResult(prev => ({ ...prev, numbers: mainPB, bonus: [pb] }));
     }
   }, [game]);
+
+  useEffect(() => {
+    const fetchLatestResult = async () => {
+      setOfficialResult(null);
+      handleClearAllResults();
+      
+      // If we are in random or manual mode, clear/refresh custom result to match new game format
+      if (drawMode !== 'official') {
+          setCustomResult(prev => ({ ...prev, numbers: [], bonus: [] }));
+          if (drawMode === 'random') generateRandomResult();
+      }
+
+      try {
+        const { data } = await supabase.from('draw_results').select('*').eq('game', game).order('draw_date', { ascending: false }).limit(1).maybeSingle();
+        if (data) setOfficialResult({ game: data.game, drawDate: data.draw_date, numbers: data.numbers, bonus: data.bonus, prizes: data.prizes });
+      } catch (err) { console.error("Failed to fetch result:", err); }
+    };
+    fetchLatestResult();
+  }, [game, drawMode, generateRandomResult]);
+
+  const activeResult = drawMode === 'official' ? officialResult : customResult;
 
   // Handle drawMode change
   const handleDrawModeChange = (mode: 'official' | 'random' | 'manual') => {
@@ -177,7 +184,7 @@ export default function SimulatorPage() {
           </div>
         </div>
 
-        {/* Setup Winning Draw (Visible in BOTH modes) */}
+        {/* Setup Winning Draw */}
         <div className="w-full max-w-2xl mb-16 space-y-10 animate-in fade-in slide-in-from-bottom-8 duration-1000">
           <div className="bg-white dark:bg-gray-900 p-2 rounded-[2.5rem] border border-gray-100 dark:border-white/5 flex overflow-hidden max-w-md mx-auto shadow-xl group hover:border-indigo-500/30">
             {(['official', 'random', 'manual'] as const).map((mode) => (
@@ -188,7 +195,7 @@ export default function SimulatorPage() {
           </div>
 
           <div className="bg-white dark:bg-gray-900 p-12 rounded-[4rem] border border-gray-100 dark:border-white/5 transition-all duration-700 overflow-hidden relative shadow-2xl hover:shadow-indigo-500/10 group">
-            <div className={`absolute top-0 right-0 w-48 h-48 rounded-full -mr-24 -mt-24 transition-transform duration-1000 group-hover:scale-150 ${game === 'Oz Lotto' ? 'bg-emerald-50/50' : game === 'Tatts Lotto' ? 'bg-red-50/50' : game === 'indigo-50/50'}`} />
+            <div className={`absolute top-0 right-0 w-48 h-48 rounded-full -mr-24 -mt-24 transition-transform duration-1000 group-hover:scale-150 ${game === 'Oz Lotto' ? 'bg-emerald-50/50' : game === 'Tatts Lotto' ? 'bg-red-50/50' : 'bg-indigo-50/50'}`} />
             <div className="relative z-10">
               {drawMode === 'official' && (
                 <div className="animate-in fade-in zoom-in-95 duration-500">

@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { generateQuickPick, compareNumbers, ESTIMATED_PRIZES } from '../lib/lotto-utils';
+import { generateQuickPick, compareNumbers, generateRandomDraw, ESTIMATED_PRIZES } from '../lib/lotto-utils';
 import LottoLinePicker from './LottoLinePicker';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -80,6 +80,7 @@ export default function NumberPicker({
   const [isRunning, setIsRunning] = useState(false);
   const [ticketsPerDraw, setTicketsPerDraw] = useState(12);
   const [drawsPerSec, setDrawsPerSec] = useState(10);
+  const [turboTarget, setTurboTarget] = useState<'random' | 'fixed'>('random');
   
   const [autoWinners, setAutoWinners] = useState<WinningResult[]>([]);
   const [stats, setStats] = useState({ draws: 0, spent: 0, won: 0 });
@@ -91,7 +92,7 @@ export default function NumberPicker({
   const storageCurrentKey = `lottoLines_${game.replace(/\s/g, '')}`;
   const storageHistoryKey = `lottoWins_${game.replace(/\s/g, '')}`;
 
-  // Reset when game changes
+  // Fully reset simulation data when game changes
   useEffect(() => {
     stopSimulation();
     setAutoWinners([]);
@@ -167,25 +168,26 @@ export default function NumberPicker({
   };
 
   const startSimulation = () => {
-    if (!drawResult || drawResult.numbers.length < (game === 'Tatts Lotto' ? 6 : 7)) {
-        alert("Please set the winning numbers at the top first!");
+    if (turboTarget === 'fixed' && (!drawResult || drawResult.numbers.length < (game === 'Tatts Lotto' ? 6 : 7))) {
+        alert("Please ensure the target winning numbers are set correctly at the top!");
         return;
     }
 
     setIsRunning(true);
     const interval = 1000 / drawsPerSec;
-    
     timerRef.current = setInterval(() => {
-      // Logic: Targeted simulation against the FIXED draw selected at the top.
+      const draw = (turboTarget === 'fixed' && drawResult) 
+        ? { numbers: drawResult.numbers, bonus: drawResult.bonus, date: drawResult.drawDate }
+        : { ...generateRandomDraw(game), date: 'Simulated' };
+
       const currentTickets = Array.from({ length: ticketsPerDraw }, () => generateQuickPick(game));
-      
       const newWinners: WinningResult[] = [];
       let weeklyWinTotal = 0;
       let highestMainMatches = 0;
       const weeklyDivStats: Record<string, number> = {};
 
       currentTickets.forEach((ticketNumbers) => {
-        const result = compareNumbers(ticketNumbers, drawResult.numbers, drawResult.bonus, game);
+        const result = compareNumbers(ticketNumbers, draw.numbers, draw.bonus, game);
         if (result.mainMatchesCount > highestMainMatches) highestMainMatches = result.mainMatchesCount;
         
         if (result.prizeTier !== "No Prize") {
@@ -197,9 +199,9 @@ export default function NumberPicker({
           newWinners.push({
             id: Math.random().toString(36).substr(2, 9),
             numbers: ticketNumbers,
-            drawNumbers: drawResult.numbers,
-            drawBonus: drawResult.bonus,
-            drawDate: drawResult.drawDate,
+            drawNumbers: draw.numbers,
+            drawBonus: draw.bonus,
+            drawDate: draw.date,
             prizeTier: result.prizeTier,
             mainMatchesCount: result.mainMatchesCount,
             bonusMatchesCount: result.bonusMatchesCount,
@@ -270,7 +272,7 @@ export default function NumberPicker({
   };
 
   const handleClearHistory = async () => {
-    if (!window.confirm("Clear results?")) return;
+    if (!window.confirm("Clear all simulation results?")) return;
     setAutoWinners([]);
     setStats({ draws: 0, spent: 0, won: 0 });
     setDivisionStats({});
@@ -418,17 +420,21 @@ export default function NumberPicker({
           {/* Simulation Configuration */}
           <div className="bg-white dark:bg-gray-900 rounded-[3rem] p-10 border border-gray-100 dark:border-white/5 shadow-xl mb-10 space-y-10">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                <div className="space-y-6">
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Simulation Batch Settings</p>
+                <div className="space-y-6 text-left">
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">1. Simulation Target</p>
+                    <div className="bg-gray-50 dark:bg-white/5 p-1.5 rounded-2xl flex gap-1 border border-gray-100 dark:border-white/10">
+                        <button onClick={() => setTurboTarget('random')} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase transition-all ${turboTarget === 'random' ? 'bg-white dark:bg-gray-800 text-indigo-600 shadow-sm' : 'text-gray-400'}`}>Fresh Draws</button>
+                        <button onClick={() => setTurboTarget('fixed')} disabled={!drawResult} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase transition-all disabled:opacity-30 ${turboTarget === 'fixed' ? 'bg-white dark:bg-gray-800 text-indigo-600 shadow-sm' : 'text-gray-400'}`}>Fixed Target</button>
+                    </div>
                     <div>
-                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Tickets per Week: {ticketsPerDraw}</label>
+                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Tickets/Week: {ticketsPerDraw}</label>
                         <input type="range" min="1" max="100" value={ticketsPerDraw} onChange={(e) => setTicketsPerDraw(parseInt(e.target.value))} className="w-full accent-indigo-600 h-1.5 bg-gray-100 dark:bg-white/5 rounded-full appearance-none cursor-pointer" />
                     </div>
                 </div>
-                <div className="space-y-6">
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Simulation Speed</p>
+                <div className="space-y-6 text-left">
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">2. Warp Speed</p>
                     <div>
-                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Warp Speed: {drawsPerSec} draws/sec</label>
+                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Speed: {drawsPerSec} draws/sec</label>
                         <input type="range" min="1" max="50" value={drawsPerSec} onChange={(e) => { setDrawsPerSec(parseInt(e.target.value)); if (isRunning) stopSimulation(); }} className="w-full accent-emerald-500 h-1.5 bg-gray-100 dark:bg-white/5 rounded-full appearance-none cursor-pointer" />
                     </div>
                 </div>
@@ -449,7 +455,7 @@ export default function NumberPicker({
           </div>
 
           {/* Auto Mode Winners Feed */}
-          <div className="mt-12 space-y-6">
+          <div className="mt-12 space-y-6 text-left">
             <div className="flex justify-between items-end px-6 mb-4">
               <div>
                 <h3 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter italic">Winning Feed</h3>
@@ -477,11 +483,10 @@ export default function NumberPicker({
                             {(winner.numbers || []).slice(0, 7).map((n, i) => {
                                 const isMatch = (winner.drawNumbers || []).includes(n);
                                 const isBonusMatch = (winner.drawBonus || []).includes(n);
-                                // Powerball specific: only highlight true Powerball yellow
-                                const isOzSupp = isOz && isBonusMatch && !isMatch;
-                                const isTattsSupp = isTatts && isBonusMatch && !isMatch;
+                                // Powerball specific fix: only highlight main numbers yellow if they match actual bonus balls
+                                const isSuppMatch = (game === 'Oz Lotto' || game === 'Tatts Lotto') && isBonusMatch && !isMatch;
                                 
-                                return <span key={i} className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-[10px] shadow-sm border ${isMatch ? `${brandBall} text-white border-transparent scale-110 shadow-md` : (isOzSupp || isTattsSupp) ? 'bg-amber-400 text-amber-950 border-transparent scale-110' : 'bg-gray-50 dark:bg-white/5 text-gray-400 dark:text-gray-300 border-gray-100 dark:border-white/5'}`}>{n}</span>;
+                                return <span key={i} className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-[10px] shadow-sm border ${isMatch ? `${brandBall} text-white border-transparent scale-110 shadow-md` : isSuppMatch ? 'bg-amber-400 text-amber-950 border-transparent scale-110' : 'bg-gray-50 dark:bg-white/5 text-gray-400 dark:text-gray-300 border-gray-100 dark:border-white/5'}`}>{n}</span>;
                             })}
                             {game === 'Powerball' && (winner.numbers || [])[7] && (
                                 <span className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-[10px] shadow-sm border-b-2 ${(winner.drawBonus || []).includes((winner.numbers || [])[7]) ? 'bg-amber-400 text-amber-950 border-amber-600 scale-110 shadow-md' : 'bg-gray-50 dark:bg-white/5 text-gray-400 dark:text-gray-300 border-gray-100 dark:border-white/5'}`}>{winner.numbers[7]}</span>
