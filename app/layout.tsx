@@ -17,11 +17,11 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "WhatIFLotto | Risk-Free Australian Lottery Simulation & Tracker",
-    template: "%s | WhatIFLotto"
+    default: "WhatIFLotto | #1 Australian Lotto Simulator & Results Tracker",
+    template: "%s | WhatIFLotto Simulator"
   },
-  description: "Track your lucky numbers against real Australian lotto results (Oz Lotto, Powerball, Tatts Lotto) risk-free. High-speed simulator and instant win alerts.",
-  keywords: ["Oz Lotto", "Powerball", "Tatts Lotto", "Saturday Lotto", "Lottery Simulator", "Lotto Tracker", "Australian Lottery", "Risk-free gambling simulation"],
+  description: "The most accurate Australian Lotto Simulator. Track Oz Lotto, Powerball, and Tatts Lotto results risk-free. Simulate years of draws in seconds and test your luck.",
+  keywords: ["Lotto Simulator", "Australian Lotto Simulator", "Powerball Simulator", "Oz Lotto Simulator", "Lotto Tracker", "Risk-free gambling simulation", "Lottery odds calculator"],
   authors: [{ name: "WhatIFLotto Australia" }],
   openGraph: {
     title: "WhatIFLotto | Australian Lottery Tracker",

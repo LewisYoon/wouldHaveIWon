@@ -168,6 +168,24 @@ export default function SimulatorPage() {
   return (
     <div className="flex min-h-screen flex-col items-center bg-gray-50 dark:bg-gray-950 pb-32 transition-colors duration-500 overflow-x-hidden text-gray-900 dark:text-gray-100 selection:bg-indigo-500 selection:text-white">
       <Navbar />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "SoftwareApplication",
+            "name": "WhatIFLotto Australian Lotto Simulator",
+            "operatingSystem": "Web",
+            "applicationCategory": "EducationalApplication",
+            "description": "A high-speed Australian lotto simulator for Oz Lotto, Powerball, and Tatts Lotto. Test your odds risk-free.",
+            "offers": {
+              "@type": "Offer",
+              "price": "0",
+              "priceCurrency": "AUD"
+            }
+          })
+        }}
+      />
       {showConfetti && <Confetti numberOfPieces={300} recycle={false} />}
 
       <main className="flex w-full flex-col items-center px-6 md:px-20 text-center pt-16 relative z-10">
