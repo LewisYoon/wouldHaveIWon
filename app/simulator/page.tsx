@@ -23,6 +23,7 @@ const TICKET_COST = 1.45;
 export default function SimulatorPage() {
   const { user, isLoading } = useAuth();
   const [game, setGame] = useState<'Oz Lotto' | 'Powerball' | 'Tatts Lotto'>('Oz Lotto');
+  const [simMode, setSimMode] = useState<'classic' | 'auto'>('classic');
   const [allComparisonResults, setAllComparisonResults] = useState<ComparisonResult[] | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
   const [isRulesModalOpen, setIsRulesModalOpen] = useState(false);
@@ -171,100 +172,111 @@ export default function SimulatorPage() {
           </div>
         </div>
 
-        <div className="w-full max-w-2xl mb-16 space-y-10 animate-in fade-in slide-in-from-bottom-8 duration-1000">
-          <div className="bg-white dark:bg-gray-900 p-2 rounded-[2.5rem] border border-gray-100 dark:border-white/5 flex overflow-hidden max-w-md mx-auto shadow-xl group hover:border-indigo-500/30">
-            {(['official', 'random', 'manual'] as const).map((mode) => (
-              <button key={mode} onClick={() => setDrawMode(mode)} className={`flex-1 py-4 px-6 rounded-[2rem] text-[11px] font-black uppercase tracking-widest transition-all duration-500 ${drawMode === mode ? 'bg-gray-900 dark:bg-indigo-600 text-white shadow-lg' : 'text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5'}`}>
-                {mode === 'official' ? 'Real Draw' : mode === 'random' ? 'Random' : 'Pick Own'}
-              </button>
-            ))}
-          </div>
+        {/* Setup Winning Draw (Only in Classic Mode) */}
+        {simMode === 'classic' && (
+          <div className="w-full max-w-2xl mb-16 space-y-10 animate-in fade-in slide-in-from-bottom-8 duration-1000">
+            <div className="bg-white dark:bg-gray-900 p-2 rounded-[2.5rem] border border-gray-100 dark:border-white/5 flex overflow-hidden max-w-md mx-auto shadow-xl group hover:border-indigo-500/30">
+              {(['official', 'random', 'manual'] as const).map((mode) => (
+                <button key={mode} onClick={() => setDrawMode(mode)} className={`flex-1 py-4 px-6 rounded-[2rem] text-[11px] font-black uppercase tracking-widest transition-all duration-500 ${drawMode === mode ? 'bg-gray-900 dark:bg-indigo-600 text-white shadow-lg' : 'text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5'}`}>
+                  {mode === 'official' ? 'Real Draw' : mode === 'random' ? 'Random' : 'Pick Own'}
+                </button>
+              ))}
+            </div>
 
-          <div className="bg-white dark:bg-gray-900 p-12 rounded-[4rem] border border-gray-100 dark:border-white/5 transition-all duration-700 overflow-hidden relative shadow-2xl hover:shadow-indigo-500/10 group">
-            <div className={`absolute top-0 right-0 w-48 h-48 rounded-full -mr-24 -mt-24 transition-transform duration-1000 group-hover:scale-150 ${game === 'Oz Lotto' ? 'bg-emerald-50/50' : game === 'Tatts Lotto' ? 'bg-red-50/50' : 'bg-indigo-50/50'}`} />
-            <div className="relative z-10">
-              {drawMode === 'official' && (
-                <div className="animate-in fade-in zoom-in-95 duration-500">
-                  {officialResult ? (
-                    <>
-                      <p className={`text-[11px] font-black uppercase tracking-[0.3em] mb-4 ${game === 'Oz Lotto' ? 'text-emerald-600' : game === 'Tatts Lotto' ? 'text-red-600' : 'text-indigo-600'}`}>Official Result</p>
-                      <p className="text-2xl font-black text-gray-900 dark:text-white mb-10 tracking-tight">Draw Date: {officialResult.drawDate}</p>
-                      <div className="flex flex-wrap gap-4 justify-center">
-                        {officialResult.numbers.map((n, i) => (
-                          <span key={`off-${i}`} className={`w-14 h-14 rounded-full text-white flex items-center justify-center font-black shadow-xl border-b-[6px] text-xl transition-transform hover:-translate-y-1 duration-300 ${game === 'Oz Lotto' ? 'bg-emerald-500 border-emerald-700' : game === 'Tatts Lotto' ? 'bg-red-500 border-red-700' : 'bg-indigo-500 border-indigo-700'}`}>{n}</span>
-                        ))}
-                        <div className="w-px h-14 bg-gray-200 dark:bg-white/10 mx-2" />
-                        {officialResult.bonus.map((n, i) => (
-                          <span key={`off-b-${i}`} className="w-14 h-14 rounded-full bg-amber-400 text-amber-950 flex items-center justify-center font-black shadow-xl border-b-[6px] border-amber-600 text-xl transition-transform hover:-translate-y-1 duration-300">{n}</span>
-                        ))}
-                      </div>
-                    </>
-                  ) : <div className="py-10 text-gray-400 font-black italic animate-pulse tracking-[0.2em] text-xs uppercase">Fetching latest draw...</div>}
-                </div>
-              )}
-
-              {drawMode === 'random' && (
-                <div className="animate-in fade-in zoom-in-95 duration-500 flex flex-col items-center">
-                  <p className="text-[11px] font-black text-purple-600 dark:text-purple-400 uppercase tracking-[0.3em] mb-10">Random Draw Generator</p>
-                  <div className="flex flex-wrap gap-4 justify-center mb-12 min-h-[56px]">
-                    {customResult.numbers.length > 0 ? (
+            <div className="bg-white dark:bg-gray-900 p-12 rounded-[4rem] border border-gray-100 dark:border-white/5 transition-all duration-700 overflow-hidden relative shadow-2xl hover:shadow-indigo-500/10 group">
+              <div className={`absolute top-0 right-0 w-48 h-48 rounded-full -mr-24 -mt-24 transition-transform duration-1000 group-hover:scale-150 ${game === 'Oz Lotto' ? 'bg-emerald-50/50' : game === 'Tatts Lotto' ? 'bg-red-50/50' : 'bg-indigo-50/50'}`} />
+              <div className="relative z-10">
+                {drawMode === 'official' && (
+                  <div className="animate-in fade-in zoom-in-95 duration-500">
+                    {officialResult ? (
                       <>
-                        {customResult.numbers.map((n, i) => (
-                          <span key={`rand-${i}`} className={`w-14 h-14 rounded-full text-white flex items-center justify-center font-black shadow-xl border-b-[6px] text-xl transition-transform hover:-translate-y-1 duration-300 ${game === 'Oz Lotto' ? 'bg-emerald-600 border-emerald-800' : game === 'Tatts Lotto' ? 'bg-red-600 border-red-800' : 'bg-indigo-600 border-indigo-800'}`}>{n}</span>
-                        ))}
-                        <div className="w-px h-14 bg-gray-200 dark:bg-white/10 mx-2" />
-                        {customResult.bonus.map((n, i) => (
-                          <span key={`rand-b-${i}`} className="w-14 h-14 rounded-full bg-amber-400 text-amber-950 flex items-center justify-center font-black shadow-xl border-b-[6px] border-amber-600 text-xl transition-transform hover:-translate-y-1 duration-300">{n}</span>
-                        ))}
+                        <p className={`text-[11px] font-black uppercase tracking-[0.3em] mb-4 ${game === 'Oz Lotto' ? 'text-emerald-600' : game === 'Tatts Lotto' ? 'text-red-600' : 'text-indigo-600'}`}>Official Result</p>
+                        <p className="text-2xl font-black text-gray-900 dark:text-white mb-10 tracking-tight">Draw Date: {officialResult.drawDate}</p>
+                        <div className="flex flex-wrap gap-4 justify-center">
+                          {officialResult.numbers.map((n, i) => (
+                            <span key={`off-${i}`} className={`w-14 h-14 rounded-full text-white flex items-center justify-center font-black shadow-xl border-b-[6px] text-xl transition-transform hover:-translate-y-1 duration-300 ${game === 'Oz Lotto' ? 'bg-emerald-500 border-emerald-700' : game === 'Tatts Lotto' ? 'bg-red-500 border-red-700' : 'bg-indigo-500 border-indigo-700'}`}>{n}</span>
+                          ))}
+                          <div className="w-px h-14 bg-gray-200 dark:bg-white/10 mx-2" />
+                          {officialResult.bonus.map((n, i) => (
+                            <span key={`off-b-${i}`} className="w-14 h-14 rounded-full bg-amber-400 text-amber-950 flex items-center justify-center font-black shadow-xl border-b-[6px] border-amber-600 text-xl transition-transform hover:-translate-y-1 duration-300">{n}</span>
+                          ))}
+                        </div>
                       </>
-                    ) : <div className="h-14 flex items-center text-gray-300 font-black italic tracking-[0.3em] uppercase text-xs">Waiting to generate...</div>}
+                    ) : <div className="py-10 text-gray-400 font-black italic animate-pulse tracking-[0.2em] text-xs uppercase">Fetching latest draw...</div>}
                   </div>
-                  <button onClick={generateRandomResult} className="px-12 py-5 bg-purple-600 text-white font-black rounded-3xl hover:bg-purple-700 shadow-2xl transition-all uppercase tracking-widest text-sm active:scale-95">Generate Random Draw</button>
-                </div>
-              )}
+                )}
 
-              {drawMode === 'manual' && (
-                <div className="animate-in fade-in zoom-in-95 duration-500 space-y-12 text-left">
-                  <p className="text-[11px] font-black text-orange-600 dark:text-orange-400 uppercase tracking-[0.3em] text-center">Set Up Winning Numbers</p>
-                  <div className="space-y-12">
-                    <div>
-                      <p className="text-[10px] font-black text-gray-400 uppercase mb-6 tracking-[0.2em] ml-4">1. Main Numbers ({game === 'Tatts Lotto' ? 6 : 7})</p>
-                      <div className="flex flex-wrap gap-2.5 justify-center bg-gray-50 dark:bg-gray-800/50 p-8 rounded-[3rem] border border-gray-100 dark:border-white/5 shadow-inner">
-                        {Array.from({ length: game === 'Oz Lotto' ? 47 : game === 'Tatts Lotto' ? 45 : 35 }, (_, i) => i + 1).map(num => {
-                          const isMain = customResult.numbers.includes(num);
-                          const required = game === 'Tatts Lotto' ? 6 : 7;
-                          const disabled = !isMain && customResult.numbers.length >= required;
-                          return (
-                            <button key={num} disabled={disabled} onClick={() => { const newNumbers = isMain ? customResult.numbers.filter(n => n !== num) : [...customResult.numbers, num].sort((a,b) => a-b); setCustomResult(prev => ({ ...prev, numbers: newNumbers })); }} className={`w-10 h-10 rounded-full text-[11px] font-black transition-all duration-300 ${isMain ? (game === 'Oz Lotto' ? 'bg-emerald-600 text-white scale-110 shadow-lg' : game === 'Tatts Lotto' ? 'bg-red-600 text-white scale-110 shadow-lg' : 'bg-indigo-600 text-white scale-110 shadow-lg') : 'bg-white dark:bg-white/5 text-gray-400 border border-gray-200 dark:border-white/10 hover:border-indigo-300 shadow-sm'} ${disabled ? 'opacity-20 grayscale' : ''}`}>{num}</button>
-                          );
-                        })}
-                      </div>
+                {drawMode === 'random' && (
+                  <div className="animate-in fade-in zoom-in-95 duration-500 flex flex-col items-center">
+                    <p className="text-[11px] font-black text-purple-600 dark:text-purple-400 uppercase tracking-[0.3em] mb-10">Random Draw Generator</p>
+                    <div className="flex flex-wrap gap-4 justify-center mb-12 min-h-[56px]">
+                      {customResult.numbers.length > 0 ? (
+                        <>
+                          {customResult.numbers.map((n, i) => (
+                            <span key={`rand-${i}`} className={`w-14 h-14 rounded-full text-white flex items-center justify-center font-black shadow-xl border-b-[6px] text-xl transition-transform hover:-translate-y-1 duration-300 ${game === 'Oz Lotto' ? 'bg-emerald-600 border-emerald-800' : game === 'Tatts Lotto' ? 'bg-red-600 border-red-800' : 'bg-indigo-600 border-indigo-800'}`}>{n}</span>
+                          ))}
+                          <div className="w-px h-14 bg-gray-200 dark:bg-white/10 mx-2" />
+                          {customResult.bonus.map((n, i) => (
+                            <span key={`rand-b-${i}`} className="w-14 h-14 rounded-full bg-amber-400 text-amber-950 flex items-center justify-center font-black shadow-xl border-b-[6px] border-amber-600 text-xl transition-transform hover:-translate-y-1 duration-300">{n}</span>
+                          ))}
+                        </>
+                      ) : <div className="h-14 flex items-center text-gray-300 font-black italic tracking-[0.3em] uppercase text-xs">Waiting to generate...</div>}
                     </div>
-                    <div>
-                      <p className="text-[10px] font-black text-amber-600 uppercase mb-6 tracking-[0.2em] ml-4">2. Bonus Numbers ({game === 'Oz Lotto' ? '3' : game === 'Tatts Lotto' ? '2' : '1'})</p>
-                      <div className="flex flex-wrap gap-2.5 justify-center bg-amber-50/30 dark:bg-amber-500/5 p-8 rounded-[3rem] border border-amber-100 dark:border-amber-500/10 shadow-inner">
-                        {Array.from({ length: game === 'Oz Lotto' || game === 'Tatts Lotto' ? 45 : 20 }, (_, i) => i + 1).map(num => {
-                          const isSupp = customResult.bonus.includes(num);
-                          const maxSupp = game === 'Oz Lotto' ? 3 : game === 'Tatts Lotto' ? 2 : 1;
-                          const disabled = !isSupp && customResult.bonus.length >= maxSupp;
-                          return (
-                            <button key={num} disabled={disabled} onClick={() => { const newBonus = isSupp ? customResult.bonus.filter(n => n !== num) : [...customResult.bonus, num].sort((a,b) => a-b); setCustomResult(prev => ({ ...prev, bonus: newBonus })); }} className={`w-10 h-10 rounded-full text-[11px] font-black transition-all duration-300 ${isSupp ? 'bg-amber-400 text-amber-950 scale-110 shadow-lg' : 'bg-white dark:bg-white/5 text-gray-400 border border-gray-200 dark:border-white/10 hover:border-amber-400 shadow-sm'} ${disabled ? 'opacity-20 grayscale' : ''}`}>{num}</button>
-                          );
-                        })}
+                    <button onClick={generateRandomResult} className="px-12 py-5 bg-purple-600 text-white font-black rounded-3xl hover:bg-purple-700 shadow-2xl transition-all uppercase tracking-widest text-sm active:scale-95">Generate Random Draw</button>
+                  </div>
+                )}
+
+                {drawMode === 'manual' && (
+                  <div className="animate-in fade-in zoom-in-95 duration-500 space-y-12 text-left">
+                    <p className="text-[11px] font-black text-orange-600 dark:text-orange-400 uppercase tracking-[0.3em] text-center">Set Up Winning Numbers</p>
+                    <div className="space-y-12">
+                      <div>
+                        <p className="text-[10px] font-black text-gray-400 uppercase mb-6 tracking-[0.2em] ml-4">1. Main Numbers ({game === 'Tatts Lotto' ? 6 : 7})</p>
+                        <div className="flex flex-wrap gap-2.5 justify-center bg-gray-50 dark:bg-gray-800/50 p-8 rounded-[3rem] border border-gray-100 dark:border-white/5 shadow-inner">
+                          {Array.from({ length: game === 'Oz Lotto' ? 47 : game === 'Tatts Lotto' ? 45 : 35 }, (_, i) => i + 1).map(num => {
+                            const isMain = customResult.numbers.includes(num);
+                            const required = game === 'Tatts Lotto' ? 6 : 7;
+                            const disabled = !isMain && customResult.numbers.length >= required;
+                            return (
+                              <button key={num} disabled={disabled} onClick={() => { const newNumbers = isMain ? customResult.numbers.filter(n => n !== num) : [...customResult.numbers, num].sort((a,b) => a-b); setCustomResult(prev => ({ ...prev, numbers: newNumbers })); }} className={`w-10 h-10 rounded-full text-[11px] font-black transition-all duration-300 ${isMain ? (game === 'Oz Lotto' ? 'bg-emerald-600 text-white scale-110 shadow-lg' : game === 'Tatts Lotto' ? 'bg-red-600 text-white scale-110 shadow-lg' : 'bg-indigo-600 text-white scale-110 shadow-lg') : 'bg-white dark:bg-white/5 text-gray-400 border border-gray-200 dark:border-white/10 hover:border-indigo-300 shadow-sm'} ${disabled ? 'opacity-20 grayscale' : ''}`}>{num}</button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black text-amber-600 uppercase mb-6 tracking-[0.2em] ml-4">2. Bonus Numbers ({game === 'Oz Lotto' ? '3' : game === 'Tatts Lotto' ? '2' : '1'})</p>
+                        <div className="flex flex-wrap gap-2.5 justify-center bg-amber-50/30 dark:bg-amber-500/5 p-8 rounded-[3rem] border border-amber-100 dark:border-amber-500/10 shadow-inner">
+                          {Array.from({ length: game === 'Oz Lotto' || game === 'Tatts Lotto' ? 45 : 20 }, (_, i) => i + 1).map(num => {
+                            const isSupp = customResult.bonus.includes(num);
+                            const maxSupp = game === 'Oz Lotto' ? 3 : game === 'Tatts Lotto' ? 2 : 1;
+                            const disabled = !isSupp && customResult.bonus.length >= maxSupp;
+                            return (
+                              <button key={num} disabled={disabled} onClick={() => { const newBonus = isSupp ? customResult.bonus.filter(n => n !== num) : [...customResult.bonus, num].sort((a,b) => a-b); setCustomResult(prev => ({ ...prev, bonus: newBonus })); }} className={`w-10 h-10 rounded-full text-[11px] font-black transition-all duration-300 ${isSupp ? 'bg-amber-400 text-amber-950 scale-110 shadow-lg' : 'bg-white dark:bg-white/5 text-gray-400 border border-gray-200 dark:border-white/10 hover:border-amber-400 shadow-sm'} ${disabled ? 'opacity-20 grayscale' : ''}`}>{num}</button>
+                            );
+                          })}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         <div className="w-full animate-in fade-in slide-in-from-bottom-12 duration-1000 delay-300">
-          <NumberPicker onCheckAllResults={handleCheckAllResults} onClearAll={handleClearAllResults} resultsRef={resultsRef} drawResult={activeResult} game={game} />
+          <NumberPicker 
+            onCheckAllResults={handleCheckAllResults} 
+            onClearAll={handleClearAllResults} 
+            resultsRef={resultsRef} 
+            drawResult={activeResult} 
+            game={game} 
+            onModeChange={setSimMode}
+          />
         </div>
 
-        {allComparisonResults && (
+        {/* Results Sections (Only in Classic Mode) */}
+        {simMode === 'classic' && allComparisonResults && (
           <div ref={resultsRef} className="w-full max-w-6xl mt-24 space-y-12 animate-in fade-in slide-in-from-bottom-12 duration-1000 text-left">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
               <div className={`p-12 rounded-[4rem] text-left border transition-all duration-700 relative overflow-hidden text-white shadow-2xl hover:scale-[1.01] group ${game === 'Oz Lotto' ? 'bg-emerald-950 border-emerald-500/20' : game === 'Tatts Lotto' ? 'bg-red-950 border-red-500/20' : 'bg-indigo-950 border-indigo-500/20'}`}>

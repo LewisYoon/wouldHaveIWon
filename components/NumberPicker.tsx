@@ -1,7 +1,7 @@
 // lotto-project/components/NumberPicker.tsx
 'use client';
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { generateQuickPick, compareNumbers, generateRandomDraw, ESTIMATED_PRIZES } from '../lib/lotto-utils';
 import LottoLinePicker from './LottoLinePicker';
 import { useAuth } from '../context/AuthContext';
@@ -21,6 +21,8 @@ type LottoLine = {
 type WinningResult = {
   id: string;
   numbers: number[];
+  drawNumbers: number[];
+  drawBonus: number[];
   drawDate: string;
   prizeTier: string;
   mainMatchesCount: number;
@@ -45,6 +47,7 @@ interface NumberPickerProps {
   resultsRef: React.RefObject<HTMLDivElement | null>;
   drawResult: DrawResult | null;
   game?: 'Oz Lotto' | 'Powerball' | 'Tatts Lotto';
+  onModeChange?: (mode: 'classic' | 'auto') => void;
 }
 
 const TrashIcon = ({ size = 18 }: { size?: number }) => (
@@ -56,7 +59,8 @@ export default function NumberPicker({
   onClearAll, 
   resultsRef, 
   drawResult,
-  game = 'Oz Lotto'
+  game = 'Oz Lotto',
+  onModeChange
 }: NumberPickerProps) {
   const { user, isLoading: isAuthLoading } = useAuth();
   
@@ -64,7 +68,7 @@ export default function NumberPicker({
   const [mode, setMode] = useState<'classic' | 'auto'>('classic');
   const [viewMode, setViewMode] = useState<'detailed' | 'compact'>('detailed');
   const [isDataLoading, setIsDataLoading] = useState(true);
-  const [showHistory, setShowHistory] = useState(false);
+  const [sortBy, setSortBy] = useState<'latest' | 'division'>('latest');
 
   // Classic State
   const [lines, setLines] = useState<LottoLine[]>([]);
@@ -76,14 +80,26 @@ export default function NumberPicker({
   const [isRunning, setIsRunning] = useState(false);
   const [ticketsPerDraw, setTicketsPerDraw] = useState(12);
   const [drawsPerSec, setDrawsPerSec] = useState(10);
+  
   const [autoWinners, setAutoWinners] = useState<WinningResult[]>([]);
   const [stats, setStats] = useState({ draws: 0, spent: 0, won: 0 });
+  const [divisionStats, setDivisionStats] = useState<Record<string, number>>({});
   const [lastWinType, setLastWinType] = useState<string | null>(null);
   const [nearMiss, setNearMiss] = useState<string | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   const storageCurrentKey = `lottoLines_${game.replace(/\s/g, '')}`;
   const storageHistoryKey = `lottoWins_${game.replace(/\s/g, '')}`;
+
+  // Reset simulation when game changes
+  useEffect(() => {
+    stopSimulation();
+    setAutoWinners([]);
+    setStats({ draws: 0, spent: 0, won: 0 });
+    setDivisionStats({});
+    setLastWinType(null);
+    setNearMiss(null);
+  }, [game]);
 
   const handleAddLine = useCallback((initialNumbers: number[] = []) => {
     setLines(prevLines => {
@@ -103,10 +119,26 @@ export default function NumberPicker({
       setIsDataLoading(true);
       if (user) {
         const { data } = await supabase.from('simulator_history').select('*').eq('game', game).order('created_at', { ascending: false });
-        if (data) setWinningHistory(data.flatMap(item => Array.isArray(item.lines) ? item.lines : [item.lines]));
+        if (data) {
+            setWinningHistory(data.flatMap(item => {
+                const innerLines = Array.isArray(item.lines) ? item.lines : [item.lines];
+                return innerLines.map((l: any) => ({
+                    ...l,
+                    drawNumbers: l.drawNumbers || [],
+                    drawBonus: l.drawBonus || []
+                }));
+            }));
+        }
       } else {
         const storedWins = localStorage.getItem(storageHistoryKey);
-        if (storedWins) setWinningHistory(JSON.parse(storedWins));
+        if (storedWins) {
+            const parsed = JSON.parse(storedWins);
+            setWinningHistory(parsed.map((l: any) => ({
+                ...l,
+                drawNumbers: l.drawNumbers || [],
+                drawBonus: l.drawBonus || []
+            })));
+        }
       }
 
       const storedLines = localStorage.getItem(storageCurrentKey);
@@ -137,23 +169,34 @@ export default function NumberPicker({
   const startSimulation = () => {
     setIsRunning(true);
     const interval = 1000 / drawsPerSec;
+    
     timerRef.current = setInterval(() => {
-      const currentTickets = Array.from({ length: ticketsPerDraw }, () => generateQuickPick(game));
+      // 1. Always generate a fresh random draw in Time Machine Mode
       const draw = generateRandomDraw(game);
+      
+      // 2. Generate random ticket batch
+      const simulationTickets = Array.from({ length: ticketsPerDraw }, () => generateQuickPick(game));
+      
       const newWinners: WinningResult[] = [];
       let weeklyWinTotal = 0;
       let highestMainMatches = 0;
+      const weeklyDivStats: Record<string, number> = {};
 
-      currentTickets.forEach(ticketNumbers => {
+      simulationTickets.forEach((ticketNumbers) => {
         const result = compareNumbers(ticketNumbers, draw.numbers, draw.bonus, game);
         if (result.mainMatchesCount > highestMainMatches) highestMainMatches = result.mainMatchesCount;
+        
         if (result.prizeTier !== "No Prize") {
           const prize = ESTIMATED_PRIZES[game][result.prizeTier] || 0;
           weeklyWinTotal += prize;
+          weeklyDivStats[result.prizeTier] = (weeklyDivStats[result.prizeTier] || 0) + 1;
+
           if (prize > 1000) setLastWinType(result.prizeTier);
           newWinners.push({
             id: Math.random().toString(36).substr(2, 9),
             numbers: ticketNumbers,
+            drawNumbers: draw.numbers,
+            drawBonus: draw.bonus,
             drawDate: 'Simulated',
             prizeTier: result.prizeTier,
             mainMatchesCount: result.mainMatchesCount,
@@ -173,11 +216,19 @@ export default function NumberPicker({
 
       setStats(prev => ({
         draws: prev.draws + 1,
-        spent: prev.spent + (ticketsPerDraw * TICKET_COST),
+        spent: prev.spent + (simulationTickets.length * TICKET_COST),
         won: prev.won + weeklyWinTotal
       }));
 
-      if (newWinners.length > 0) setAutoWinners(prev => [...newWinners, ...prev].slice(0, 50));
+      setDivisionStats(prev => {
+          const updated = { ...prev };
+          Object.keys(weeklyDivStats).forEach(tier => {
+              updated[tier] = (updated[tier] || 0) + weeklyDivStats[tier];
+          });
+          return updated;
+      });
+
+      if (newWinners.length > 0) setAutoWinners(prev => [...newWinners, ...prev].slice(0, 500));
     }, interval);
   };
 
@@ -188,12 +239,14 @@ export default function NumberPicker({
 
     if (drawResult) {
       const currentWinners: WinningResult[] = [];
-      completeLines.forEach(line => {
+      completeLines.forEach((line) => {
         const result = compareNumbers(line.numbers, drawResult.numbers, drawResult.bonus, game);
         if (result.prizeTier !== "No Prize") {
           currentWinners.push({
             id: Date.now().toString() + Math.random(),
             numbers: line.numbers,
+            drawNumbers: drawResult.numbers,
+            drawBonus: drawResult.bonus,
             drawDate: drawResult.drawDate,
             prizeTier: result.prizeTier,
             mainMatchesCount: result.mainMatchesCount,
@@ -215,14 +268,31 @@ export default function NumberPicker({
   };
 
   const handleClearHistory = async () => {
-    if (!window.confirm("Clear all history for this game?")) return;
-    if (user) await supabase.from('simulator_history').delete().eq('user_id', user.id).eq('game', game);
-    setWinningHistory([]);
+    if (!window.confirm("Clear all simulation results?")) return;
     setAutoWinners([]);
-    localStorage.removeItem(storageHistoryKey);
+    setStats({ draws: 0, spent: 0, won: 0 });
+    setDivisionStats({});
+  };
+
+  const handleModeToggle = (newMode: 'classic' | 'auto') => {
+    setMode(newMode);
+    if (newMode === 'classic') stopSimulation();
+    if (onModeChange) onModeChange(newMode);
   };
 
   const formatCurrency = (val: number) => new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', maximumFractionDigits: 0 }).format(val);
+  
+  const currentFeed = useMemo(() => {
+    const raw = autoWinners;
+    if (sortBy === 'latest') return raw;
+    return [...raw].sort((a, b) => {
+        const rankA = parseInt(a.prizeTier.replace(/[^0-9]/g, '')) || 99;
+        const rankB = parseInt(b.prizeTier.replace(/[^0-9]/g, '')) || 99;
+        if (rankA !== rankB) return rankA - rankB;
+        return (b.weekNumber || 0) - (a.weekNumber || 0);
+    });
+  }, [autoWinners, sortBy]);
+
   const getEquivalentItem = (spent: number) => {
     if (spent < 50) return "a Fancy Pizza";
     if (spent < 1000) return `${Math.floor(spent / 5)} Coffees`;
@@ -231,24 +301,34 @@ export default function NumberPicker({
     return "a Decent House Deposit";
   };
 
+  const isOz = game === 'Oz Lotto';
+  const isTatts = game === 'Tatts Lotto';
+  const brandBall = isOz ? 'bg-emerald-500' : isTatts ? 'bg-red-500' : 'bg-indigo-600';
+  const brandText = isOz ? 'text-emerald-600' : isTatts ? 'text-red-600' : 'text-indigo-600';
+
   return (
     <div className="w-full max-w-3xl mx-auto my-8 pb-48 px-4 relative">
       
+      {/* Visual Alerts */}
+      {lastWinType && (
+        <div className="fixed inset-0 z-[200] pointer-events-none flex items-center justify-center bg-emerald-500/20 backdrop-blur-sm animate-in fade-in zoom-in duration-300">
+          <div className="bg-white dark:bg-gray-900 p-12 rounded-[4rem] shadow-2xl text-center border-4 border-emerald-500 animate-bounce pointer-events-auto">
+            <h2 className="text-6xl font-black text-gray-900 dark:text-white uppercase tracking-tighter italic mb-8">{lastWinType}!</h2>
+            <button onClick={() => setLastWinType(null)} className="px-12 py-4 bg-emerald-500 text-white rounded-2xl font-black uppercase text-sm tracking-widest shadow-xl shadow-emerald-500/20 hover:bg-emerald-600 transition-all">Awesome!</button>
+          </div>
+        </div>
+      )}
+      {nearMiss && (
+        <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[150] pointer-events-none">
+          <div className="text-8xl font-black text-orange-500/40 uppercase italic tracking-tighter animate-ping select-none">{nearMiss}</div>
+        </div>
+      )}
+
       {/* Mode Toggle */}
       <div className="flex justify-center mb-12">
         <div className="bg-gray-100 dark:bg-white/5 p-1.5 rounded-[2rem] flex items-center shadow-inner border border-gray-200 dark:border-white/10">
-          <button 
-            onClick={() => { setMode('classic'); stopSimulation(); }}
-            className={`px-10 py-3 rounded-full font-black text-xs uppercase tracking-widest transition-all ${mode === 'classic' ? 'bg-white dark:bg-gray-800 text-indigo-600 shadow-xl' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'}`}
-          >
-            Classic
-          </button>
-          <button 
-            onClick={() => setMode('auto')}
-            className={`px-10 py-3 rounded-full font-black text-xs uppercase tracking-widest transition-all ${mode === 'auto' ? 'bg-white dark:bg-gray-800 text-indigo-600 shadow-xl' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'}`}
-          >
-            Turbo
-          </button>
+          <button onClick={() => handleModeToggle('classic')} className={`px-10 py-3 rounded-full font-black text-xs uppercase tracking-widest transition-all ${mode === 'classic' ? 'bg-white dark:bg-gray-800 text-indigo-600 shadow-xl' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'}`}>Classic</button>
+          <button onClick={() => handleModeToggle('auto')} className={`px-10 py-3 rounded-full font-black text-xs uppercase tracking-widest transition-all ${mode === 'auto' ? 'bg-white dark:bg-gray-800 text-indigo-600 shadow-xl' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'}`}>Turbo</button>
         </div>
       </div>
 
@@ -256,10 +336,7 @@ export default function NumberPicker({
       {mode === 'classic' && (
         <div className="animate-in fade-in slide-in-from-left-4 duration-500">
           <div className="flex items-center justify-between px-6 mb-8">
-            <div className="flex flex-col">
-              <h3 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter italic">Lotto Ticket</h3>
-              <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-1">Manual Number Selection</p>
-            </div>
+            <div className="flex flex-col"><h3 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter italic">Lotto Ticket</h3><p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-1">Manual Number Selection</p></div>
             <div className="flex bg-gray-100 dark:bg-white/5 p-1 rounded-xl border border-gray-200 dark:border-white/10 shadow-sm">
               <button onClick={() => setViewMode('detailed')} className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${viewMode === 'detailed' ? 'bg-white dark:bg-gray-800 text-indigo-600 shadow-sm' : 'text-gray-400'}`}>List</button>
               <button onClick={() => setViewMode('compact')} className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${viewMode === 'compact' ? 'bg-white dark:bg-gray-800 text-indigo-600 shadow-sm' : 'text-gray-400'}`}>Grid</button>
@@ -305,79 +382,119 @@ export default function NumberPicker({
       {/* Auto Mode Content */}
       {mode === 'auto' && (
         <div className="animate-in fade-in slide-in-from-right-4 duration-500">
-          <div className="bg-white dark:bg-gray-900 rounded-[3rem] p-10 border border-gray-100 dark:border-white/5 shadow-xl mb-10">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-10">
-              <div>
-                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Tickets/Week</label>
-                <input type="range" min="1" max="100" value={ticketsPerDraw} onChange={(e) => setTicketsPerDraw(parseInt(e.target.value))} className="w-full accent-indigo-600 h-1.5 bg-gray-100 dark:bg-white/5 rounded-full appearance-none cursor-pointer" />
-                <div className="flex justify-between mt-3 px-1"><span className="text-lg font-black text-indigo-600">{ticketsPerDraw}</span></div>
-              </div>
-              <div>
-                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Warp Speed (Draws/Sec)</label>
-                <input type="range" min="1" max="50" value={drawsPerSec} onChange={(e) => { setDrawsPerSec(parseInt(e.target.value)); if (isRunning) stopSimulation(); }} className="w-full accent-emerald-500 h-1.5 bg-gray-100 dark:bg-white/5 rounded-full appearance-none cursor-pointer" />
-                <div className="flex justify-between mt-3 px-1"><span className="text-lg font-black text-emerald-500">{drawsPerSec}</span></div>
-              </div>
+          
+          {/* Detailed Summary */}
+          {!isRunning && stats.draws > 0 && (
+            <div className="bg-white dark:bg-gray-900 rounded-[3rem] p-10 border-2 border-indigo-500 shadow-2xl mb-10 animate-in zoom-in-95 duration-500">
+                <div className="flex justify-between items-center mb-8">
+                    <h3 className="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tighter italic">Simulation Result</h3>
+                    <span className="bg-indigo-600 text-white text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest">Summary</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 mb-10">
+                    <div className="space-y-4">
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Divisions Won</p>
+                        <div className="space-y-2">
+                            {Object.entries(divisionStats).sort((a,b) => parseInt(a[0].replace(/\D/g,'')) - parseInt(b[0].replace(/\D/g,''))).map(([tier, count]) => (
+                                <div key={tier} className="flex justify-between items-center bg-gray-50 dark:bg-white/5 px-4 py-2 rounded-xl">
+                                    <span className="text-xs font-bold text-gray-600 dark:text-gray-400">{tier}</span>
+                                    <span className="text-sm font-black text-gray-900 dark:text-white">{count}x</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                    <div className="bg-gray-50 dark:bg-indigo-500/5 p-6 rounded-[2rem] border border-gray-100 dark:border-indigo-500/10 flex flex-col justify-center text-center">
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Reality Check</p>
+                        <p className="text-gray-500 dark:text-gray-400 text-sm font-medium leading-relaxed italic">
+                            Instead of spending <span className="text-red-500 font-black">{formatCurrency(stats.spent)}</span> on lotto, you could have bought <span className="text-indigo-600 dark:text-indigo-400 font-black">{getEquivalentItem(stats.spent)}</span>.
+                        </p>
+                    </div>
+                </div>
+                <button onClick={() => { setStats({ draws: 0, spent: 0, won: 0 }); setDivisionStats({}); setAutoWinners([]); }} className="w-full py-4 rounded-2xl bg-gray-100 dark:bg-white/5 text-gray-400 font-black uppercase text-[10px] tracking-[0.3em] hover:bg-gray-200 transition-all">Reset Simulation</button>
             </div>
-            <button onClick={isRunning ? stopSimulation : startSimulation} className={`w-full py-6 rounded-[2rem] font-black uppercase tracking-[0.3em] text-sm shadow-2xl transition-all active:scale-95 ${isRunning ? 'bg-red-500 text-white' : 'bg-indigo-600 text-white'}`}>{isRunning ? 'Abort' : 'Start Time Machine'}</button>
+          )}
+
+          {/* Simulation Configuration */}
+          <div className="bg-white dark:bg-gray-900 rounded-[3rem] p-10 border border-gray-100 dark:border-white/5 shadow-xl mb-10 space-y-10">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                <div className="space-y-6">
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">1. Batch Settings</p>
+                    <div>
+                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Tickets per Week: {ticketsPerDraw}</label>
+                        <input type="range" min="1" max="100" value={ticketsPerDraw} onChange={(e) => setTicketsPerDraw(parseInt(e.target.value))} className="w-full accent-indigo-600 h-1.5 bg-gray-100 dark:bg-white/5 rounded-full appearance-none cursor-pointer" />
+                    </div>
+                </div>
+                <div className="space-y-6">
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">2. Simulation Speed</p>
+                    <div>
+                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Speed: {drawsPerSec} draws/sec</label>
+                        <input type="range" min="1" max="50" value={drawsPerSec} onChange={(e) => { setDrawsPerSec(parseInt(e.target.value)); if (isRunning) stopSimulation(); }} className="w-full accent-emerald-500 h-1.5 bg-gray-100 dark:bg-white/5 rounded-full appearance-none cursor-pointer" />
+                    </div>
+                </div>
+            </div>
+            <button onClick={isRunning ? stopSimulation : startSimulation} className={`w-full py-6 rounded-[2rem] font-black uppercase tracking-[0.3em] text-sm shadow-2xl transition-all active:scale-95 ${isRunning ? 'bg-red-500 text-white' : 'bg-indigo-600 text-white shadow-indigo-500/20'}`}>{isRunning ? 'Abort Simulation' : 'Enter Time Machine'}</button>
           </div>
 
           <div className={`bg-gray-950 rounded-[3.5rem] p-10 text-white shadow-2xl border transition-all duration-500 mb-12 relative overflow-hidden ${isRunning ? 'border-indigo-500/50 shadow-indigo-500/20' : 'border-white/10'}`}>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-10 relative z-10 text-center md:text-left">
-              <div><p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Years</p><p className="text-5xl font-black tabular-nums">{(stats.draws / 52).toFixed(1)}</p></div>
-              <div><p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Spent</p><p className="text-5xl font-black text-red-500 tabular-nums tracking-tighter">{formatCurrency(stats.spent)}</p><p className="text-[9px] font-bold text-gray-600 mt-2 uppercase italic">Enough for {getEquivalentItem(stats.spent)}</p></div>
-              <div><p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Won</p><p className="text-5xl font-black text-emerald-400 tabular-nums tracking-tighter">{formatCurrency(stats.won)}</p></div>
+              <div><p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Time Traveled</p><p className="text-5xl font-black tabular-nums">{(stats.draws / 52).toFixed(1)}<span className="text-xl text-gray-600 ml-1 font-serif italic lowercase">yrs</span></p></div>
+              <div><p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Total "Spent"</p><p className="text-5xl font-black text-red-500 tabular-nums tracking-tighter">{formatCurrency(stats.spent)}</p></div>
+              <div><p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Total Won</p><p className="text-5xl font-black text-emerald-400 tabular-nums tracking-tighter">{formatCurrency(stats.won)}</p></div>
             </div>
             <div className="mt-12 pt-10 border-t border-white/5 text-center relative z-10">
-              <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em] mb-2">Balance</p>
+              <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em] mb-2">Temporal Balance</p>
               <p className={`text-7xl font-black tracking-tighter tabular-nums ${stats.won - stats.spent >= 0 ? 'text-emerald-400' : 'text-red-600'}`}>{formatCurrency(stats.won - stats.spent)}</p>
             </div>
           </div>
-        </div>
-      )}
 
-      {/* History/Wins UI (Unified) */}
-      <div className="mt-12 space-y-6">
-        <div className="flex justify-between items-center px-6">
-          <h3 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter italic">Winning Feed</h3>
-          <button onClick={handleClearHistory} className="text-[9px] font-black text-red-500 hover:text-red-700 uppercase tracking-widest border border-red-100 dark:border-red-500/20 px-4 py-1.5 rounded-full">Clear History</button>
-        </div>
-        
-        {((mode === 'classic' ? winningHistory : autoWinners).length === 0) ? (
-          <div className="bg-white dark:bg-gray-900/50 p-32 rounded-[3.5rem] border-2 border-dashed border-gray-100 dark:border-white/5 text-center"><p className="text-gray-400 font-bold italic uppercase tracking-[0.3em] text-xs">No records found.</p></div>
-        ) : (
-          <div className="grid grid-cols-1 gap-4 max-h-[800px] overflow-y-auto pr-2 custom-scrollbar">
-            {(mode === 'classic' ? winningHistory : autoWinners).map((winner) => (
-              <div key={winner.id} className={`bg-white dark:bg-gray-900 p-8 rounded-[3rem] border shadow-sm transition-all duration-500 border-l-8 ${winner.isSimulated ? 'border-l-indigo-500' : 'border-l-emerald-500'}`}>
-                <div className="flex flex-wrap justify-between items-center gap-6">
-                  <div>
-                    <div className="flex items-center gap-3 mb-2">
-                      <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-lg ${winner.isSimulated ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600' : 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600'}`}>{winner.drawDate} {winner.weekNumber && `• Week ${winner.weekNumber}`}</span>
-                    </div>
-                    <h4 className="text-3xl font-black text-gray-900 dark:text-white tracking-tighter">{winner.prizeTier}</h4>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{winner.isSimulated ? 'Estimated Win' : 'Official Prize'}</p>
-                    <p className="text-3xl font-black text-emerald-600 dark:text-emerald-400 tracking-tighter">{winner.prizeValue ? formatCurrency(winner.prizeValue) : 'Calculated in Results'}</p>
-                  </div>
+          {/* Auto Mode Winners Feed */}
+          <div className="mt-12 space-y-6">
+            <div className="flex justify-between items-end px-6 mb-4">
+              <div>
+                <h3 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter italic">Winning Feed</h3>
+                <div className="flex gap-4 mt-2">
+                    <button onClick={() => setSortBy('latest')} className={`text-[9px] font-black uppercase tracking-widest border-b-2 transition-all ${sortBy === 'latest' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-400'}`}>Latest</button>
+                    <button onClick={() => setSortBy('division')} className={`text-[9px] font-black uppercase tracking-widest border-b-2 transition-all ${sortBy === 'division' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-400'}`}>Top Divisions</button>
                 </div>
               </div>
-            ))}
+              <button onClick={handleClearHistory} className="text-[9px] font-black text-red-500 hover:text-red-700 uppercase tracking-widest border border-red-100 dark:border-red-500/20 px-4 py-1.5 rounded-full">Clear History</button>
+            </div>
+            
+            {currentFeed.length === 0 ? (
+              <div className="bg-white dark:bg-gray-900/50 p-32 rounded-[3.5rem] border-2 border-dashed border-gray-100 dark:border-white/5 text-center"><p className="text-gray-400 font-bold italic uppercase tracking-[0.3em] text-xs">{isRunning ? 'Searching the multi-verse...' : 'Simulation idle.'}</p></div>
+            ) : (
+              <div className="grid grid-cols-1 gap-4 max-h-[800px] overflow-y-auto pr-2 custom-scrollbar">
+                {currentFeed.map((winner) => (
+                  <div key={winner.id} className={`bg-white dark:bg-gray-900 p-8 rounded-[3rem] border shadow-sm transition-all duration-500 border-l-8 border-l-indigo-500`}>
+                    <div className="flex flex-wrap justify-between items-start gap-6">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600`}>{winner.drawDate} {winner.weekNumber && `• Week ${winner.weekNumber}`}</span>
+                        </div>
+                        <h4 className="text-3xl font-black text-gray-900 dark:text-white tracking-tighter mb-4">{winner.prizeTier}</h4>
+                        <div className="flex flex-wrap gap-2">
+                            {(winner.numbers || []).slice(0, 7).map((n, i) => {
+                                const isMatch = (winner.drawNumbers || []).includes(n);
+                                const isBonusMatch = (winner.drawBonus || []).includes(n);
+                                const isOzSupp = isOz && isBonusMatch && !isMatch;
+                                const isTattsSupp = isTatts && isBonusMatch && !isMatch;
+                                
+                                return <span key={i} className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-[10px] shadow-sm border ${isMatch ? `${brandBall} text-white border-transparent scale-110 shadow-md` : (isOzSupp || isTattsSupp) ? 'bg-amber-400 text-amber-950 border-transparent scale-110' : 'bg-gray-50 dark:bg-white/5 text-gray-400 dark:text-gray-300 border-gray-100 dark:border-white/5'}`}>{n}</span>;
+                            })}
+                            {game === 'Powerball' && (winner.numbers || [])[7] && (
+                                <span className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-[10px] shadow-sm border-b-2 ${(winner.drawBonus || []).includes((winner.numbers || [])[7]) ? 'bg-amber-400 text-amber-950 border-amber-600 scale-110 shadow-md' : 'bg-gray-50 dark:bg-white/5 text-gray-400 dark:text-gray-300 border-gray-100 dark:border-white/5'}`}>{winner.numbers[7]}</span>
+                            )}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Estimated Win</p>
+                        <p className={`text-3xl font-black tracking-tighter ${brandText}`}>{winner.prizeValue ? formatCurrency(winner.prizeValue) : 'Calculated in Results'}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-        )}
-      </div>
-
-      {/* Visual Alerts */}
-      {lastWinType && (
-        <div className="fixed inset-0 z-[200] pointer-events-none flex items-center justify-center bg-emerald-500/20 backdrop-blur-sm animate-in fade-in zoom-in duration-300">
-          <div className="bg-white dark:bg-gray-900 p-12 rounded-[4rem] shadow-2xl text-center border-4 border-emerald-500 animate-bounce">
-            <h2 className="text-6xl font-black text-gray-900 dark:text-white uppercase tracking-tighter italic">{lastWinType}!</h2>
-            <button onClick={() => setLastWinType(null)} className="mt-8 px-8 py-3 bg-emerald-500 text-white rounded-2xl font-black uppercase text-xs tracking-widest pointer-events-auto">Awesome!</button>
-          </div>
-        </div>
-      )}
-      {nearMiss && (
-        <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[150] pointer-events-none">
-          <div className="text-8xl font-black text-orange-500/40 uppercase italic tracking-tighter animate-ping select-none">{nearMiss}</div>
         </div>
       )}
     </div>
