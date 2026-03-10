@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { generateQuickPick, compareNumbers, generateRandomDraw, ESTIMATED_PRIZES } from '../lib/lotto-utils';
+import { generateQuickPick, compareNumbers, ESTIMATED_PRIZES } from '../lib/lotto-utils';
 import LottoLinePicker from './LottoLinePicker';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -91,7 +91,7 @@ export default function NumberPicker({
   const storageCurrentKey = `lottoLines_${game.replace(/\s/g, '')}`;
   const storageHistoryKey = `lottoWins_${game.replace(/\s/g, '')}`;
 
-  // Reset simulation when game changes
+  // Reset when game changes
   useEffect(() => {
     stopSimulation();
     setAutoWinners([]);
@@ -167,23 +167,25 @@ export default function NumberPicker({
   };
 
   const startSimulation = () => {
+    if (!drawResult || drawResult.numbers.length < (game === 'Tatts Lotto' ? 6 : 7)) {
+        alert("Please set the winning numbers at the top first!");
+        return;
+    }
+
     setIsRunning(true);
     const interval = 1000 / drawsPerSec;
     
     timerRef.current = setInterval(() => {
-      // 1. Always generate a fresh random draw in Time Machine Mode
-      const draw = generateRandomDraw(game);
-      
-      // 2. Generate random ticket batch
-      const simulationTickets = Array.from({ length: ticketsPerDraw }, () => generateQuickPick(game));
+      // Logic: Targeted simulation against the FIXED draw selected at the top.
+      const currentTickets = Array.from({ length: ticketsPerDraw }, () => generateQuickPick(game));
       
       const newWinners: WinningResult[] = [];
       let weeklyWinTotal = 0;
       let highestMainMatches = 0;
       const weeklyDivStats: Record<string, number> = {};
 
-      simulationTickets.forEach((ticketNumbers) => {
-        const result = compareNumbers(ticketNumbers, draw.numbers, draw.bonus, game);
+      currentTickets.forEach((ticketNumbers) => {
+        const result = compareNumbers(ticketNumbers, drawResult.numbers, drawResult.bonus, game);
         if (result.mainMatchesCount > highestMainMatches) highestMainMatches = result.mainMatchesCount;
         
         if (result.prizeTier !== "No Prize") {
@@ -195,9 +197,9 @@ export default function NumberPicker({
           newWinners.push({
             id: Math.random().toString(36).substr(2, 9),
             numbers: ticketNumbers,
-            drawNumbers: draw.numbers,
-            drawBonus: draw.bonus,
-            drawDate: 'Simulated',
+            drawNumbers: drawResult.numbers,
+            drawBonus: drawResult.bonus,
+            drawDate: drawResult.drawDate,
             prizeTier: result.prizeTier,
             mainMatchesCount: result.mainMatchesCount,
             bonusMatchesCount: result.bonusMatchesCount,
@@ -216,7 +218,7 @@ export default function NumberPicker({
 
       setStats(prev => ({
         draws: prev.draws + 1,
-        spent: prev.spent + (simulationTickets.length * TICKET_COST),
+        spent: prev.spent + (ticketsPerDraw * TICKET_COST),
         won: prev.won + weeklyWinTotal
       }));
 
@@ -268,7 +270,7 @@ export default function NumberPicker({
   };
 
   const handleClearHistory = async () => {
-    if (!window.confirm("Clear all simulation results?")) return;
+    if (!window.confirm("Clear results?")) return;
     setAutoWinners([]);
     setStats({ draws: 0, spent: 0, won: 0 });
     setDivisionStats({});
@@ -417,16 +419,16 @@ export default function NumberPicker({
           <div className="bg-white dark:bg-gray-900 rounded-[3rem] p-10 border border-gray-100 dark:border-white/5 shadow-xl mb-10 space-y-10">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                 <div className="space-y-6">
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">1. Batch Settings</p>
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Simulation Batch Settings</p>
                     <div>
                         <label className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Tickets per Week: {ticketsPerDraw}</label>
                         <input type="range" min="1" max="100" value={ticketsPerDraw} onChange={(e) => setTicketsPerDraw(parseInt(e.target.value))} className="w-full accent-indigo-600 h-1.5 bg-gray-100 dark:bg-white/5 rounded-full appearance-none cursor-pointer" />
                     </div>
                 </div>
                 <div className="space-y-6">
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">2. Simulation Speed</p>
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Simulation Speed</p>
                     <div>
-                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Speed: {drawsPerSec} draws/sec</label>
+                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Warp Speed: {drawsPerSec} draws/sec</label>
                         <input type="range" min="1" max="50" value={drawsPerSec} onChange={(e) => { setDrawsPerSec(parseInt(e.target.value)); if (isRunning) stopSimulation(); }} className="w-full accent-emerald-500 h-1.5 bg-gray-100 dark:bg-white/5 rounded-full appearance-none cursor-pointer" />
                     </div>
                 </div>
@@ -475,6 +477,7 @@ export default function NumberPicker({
                             {(winner.numbers || []).slice(0, 7).map((n, i) => {
                                 const isMatch = (winner.drawNumbers || []).includes(n);
                                 const isBonusMatch = (winner.drawBonus || []).includes(n);
+                                // Powerball specific: only highlight true Powerball yellow
                                 const isOzSupp = isOz && isBonusMatch && !isMatch;
                                 const isTattsSupp = isTatts && isBonusMatch && !isMatch;
                                 
