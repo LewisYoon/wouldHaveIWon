@@ -1,7 +1,13 @@
-'use client';
-
 import Navbar from '../../components/Navbar';
 import Link from 'next/link';
+import { Metadata } from 'next';
+
+export const dynamic = 'force-static';
+
+export const metadata: Metadata = {
+  title: 'Lotto Simulator Knowledge Base | WhatIFLotto',
+  description: 'In-depth analysis, historical archives, and mathematical guides to the Australian lottery landscape.',
+};
 
 const posts = [
   {
@@ -49,8 +55,8 @@ export default function BlogPage() {
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-          {posts.map((post, i) => (
-            <article key={post.slug} className="group flex flex-col bg-white dark:bg-gray-900 rounded-[3rem] border border-gray-100 dark:border-white/5 shadow-xl overflow-hidden hover:-translate-y-2 transition-all duration-500">
+          {posts.map((post) => (
+            <article key={post.slug} className="group flex flex-col bg-white dark:bg-gray-900 rounded-[3rem] border border-gray-100 dark:border-white/5 shadow-xl overflow-hidden hover:-translate-y-2 transition-all duration-500 text-left">
               <div className={`h-64 ${post.bg} flex items-center justify-center relative overflow-hidden`}>
                 <div className="absolute inset-0 opacity-10 group-hover:scale-110 transition-transform duration-1000 bg-[radial-gradient(#000_1px,transparent_1px)] dark:bg-[radial-gradient(#fff_1px,transparent_1px)] bg-[size:20px_20px]" />
                 <span className="text-6xl group-hover:rotate-12 transition-transform duration-500">
@@ -77,10 +83,9 @@ export default function BlogPage() {
           ))}
         </div>
 
-        {/* Newsletter / Static Content */}
         <section className="mt-40 bg-gray-950 rounded-[4rem] p-12 md:p-20 text-white shadow-2xl relative overflow-hidden border border-white/5">
             <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-600/10 rounded-full blur-[100px] -mr-48 -mt-48" />
-            <div className="relative z-10 max-w-2xl mx-auto text-center">
+            <div className="relative z-10 max-w-2xl mx-auto text-center text-left">
                 <h2 className="text-4xl font-black mb-8 uppercase tracking-tighter italic">Stay Informed</h2>
                 <p className="text-gray-400 text-lg mb-12 font-medium leading-relaxed">
                     We regularly update our knowledge base with the latest statistical trends and historical analysis of Australian lotto games. Join our community of data-driven players.

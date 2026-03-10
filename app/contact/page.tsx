@@ -1,51 +1,55 @@
-'use client';
-
 import Navbar from '../../components/Navbar';
+import { Metadata } from 'next';
+
+export const dynamic = 'force-static';
+
+export const metadata: Metadata = {
+  title: 'Contact Us | WhatIFLotto',
+  description: 'Get in touch with the WhatIFLotto Australia team for support or inquiries.',
+};
 
 export default function ContactPage() {
   return (
-    <div className="bg-white dark:bg-gray-950 min-h-screen text-gray-900 dark:text-gray-100 selection:bg-indigo-500 selection:text-white">
+    <div className="bg-white dark:bg-gray-950 min-h-screen text-gray-900 dark:text-gray-100 selection:bg-indigo-500 selection:text-white transition-colors duration-500">
       <Navbar />
       
-      <main className="max-w-4xl mx-auto px-6 py-24 text-center">
-        <h1 className="text-5xl md:text-7xl font-black uppercase tracking-tighter mb-8 animate-in fade-in slide-in-from-top-8 duration-1000">
-          Get in <span className="text-indigo-600 dark:text-indigo-400 italic">Touch</span>
-        </h1>
-        <p className="text-xl text-gray-500 dark:text-gray-400 max-w-2xl mx-auto font-medium mb-20">
-          Have questions about our simulation engine or suggestions for new features? We'd love to hear from you.
-        </p>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 text-left">
-          <section className="bg-gray-50 dark:bg-white/5 p-10 rounded-[3rem] border border-gray-100 dark:border-white/5 shadow-inner transition-all hover:scale-[1.02] duration-500">
-            <h2 className="text-2xl font-black mb-6 uppercase italic tracking-tight">Support & Feedback</h2>
-            <p className="text-gray-600 dark:text-gray-400 font-medium mb-10 leading-relaxed">
-              Our team is dedicated to providing the most accurate lottery simulation experience in Australia. If you encounter any data discrepancies or technical issues, please reach out.
+      <main className="max-w-4xl mx-auto px-6 py-32 text-center">
+        <header className="mb-20 animate-in fade-in slide-in-from-bottom-8 duration-1000">
+            <h1 className="text-6xl md:text-8xl font-black uppercase tracking-tighter mb-8 leading-tight">
+                Get in <span className="text-indigo-600 dark:text-indigo-400 italic">Touch</span>
+            </h1>
+            <p className="text-xl md:text-2xl text-gray-500 dark:text-gray-400 max-w-2xl mx-auto font-medium leading-relaxed">
+                Have questions about our simulation logic or need support? We're here to help.
             </p>
-            <div className="space-y-4">
-              <p className="text-xs font-black text-gray-400 uppercase tracking-widest">Email Address</p>
-              <a href="mailto:support@whatiflotto.com" className="text-xl font-black text-indigo-600 dark:text-indigo-400 hover:opacity-80 transition-opacity">support@whatiflotto.com</a>
-            </div>
-          </section>
+        </header>
 
-          <section className="bg-white dark:bg-gray-900 p-10 rounded-[3rem] border border-gray-100 dark:border-white/5 shadow-xl transition-all hover:scale-[1.02] duration-500">
-            <h2 className="text-2xl font-black mb-6 uppercase italic tracking-tight">Business Inquiries</h2>
-            <p className="text-gray-600 dark:text-gray-400 font-medium mb-10 leading-relaxed">
-              For partnership opportunities, media inquiries, or data integration requests, please contact our administrative department.
-            </p>
-            <div className="space-y-4">
-              <p className="text-xs font-black text-gray-400 uppercase tracking-widest">General Inquiries</p>
-              <a href="mailto:hello@whatiflotto.com" className="text-xl font-black text-emerald-600 dark:text-emerald-400 hover:opacity-80 transition-opacity">hello@whatiflotto.com</a>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-24">
+            <div className="p-12 bg-gray-50 dark:bg-white/5 rounded-[3rem] border border-gray-100 dark:border-white/5 hover:-translate-y-1 transition-all duration-500 group text-left">
+                <div className="w-14 h-14 bg-indigo-600 text-white rounded-2xl flex items-center justify-center mb-8 shadow-xl shadow-indigo-500/20 group-hover:rotate-12 transition-transform">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                </div>
+                <h3 className="text-2xl font-black uppercase mb-2">Email Us</h3>
+                <p className="text-gray-500 dark:text-gray-400 font-bold mb-6">General inquiries & support</p>
+                <a href="mailto:support@whatiflotto.com" className="text-xl font-black text-indigo-600 dark:text-indigo-400 underline decoration-indigo-500/30 hover:decoration-indigo-500 transition-all">
+                    support@whatiflotto.com
+                </a>
             </div>
-          </section>
+
+            <div className="p-12 bg-gray-50 dark:bg-white/5 rounded-[3rem] border border-gray-100 dark:border-white/5 hover:-translate-y-1 transition-all duration-500 group text-left">
+                <div className="w-14 h-14 bg-emerald-600 text-white rounded-2xl flex items-center justify-center mb-8 shadow-xl shadow-emerald-500/20 group-hover:rotate-12 transition-transform">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                </div>
+                <h3 className="text-2xl font-black uppercase mb-2">Location</h3>
+                <p className="text-gray-500 dark:text-gray-400 font-bold mb-6">Proudly Australian</p>
+                <p className="text-xl font-black text-gray-900 dark:text-white">
+                    Sydney, NSW <br /> Australia
+                </p>
+            </div>
         </div>
 
-        <div className="mt-32 p-12 bg-gray-950 rounded-[4rem] text-white shadow-2xl relative overflow-hidden border border-white/5">
-            <div className="absolute top-0 left-0 w-64 h-64 bg-indigo-600/10 rounded-full blur-[100px] -ml-32 -mt-32" />
-            <h3 className="text-3xl font-black mb-6 tracking-tight uppercase">Address</h3>
-            <p className="text-gray-400 text-lg font-medium max-w-sm mx-auto leading-relaxed italic">
-                WhatIFLotto Australia <br />
-                Sydney, Australia <br />
-               
+        <div className="max-w-2xl auto pt-16 border-t border-gray-100 dark:border-white/5">
+            <p className="text-gray-400 text-lg font-medium leading-relaxed italic">
+                "We usually respond within 24-48 business hours. Thank you for using Australia's most advanced risk-free lottery tracker."
             </p>
         </div>
       </main>

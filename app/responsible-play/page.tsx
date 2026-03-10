@@ -1,11 +1,16 @@
-'use client';
-
 import Navbar from '../../components/Navbar';
-import Link from 'next/link';
+import { Metadata } from 'next';
+
+export const dynamic = 'force-static';
+
+export const metadata: Metadata = {
+  title: 'Responsible Play | WhatIFLotto',
+  description: 'Our commitment to responsible simulation and resources for gambling help in Australia.',
+};
 
 export default function ResponsiblePlay() {
   return (
-    <div className="bg-white dark:bg-gray-950 min-h-screen text-gray-900 dark:text-gray-100 selection:bg-indigo-500 selection:text-white">
+    <div className="bg-white dark:bg-gray-950 min-h-screen text-gray-900 dark:text-gray-100 selection:bg-indigo-500 selection:text-white transition-colors duration-500">
       <Navbar />
       
       <main className="max-w-4xl mx-auto px-6 py-24">
@@ -70,7 +75,7 @@ export default function ResponsiblePlay() {
                   <p className="font-medium text-indigo-50 mb-4 text-lg">National 24/7 Support Service</p>
                   <div className="flex flex-wrap gap-4">
                     <a href="tel:1800858858" className="px-8 py-3 bg-white text-indigo-600 rounded-xl font-black text-sm uppercase tracking-widest hover:brightness-110 transition-all">Call 1800 858 858</a>
-                    <a href="https://www.gamblinghelponline.org.au" target="_blank" className="px-8 py-3 bg-indigo-950/30 text-white border-2 border-white/20 rounded-xl font-black text-sm uppercase tracking-widest hover:bg-indigo-950/50 transition-all">Visit Website</a>
+                    <a href="https://www.gamblinghelponline.org.au" target="_blank" rel="noopener noreferrer" className="px-8 py-3 bg-indigo-950/30 text-white border-2 border-white/20 rounded-xl font-black text-sm uppercase tracking-widest hover:bg-indigo-950/50 transition-all">Visit Website</a>
                   </div>
                 </div>
 
@@ -83,7 +88,7 @@ export default function ResponsiblePlay() {
                   <div className="bg-white/10 p-6 rounded-3xl border border-white/10">
                     <h5 className="font-black uppercase mb-2">Beyond Blue</h5>
                     <p className="text-sm font-medium text-indigo-100 mb-4">Anxiety, depression and suicide prevention</p>
-                    <a href="tel:1300224636" className="text-lg font-black underline hover:text-white">Call 1300 22 4636</a>
+                    <a href="tel:1300224636" className="text-lg font-black underline hover:text-white">Call 1300 22 46 36</a>
                   </div>
                 </div>
               </div>

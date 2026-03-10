@@ -1,7 +1,13 @@
-'use client';
-
 import Navbar from '../../components/Navbar';
 import Link from 'next/link';
+import { Metadata } from 'next';
+
+export const dynamic = 'force-static';
+
+export const metadata: Metadata = {
+  title: 'How It Works | WhatIFLotto Simulator',
+  description: 'A comprehensive guide to Australia\'s premier risk-free lottery simulation and tracking platform. Learn about our data accuracy and division logic.',
+};
 
 export default function HowItWorks() {
   return (
@@ -24,9 +30,9 @@ export default function HowItWorks() {
           
           {/* Section 1: The Core Mission */}
           <article className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-            <div className="order-2 lg:order-1">
-              <h2 className="text-4xl font-black mb-8 tracking-tight italic">Bridging Reality and Imagination</h2>
-              <div className="space-y-6 text-lg text-gray-600 dark:text-gray-300 leading-relaxed font-medium text-left">
+            <div className="order-2 lg:order-1 text-left">
+              <h2 className="text-4xl font-black mb-8 tracking-tight italic uppercase">Bridging Reality and Imagination</h2>
+              <div className="space-y-6 text-lg text-gray-600 dark:text-gray-300 leading-relaxed font-medium">
                 <p>
                   WhatIFLotto was born from a simple question: "What if my lucky numbers actually came up?" Instead of spending thousands of dollars over a lifetime to find out, we provide a mathematically accurate simulation environment where you can test your numbers against real official Australian draw data.
                 </p>
@@ -36,17 +42,17 @@ export default function HowItWorks() {
               </div>
             </div>
             <div className="order-1 lg:order-2 bg-indigo-50 dark:bg-indigo-500/10 rounded-[3rem] p-12 aspect-square flex items-center justify-center shadow-inner">
-              <div className="text-8xl animate-bounce">🎲</div>
+              <div className="text-8xl">🎲</div>
             </div>
           </article>
 
           {/* Section 2: Tracking Your Luck */}
           <article className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div className="bg-emerald-50 dark:bg-emerald-500/10 rounded-[3rem] p-12 aspect-square flex items-center justify-center shadow-inner">
-              <div className="text-8xl animate-pulse">📈</div>
+              <div className="text-8xl">📈</div>
             </div>
             <div className="text-left">
-              <h2 className="text-4xl font-black mb-8 tracking-tight italic">The Luck Tracker</h2>
+              <h2 className="text-4xl font-black mb-8 tracking-tight italic uppercase">The Luck Tracker</h2>
               <div className="space-y-6 text-lg text-gray-600 dark:text-gray-300 leading-relaxed font-medium">
                 <p>
                   The "Track My Luck" feature is the heart of the WhatIFLotto experience. It allows you to save sets of numbers for specific upcoming draw dates. Once the official results are finalized (usually around 8:30 PM - 9:00 PM AEST on draw nights), our system automatically checks your sets.
@@ -63,7 +69,7 @@ export default function HowItWorks() {
           {/* Section 3: High-Speed Simulation */}
           <article className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div className="order-2 lg:order-1 text-left">
-              <h2 className="text-4xl font-black mb-8 tracking-tight italic">Turbo Simulation (The Time Machine)</h2>
+              <h2 className="text-4xl font-black mb-8 tracking-tight italic uppercase">Turbo Simulation</h2>
               <div className="space-y-6 text-lg text-gray-600 dark:text-gray-300 leading-relaxed font-medium">
                 <p>
                   Want to know what 50 years of playing 10 tickets a week looks like? Our Turbo Mode simulator allows you to compress a lifetime of play into mere minutes.
@@ -74,7 +80,7 @@ export default function HowItWorks() {
               </div>
             </div>
             <div className="order-1 lg:order-2 bg-purple-50 dark:bg-purple-500/10 rounded-[3rem] p-12 aspect-square flex items-center justify-center shadow-inner">
-              <div className="text-8xl animate-spin-slow">🚀</div>
+              <div className="text-8xl">🚀</div>
             </div>
           </article>
 

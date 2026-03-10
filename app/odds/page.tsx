@@ -165,6 +165,26 @@ export default function OddsPage() {
                 </table>
               </div>
             </section>
+
+            {/* Static Educational Content for AdSense */}
+            <section className="max-w-none prose prose-indigo dark:prose-invert space-y-8 text-left border-t border-gray-100 dark:border-white/5 pt-16">
+              <h2 className="text-3xl font-black uppercase tracking-tight italic">Understanding Lottery Mathematics</h2>
+              <div className="text-gray-600 dark:text-gray-400 space-y-6 font-medium leading-relaxed">
+                <p>
+                  The odds displayed above are calculated using combinatorics, a branch of mathematics concerned with counting. For Australian lotteries, the probability of winning is fixed and does not change based on previous draws or the number of people playing.
+                </p>
+                
+                <h3 className="text-xl font-black text-gray-900 dark:text-white uppercase">The Power of Randomness</h3>
+                <p>
+                  Many players search for "hot" or "cold" numbers, but in a mathematically fair system like the Australian lottery Bloc, every ball has an equal probability of being drawn in every draw. Our <strong>Lotto Simulator</strong> uses this same principle of true randomness to help you visualize why "systems" rarely beat the house edge.
+                </p>
+
+                <h3 className="text-xl font-black text-gray-900 dark:text-white uppercase">Why Odds Vary Between Games</h3>
+                <p>
+                  The primary factor in lottery odds is the "matrix"—the size of the ball pool and the number of balls required to win. For example, Powerball Australia's 7/35 + 1/20 matrix creates much higher odds (1 in 134 million) than Tatts Lotto's 6/45 matrix (1 in 8 million). This is why Powerball jackpots can grow to massive amounts, as they are harder to win and more likely to roll over.
+                </p>
+              </div>
+            </section>
           </div>
 
           <aside className="space-y-10">
