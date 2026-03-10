@@ -80,7 +80,6 @@ export default function NumberPicker({
   const [isRunning, setIsRunning] = useState(false);
   const [ticketsPerDraw, setTicketsPerDraw] = useState(12);
   const [drawsPerSec, setDrawsPerSec] = useState(10);
-  const [turboTarget, setTurboTarget] = useState<'random' | 'fixed'>('random');
   
   const [autoWinners, setAutoWinners] = useState<WinningResult[]>([]);
   const [stats, setStats] = useState({ draws: 0, spent: 0, won: 0 });
@@ -92,7 +91,7 @@ export default function NumberPicker({
   const storageCurrentKey = `lottoLines_${game.replace(/\s/g, '')}`;
   const storageHistoryKey = `lottoWins_${game.replace(/\s/g, '')}`;
 
-  // Fully reset simulation data when game changes
+  // Reset when game changes
   useEffect(() => {
     stopSimulation();
     setAutoWinners([]);
@@ -168,7 +167,7 @@ export default function NumberPicker({
   };
 
   const startSimulation = () => {
-    if (turboTarget === 'fixed' && (!drawResult || drawResult.numbers.length < (game === 'Tatts Lotto' ? 6 : 7))) {
+    if (!drawResult || drawResult.numbers.length < (game === 'Tatts Lotto' ? 6 : 7)) {
         alert("Please ensure the target winning numbers are set correctly at the top!");
         return;
     }
@@ -176,10 +175,7 @@ export default function NumberPicker({
     setIsRunning(true);
     const interval = 1000 / drawsPerSec;
     timerRef.current = setInterval(() => {
-      const draw = (turboTarget === 'fixed' && drawResult) 
-        ? { numbers: drawResult.numbers, bonus: drawResult.bonus, date: drawResult.drawDate }
-        : { ...generateRandomDraw(game), date: 'Simulated' };
-
+      // Logic: Simulation always uses the FIXED target drawResult passed from parent
       const currentTickets = Array.from({ length: ticketsPerDraw }, () => generateQuickPick(game));
       const newWinners: WinningResult[] = [];
       let weeklyWinTotal = 0;
@@ -187,7 +183,7 @@ export default function NumberPicker({
       const weeklyDivStats: Record<string, number> = {};
 
       currentTickets.forEach((ticketNumbers) => {
-        const result = compareNumbers(ticketNumbers, draw.numbers, draw.bonus, game);
+        const result = compareNumbers(ticketNumbers, drawResult.numbers, drawResult.bonus, game);
         if (result.mainMatchesCount > highestMainMatches) highestMainMatches = result.mainMatchesCount;
         
         if (result.prizeTier !== "No Prize") {
@@ -199,9 +195,9 @@ export default function NumberPicker({
           newWinners.push({
             id: Math.random().toString(36).substr(2, 9),
             numbers: ticketNumbers,
-            drawNumbers: draw.numbers,
-            drawBonus: draw.bonus,
-            drawDate: draw.date,
+            drawNumbers: drawResult.numbers,
+            drawBonus: drawResult.bonus,
+            drawDate: drawResult.drawDate,
             prizeTier: result.prizeTier,
             mainMatchesCount: result.mainMatchesCount,
             bonusMatchesCount: result.bonusMatchesCount,
@@ -421,18 +417,14 @@ export default function NumberPicker({
           <div className="bg-white dark:bg-gray-900 rounded-[3rem] p-10 border border-gray-100 dark:border-white/5 shadow-xl mb-10 space-y-10">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                 <div className="space-y-6 text-left">
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">1. Simulation Target</p>
-                    <div className="bg-gray-50 dark:bg-white/5 p-1.5 rounded-2xl flex gap-1 border border-gray-100 dark:border-white/10">
-                        <button onClick={() => setTurboTarget('random')} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase transition-all ${turboTarget === 'random' ? 'bg-white dark:bg-gray-800 text-indigo-600 shadow-sm' : 'text-gray-400'}`}>Fresh Draws</button>
-                        <button onClick={() => setTurboTarget('fixed')} disabled={!drawResult} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase transition-all disabled:opacity-30 ${turboTarget === 'fixed' ? 'bg-white dark:bg-gray-800 text-indigo-600 shadow-sm' : 'text-gray-400'}`}>Fixed Target</button>
-                    </div>
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Simulation Settings</p>
                     <div>
-                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Tickets/Week: {ticketsPerDraw}</label>
+                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Tickets per Week: {ticketsPerDraw}</label>
                         <input type="range" min="1" max="100" value={ticketsPerDraw} onChange={(e) => setTicketsPerDraw(parseInt(e.target.value))} className="w-full accent-indigo-600 h-1.5 bg-gray-100 dark:bg-white/5 rounded-full appearance-none cursor-pointer" />
                     </div>
                 </div>
                 <div className="space-y-6 text-left">
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">2. Warp Speed</p>
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Warp Speed</p>
                     <div>
                         <label className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Speed: {drawsPerSec} draws/sec</label>
                         <input type="range" min="1" max="50" value={drawsPerSec} onChange={(e) => { setDrawsPerSec(parseInt(e.target.value)); if (isRunning) stopSimulation(); }} className="w-full accent-emerald-500 h-1.5 bg-gray-100 dark:bg-white/5 rounded-full appearance-none cursor-pointer" />
