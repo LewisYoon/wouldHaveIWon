@@ -16,7 +16,7 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
     email_results: true,
   });
   const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSubmitting] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (isOpen && user) {
@@ -82,7 +82,7 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
                 </div>
                 <button 
                   onClick={() => handleUpdate('email_notifications', !prefs.email_notifications)}
-                  disabled={isSaving}
+                  disabled={isSubmitting}
                   className={`w-14 h-8 rounded-full transition-colors relative ${prefs.email_notifications ? 'bg-indigo-600' : 'bg-gray-200 dark:bg-gray-800'}`}
                 >
                   <div className={`absolute top-1 left-1 w-6 h-6 bg-white rounded-full transition-transform shadow-sm ${prefs.email_notifications ? 'translate-x-6' : 'translate-x-0'}`} />
