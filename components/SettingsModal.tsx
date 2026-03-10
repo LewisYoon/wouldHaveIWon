@@ -59,16 +59,16 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-      <div className="bg-white dark:bg-gray-900 w-full max-w-md rounded-[2.5rem] shadow-2xl border border-gray-100 dark:border-white/5 overflow-hidden animate-in zoom-in-95 duration-300">
-        <div className="p-8 border-b border-gray-100 dark:border-white/5 flex justify-between items-center bg-gray-50/50 dark:bg-white/5">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 md:p-6 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+      <div className="bg-white dark:bg-gray-900 w-full max-w-md rounded-[2.5rem] shadow-2xl border border-gray-100 dark:border-white/5 overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-300 flex flex-col max-h-[90vh]">
+        <div className="p-8 border-b border-gray-100 dark:border-white/5 flex justify-between items-center bg-gray-50/50 dark:bg-white/5 flex-shrink-0">
           <h2 className="text-xl font-black uppercase tracking-tighter italic">Settings</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
           </button>
         </div>
 
-        <div className="p-10 space-y-10">
+        <div className="p-10 space-y-10 overflow-y-auto">
           {isLoading ? (
             <div className="py-10 text-center animate-pulse">
               <p className="text-gray-400 font-bold uppercase tracking-widest text-xs">Loading preferences...</p>
@@ -76,28 +76,28 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
           ) : (
             <div className="space-y-8">
               <div className="flex items-center justify-between group">
-                <div className="text-left">
-                  <h3 className="font-black text-gray-900 dark:text-white uppercase tracking-tight mb-1">Draw Reminders</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">Get notified before the big draws.</p>
+                <div className="text-left pr-4">
+                  <h3 className="font-black text-gray-900 dark:text-white uppercase tracking-tight mb-1 text-sm md:text-base">Draw Reminders</h3>
+                  <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 font-medium">Get notified before the big draws.</p>
                 </div>
                 <button 
                   onClick={() => handleUpdate('email_notifications', !prefs.email_notifications)}
                   disabled={isSubmitting}
-                  className={`w-14 h-8 rounded-full transition-colors relative ${prefs.email_notifications ? 'bg-indigo-600' : 'bg-gray-200 dark:bg-gray-800'}`}
+                  className={`w-14 h-8 rounded-full transition-colors relative flex-shrink-0 ${prefs.email_notifications ? 'bg-indigo-600' : 'bg-gray-200 dark:bg-gray-800'}`}
                 >
                   <div className={`absolute top-1 left-1 w-6 h-6 bg-white rounded-full transition-transform shadow-sm ${prefs.email_notifications ? 'translate-x-6' : 'translate-x-0'}`} />
                 </button>
               </div>
 
               <div className="flex items-center justify-between group">
-                <div className="text-left">
-                  <h3 className="font-black text-gray-900 dark:text-white uppercase tracking-tight mb-1">Draw Results</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">See how your numbers did instantly.</p>
+                <div className="text-left pr-4">
+                  <h3 className="font-black text-gray-900 dark:text-white uppercase tracking-tight mb-1 text-sm md:text-base">Draw Results</h3>
+                  <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 font-medium">See how your numbers did instantly.</p>
                 </div>
                 <button 
                   onClick={() => handleUpdate('email_results', !prefs.email_results)}
                   disabled={isSubmitting}
-                  className={`w-14 h-8 rounded-full transition-colors relative ${prefs.email_results ? 'bg-indigo-600' : 'bg-gray-200 dark:bg-gray-800'}`}
+                  className={`w-14 h-8 rounded-full transition-colors relative flex-shrink-0 ${prefs.email_results ? 'bg-indigo-600' : 'bg-gray-200 dark:bg-gray-800'}`}
                 >
                   <div className={`absolute top-1 left-1 w-6 h-6 bg-white rounded-full transition-transform shadow-sm ${prefs.email_results ? 'translate-x-6' : 'translate-x-0'}`} />
                 </button>
@@ -106,7 +106,7 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
           )}
         </div>
 
-        <div className="p-8 bg-gray-50 dark:bg-white/5 text-center">
+        <div className="p-8 bg-gray-50 dark:bg-white/5 text-center flex-shrink-0 border-t border-gray-100 dark:border-white/5">
           <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-relaxed">
             Preferences are synced across all your devices.
           </p>
