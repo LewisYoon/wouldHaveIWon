@@ -1,6 +1,12 @@
-'use client';
-
 import Navbar from '../../components/Navbar';
+import { Metadata } from 'next';
+
+export const dynamic = 'force-static';
+
+export const metadata: Metadata = {
+  title: 'Terms of Service | WhatIFLotto',
+  description: 'Terms and conditions for using WhatIFLotto Australian Lotto Simulator and Tracking services.',
+};
 
 export default function Terms() {
   return (
@@ -14,9 +20,9 @@ export default function Terms() {
 
         <div className="prose prose-indigo dark:prose-invert max-w-none space-y-10 text-lg text-gray-600 dark:text-gray-300 font-medium leading-relaxed">
           <section>
-            <p className="text-sm font-black text-gray-400 uppercase tracking-widest mb-4">Effective Date: March 6, 2026</p>
+            <p className="text-sm font-black text-gray-400 uppercase tracking-widest mb-4">Effective Date: March 10, 2026</p>
             <p>
-              Welcome to WhatIFLotto. By accessing this website, we assume you accept these terms and conditions. Do not continue to use WhatIFLotto if you do not agree to all of the terms and conditions stated on this page.
+              Welcome to WhatIFLotto. By accessing this website (https://whatiflotto.com), we assume you accept these terms and conditions. Do not continue to use WhatIFLotto if you do not agree to all of the terms and conditions stated on this page.
             </p>
           </section>
 
@@ -47,7 +53,7 @@ export default function Terms() {
           <section className="space-y-4">
             <h2 className="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tight">4. Data Accuracy</h2>
             <p>
-              We fetch official lottery data through automated third-party integrations. While we monitor these feeds daily, we are not responsible for delays, errors, or omissions in the official data provided by lottery Bloc members.
+              We fetch official lottery data through automated third-party integrations. While we monitor these feeds daily, we are not responsible for delays, errors, or omissions in the official data provided by lottery providers.
             </p>
           </section>
 
@@ -67,7 +73,7 @@ export default function Terms() {
 
           <section className="p-8 bg-gray-50 dark:bg-white/5 rounded-3xl border border-gray-100 dark:border-white/5">
             <h2 className="text-2xl font-black text-gray-900 dark:text-white uppercase mb-4">Termination</h2>
-            <p className="text-base">
+            <p className="text-base font-bold italic">
               We may terminate or suspend access to our Service immediately, without prior notice or liability, for any reason whatsoever, including without limitation if you breach the Terms.
             </p>
           </section>

@@ -1,6 +1,12 @@
-'use client';
-
 import Navbar from '../../components/Navbar';
+import { Metadata } from 'next';
+
+export const dynamic = 'force-static';
+
+export const metadata: Metadata = {
+  title: 'Privacy Policy | WhatIFLotto',
+  description: 'Privacy Policy for WhatIFLotto Australia. Learn how we handle your data and cookies.',
+};
 
 export default function PrivacyPolicy() {
   return (
@@ -14,9 +20,9 @@ export default function PrivacyPolicy() {
 
         <div className="prose prose-indigo dark:prose-invert max-w-none space-y-10 text-lg text-gray-600 dark:text-gray-300 font-medium leading-relaxed">
           <section>
-            <p className="text-sm font-black text-gray-400 uppercase tracking-widest mb-4">Last Updated: March 6, 2026</p>
+            <p className="text-sm font-black text-gray-400 uppercase tracking-widest mb-4">Last Updated: March 10, 2026</p>
             <p>
-              At WhatIFLotto, accessible from whatiflotto.com, one of our main priorities is the privacy of our visitors. This Privacy Policy document contains types of information that is collected and recorded by WhatIFLotto and how we use it.
+              At WhatIFLotto, accessible from https://whatiflotto.com, one of our main priorities is the privacy of our visitors. This Privacy Policy document contains types of information that is collected and recorded by WhatIFLotto and how we use it.
             </p>
           </section>
 
@@ -30,7 +36,7 @@ export default function PrivacyPolicy() {
           <section className="space-y-4">
             <h2 className="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tight">2. How We Use Your Information</h2>
             <p>We use the information we collect in various ways, including to:</p>
-            <ul className="list-disc pl-6 space-y-2">
+            <ul className="list-disc pl-6 space-y-2 text-base">
               <li>Provide, operate, and maintain our website and lotto simulation engine.</li>
               <li>Improve, personalize, and expand our website features.</li>
               <li>Understand and analyze how you use our website.</li>
@@ -69,7 +75,7 @@ export default function PrivacyPolicy() {
 
           <section className="p-8 bg-gray-50 dark:bg-white/5 rounded-3xl border border-gray-100 dark:border-white/5">
             <h2 className="text-2xl font-black text-gray-900 dark:text-white uppercase mb-4">Contact Us</h2>
-            <p className="text-base">
+            <p className="text-base font-bold italic">
               If you have additional questions or require more information about our Privacy Policy, do not hesitate to contact us at support@whatiflotto.com.
             </p>
           </section>
