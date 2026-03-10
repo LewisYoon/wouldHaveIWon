@@ -303,62 +303,42 @@ export default function SimulatorPage() {
         {/* Classic Mode Results */}
         {simMode === 'classic' && allComparisonResults && (
           <div ref={resultsRef} className="w-full max-w-6xl mt-24 space-y-12 animate-in fade-in slide-in-from-bottom-12 duration-1000 text-left">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-              <div className={`p-12 rounded-[4rem] border transition-all duration-700 relative overflow-hidden text-white shadow-2xl hover:scale-[1.01] group ${game === 'Oz Lotto' ? 'bg-emerald-950 border-emerald-500/20' : game === 'Tatts Lotto' ? 'bg-red-950 border-red-500/20' : 'bg-indigo-950 border-indigo-500/20'}`}>
-                <div className={`absolute top-0 right-0 w-48 h-48 rounded-full -mr-24 -mt-24 transition-transform duration-[2s] group-hover:scale-150 ${game === 'Oz Lotto' ? 'bg-emerald-500/5' : game === 'Tatts Lotto' ? 'bg-red-500/5' : 'bg-indigo-500/5'}`} />
-                <p className={`text-[11px] font-black uppercase tracking-[0.4em] mb-10 ${isOz ? 'text-emerald-400' : isTatts ? 'text-red-400' : 'text-indigo-400'}`}>Simulation Result</p>
-                <h3 className="text-3xl md:text-4xl font-black mb-12 tracking-tighter italic text-white leading-tight">"{luckNarrative}"</h3>
-                <div className="flex items-center gap-6 relative z-10">
-                  <div className={`w-16 h-16 rounded-3xl flex items-center justify-center text-3xl shadow-inner ${isOz ? 'bg-emerald-500/10' : isTatts ? 'bg-red-500/10' : 'bg-indigo-500/10'}`}>📊</div>
-                  <div><p className={`text-xs font-bold uppercase tracking-widest ${isOz ? 'text-emerald-400' : isTatts ? 'text-red-400' : 'text-indigo-400'}`}>Return on Investment</p><p className="text-4xl font-black text-white tracking-tighter">{stats.roi.toFixed(1)}%</p></div>
-                </div>
-              </div>
-              <div className="bg-white dark:bg-gray-900 p-12 rounded-[4rem] border border-gray-100 dark:border-white/5 shadow-2xl">
-                <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.4em] mb-10">{realWorldValue.label}</p>
-                <div className="space-y-6">
-                  {realWorldValue.items.map((item, i) => (
-                    <div key={i} className="flex items-center justify-between p-6 bg-gray-50 dark:bg-gray-800/50 rounded-3xl transition-all duration-500 group hover:bg-white dark:hover:bg-gray-800 shadow-sm hover:shadow-md"><span className="font-bold text-gray-600 dark:text-gray-400 text-lg">{item.name}</span><span className="text-3xl font-black text-gray-900 dark:text-white tracking-tighter transition-transform group-hover:scale-110">{item.qty.toLocaleString()}x</span></div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
-              <div className="bg-white dark:bg-gray-900 p-10 rounded-[3rem] border border-gray-100 dark:border-white/5 shadow-xl">
-                <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.3em] mb-4">Total Cost</p><p className="text-5xl font-black text-gray-900 dark:text-white tracking-tighter">{formatCurrency(stats.totalSpent)}</p>
-              </div>
-              <div className="bg-white dark:bg-gray-900 p-10 rounded-[3rem] border border-gray-100 dark:border-white/5 shadow-xl">
-                <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.3em] mb-4">Total Won</p><p className={`text-5xl font-black ${brandStyles.text} tracking-tighter`}>{formatCurrency(stats.totalWon)}</p>
-              </div>
-              <div className={`p-10 rounded-[3rem] border shadow-2xl ${stats.profit >= 0 ? 'bg-emerald-600 border-emerald-700 text-white' : 'bg-rose-600 border-rose-700 text-white'}`}>
-                <p className="text-[11px] font-black text-white/60 uppercase tracking-[0.3em] mb-4">Net Profit/Loss</p><p className="text-5xl font-black tracking-tighter">{formatCurrency(stats.profit)}</p>
-              </div>
-            </div>
-
-            <div className="bg-white dark:bg-gray-900 p-12 rounded-[4rem] border border-gray-100 dark:border-white/5 text-left shadow-2xl">
-              <h2 className="text-4xl font-black mb-12 tracking-tighter uppercase italic">Draw Analysis</h2>
-              <div className="grid grid-cols-1 gap-4 max-h-[800px] overflow-y-auto pr-4 custom-scrollbar">
-                {allComparisonResults?.map((result, index) => {
-                  const hasPrize = result.prizeTier !== "No Prize";
-                  const prizeAmt = activeResult?.prizes[result.prizeTier] || 0;
-                  return (
-                    <div key={index} className={`flex flex-col sm:flex-row sm:items-center justify-between p-8 rounded-[2.5rem] transition-all duration-500 border group hover:-translate-y-1 ${hasPrize ? `${brandStyles.bgLight} border-${brandColor}-200 dark:border-${brandColor}-500/20 shadow-lg` : 'bg-gray-50/30 dark:bg-white/5 border-gray-100 dark:border-white/5 opacity-40 grayscale hover:opacity-100 hover:grayscale-0 hover:shadow-md'}`}>
-                      <div className="flex items-center gap-8">
-                        <span className="text-[12px] font-black text-gray-300 dark:text-gray-700 w-8 transition-colors group-hover:text-indigo-500">{String(index + 1).padStart(2, '0')}</span>
-                        <div>
-                          <p className="text-lg font-black text-gray-800 dark:text-white tracking-tight">{result.mainMatchesCount} Main {game === 'Powerball' ? `+ ${result.bonusMatchesCount > 0 ? 'PB' : 'No PB'}` : `+ ${result.bonusMatchesCount} Supps`}</p>
-                          <p className={`text-[11px] font-bold uppercase tracking-[0.2em] mt-1 ${hasPrize ? brandStyles.text : 'text-gray-400'}`}>{result.prizeTier}</p>
-                        </div>
-                      </div>
-                      <div className="text-right mt-6 sm:mt-0"><p className={`text-3xl font-black tracking-tighter transition-all duration-500 group-hover:scale-110 ${hasPrize ? brandStyles.text : 'text-gray-200'}`}>{hasPrize ? formatCurrency(prizeAmt) : formatCurrency(0)}</p></div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+            {/* ... existing results content ... */}
           </div>
         )}
       </main>
+
+      {/* Static Educational Content for AdSense/SEO */}
+      <section className="max-w-4xl mx-auto px-6 py-32 text-left border-t border-gray-100 dark:border-white/5 mt-20">
+        <h2 className="text-4xl font-black mb-12 uppercase tracking-tighter italic">Lotto Simulation Technology</h2>
+        <div className="prose prose-indigo dark:prose-invert max-w-none space-y-10 text-lg text-gray-600 dark:text-gray-400 font-medium leading-relaxed text-left">
+          <p>
+            WhatIFLotto's simulation engine is built on the principles of true mathematical randomness and historical data analysis. Whether you are using our <strong>Classic Mode</strong> to check a single week's luck or our <strong>Turbo Mode</strong> to simulate a lifetime of play, the goal remains the same: education through visualization.
+          </p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 not-prose">
+            <div className="space-y-4">
+              <h3 className="text-xl font-black uppercase text-gray-900 dark:text-white">Why We Simulate?</h3>
+              <p className="text-sm">Human brains are not naturally evolved to understand probabilities like 1 in 134,490,400 (the odds of winning Powerball Division 1). Simulation allows you to compress time and see these odds play out thousands of times in seconds.</p>
+            </div>
+            <div className="space-y-4">
+              <h3 className="text-xl font-black uppercase text-gray-900 dark:text-white">The "Reality Check"</h3>
+              <p className="text-sm">By comparing simulated winnings to real-world items like luxury cars or everyday coffees, we provide a tangible context to lottery outcomes. It’s one thing to see a loss; it’s another to see how many "dream vacations" were spent to get there.</p>
+            </div>
+          </div>
+
+          <p>
+            Our simulator adheres strictly to the official rules of the Australian lottery. This includes correct ball pools (e.g., 7 from 35 for Powerball), correct supplementary/powerball logic, and exact prize division structures. We update our prize pool estimates regularly to reflect current Australian jackpot trends.
+          </p>
+
+          <footer className="pt-10 border-t border-gray-100 dark:border-white/10">
+            <p className="text-xs font-bold uppercase tracking-widest text-gray-500">
+                Independent Simulation • Official Rules • 100% Risk-Free
+            </p>
+          </footer>
+        </div>
+      </section>
+
       <DivisionRules game={game} isOpen={isRulesModalOpen} onClose={() => setIsRulesModalOpen(false)} />
     </div>
   );

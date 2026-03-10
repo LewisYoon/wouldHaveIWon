@@ -14,7 +14,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/responsible-play',
     '/privacy',
     '/terms',
-    '/login'
+    '/login',
+    '/blog',
+    '/blog/mathematics-of-powerball',
+    '/blog/history-of-oz-lotto',
+    '/blog/benefits-of-simulation'
   ].map((route) => ({
     url: `${baseUrl}${route}`,
     lastModified: new Date().toISOString().split('T')[0],

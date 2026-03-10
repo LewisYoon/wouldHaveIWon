@@ -224,6 +224,56 @@ export default function Home() {
           </div>
         </section>
 
+        {/* Knowledge Hub / Articles Section */}
+        <section className="mb-40">
+          <div className="text-left mb-16 px-4">
+            <h2 className="text-4xl font-black text-gray-900 dark:text-white uppercase tracking-tighter italic">Lotto Knowledge Hub</h2>
+            <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Expert Insights & Mathematical Analysis</p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <article className="bg-white dark:bg-gray-900 p-10 rounded-[3rem] border border-gray-100 dark:border-white/5 shadow-xl hover:-translate-y-1 transition-all duration-500 group">
+              <div className="w-12 h-12 bg-indigo-50 dark:bg-indigo-500/10 rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform">
+                <span className="text-2xl">🧮</span>
+              </div>
+              <h3 className="text-xl font-black mb-4 uppercase tracking-tight">The Mathematics of Luck</h3>
+              <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed mb-8">
+                Understanding the 1 in 134 million odds of Powerball requires a grasp of combinatorics. We break down why some numbers seem "luckier" than others and what the law of large numbers really means for your tickets.
+              </p>
+              <Link href="/how-it-works" className="text-[10px] font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-600/20 pb-1 hover:border-indigo-600 transition-all">Read Full Guide</Link>
+            </article>
+
+            <article className="bg-white dark:bg-gray-900 p-10 rounded-[3rem] border border-gray-100 dark:border-white/5 shadow-xl hover:-translate-y-1 transition-all duration-500 group">
+              <div className="w-12 h-12 bg-emerald-50 dark:bg-emerald-500/10 rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform">
+                <span className="text-2xl">🇦🇺</span>
+              </div>
+              <h3 className="text-xl font-black mb-4 uppercase tracking-tight">Australian Lotto History</h3>
+              <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed mb-8">
+                From the first Tatts Lotto draw in 1972 to the massive Powerball jackpots of today, explore how the Australian lottery landscape has evolved and how it compares to international games like Mega Millions.
+              </p>
+              <Link href="/odds" className="text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400 border-b-2 border-emerald-600/20 pb-1 hover:border-emerald-600 transition-all">Explore History</Link>
+            </article>
+
+            <article className="bg-white dark:bg-gray-900 p-10 rounded-[3rem] border border-gray-100 dark:border-white/5 shadow-xl hover:-translate-y-1 transition-all duration-500 group">
+              <div className="w-12 h-12 bg-purple-50 dark:bg-purple-500/10 rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform">
+                <span className="text-2xl">🛡️</span>
+              </div>
+              <h3 className="text-xl font-black mb-4 uppercase tracking-tight">Responsible Simulation</h3>
+              <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed mb-8">
+                Simulation is a powerful tool for financial awareness. By "playing" without spending, you can witness the reality of the house edge and make more informed decisions about your real-world entertainment budget.
+              </p>
+              <Link href="/responsible-play" className="text-[10px] font-black uppercase tracking-widest text-purple-600 dark:text-purple-400 border-b-2 border-purple-600/20 pb-1 hover:border-purple-600 transition-all">Safety First</Link>
+            </article>
+          </div>
+
+          <div className="mt-16 text-center">
+            <Link href="/blog" className="inline-flex items-center gap-3 text-[11px] font-black uppercase tracking-[0.3em] text-gray-400 hover:text-indigo-500 transition-all group">
+              Explore the full knowledge base
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="group-hover:translate-x-1 transition-transform"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </Link>
+          </div>
+        </section>
+
         {/* Feature Grid */}
         <section className="mb-40">
           <div className="text-center mb-20">

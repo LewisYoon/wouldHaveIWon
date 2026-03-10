@@ -415,6 +415,36 @@ export default function LuckPage() {
           </div>
         </div>
       </main>
+
+      {/* Static Educational Content for AdSense/SEO */}
+      <section className="max-w-4xl mx-auto px-6 py-32 text-left border-t border-gray-100 dark:border-white/5 mt-20">
+        <h2 className="text-4xl font-black mb-12 uppercase tracking-tighter italic">Guide to Lottery Tracking</h2>
+        <div className="prose prose-indigo dark:prose-invert max-w-none space-y-10 text-lg text-gray-600 dark:text-gray-400 font-medium leading-relaxed text-left">
+          <p>
+            The WhatIFLotto Luck Tracker is designed as a psychological and mathematical tool to help Australians understand the reality of lottery participation. By tracking your "lucky numbers" against real official results from Oz Lotto, Powerball, and Tatts Lotto, you can experience the highs and lows of the game without any financial risk.
+          </p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 not-prose">
+            <div className="space-y-4">
+              <h3 className="text-xl font-black uppercase text-gray-900 dark:text-white">1. Psychological Distance</h3>
+              <p className="text-sm">Seeing a "Division 1 Miss" in a simulation creates a healthy psychological distance between the desire to win and the financial impulse to play. It allows you to visualize the outcome objectively.</p>
+            </div>
+            <div className="space-y-4">
+              <h3 className="text-xl font-black uppercase text-gray-900 dark:text-white">2. Data-Driven Awareness</h3>
+              <p className="text-sm">Our platform uses verified data to show you exactly how much you would have spent over time. For many, seeing the "Money Saved" statistic is more rewarding than the occasional virtual win.</p>
+            </div>
+          </div>
+
+          <p>
+            Our automated systems sync with official Australian lottery providers every Tuesday, Thursday, and Saturday. We ensure that every division check—from a simple Division 9 Powerball win to a multi-million dollar Oz Lotto jackpot—is calculated with 100% mathematical accuracy.
+          </p>
+
+          <blockquote className="border-l-4 border-indigo-500 pl-6 italic font-bold text-gray-900 dark:text-white bg-indigo-50 dark:bg-indigo-500/5 p-8 rounded-r-3xl">
+            "The best way to understand the odds is to witness them in action. Our tracker provides a front-row seat to the mathematics of probability."
+          </blockquote>
+        </div>
+      </section>
+
       <DivisionRules game={game} isOpen={isRulesModalOpen} onClose={() => setIsRulesModalOpen(false)} />
     </div>
   );

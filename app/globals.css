@@ -25,10 +25,19 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Simple utility for dark mode blocks if Tailwind variants fail */
-.dark-section {
-  background-color: #020617;
-  color: #f8fafc;
+@layer utilities {
+  .animate-shimmer {
+    animation: shimmer 2s infinite linear;
+  }
+  
+  .animate-spin-slow {
+    animation: spin 8s infinite linear;
+  }
+
+  @keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
 }
 
 /* Custom Scrollbar */

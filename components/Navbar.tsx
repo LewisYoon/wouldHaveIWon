@@ -13,6 +13,7 @@ export default function Navbar() {
   const navLinks = [
     { name: 'Luck', href: '/luck' },
     { name: 'Simulator', href: '/simulator' },
+    { name: 'Guides', href: '/blog' },
   ];
 
   return (
