@@ -115,30 +115,30 @@ export default function Home() {
           </div>
           
           <h1 className="text-5xl md:text-7xl lg:text-8xl font-black mb-8 tracking-tighter uppercase leading-[0.9] max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-700">
-            Advanced Australian <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-500 to-emerald-500 dark:from-indigo-400 dark:via-purple-400 dark:to-emerald-400 font-serif italic lowercase tracking-tight px-2">Lotto</span> <span className="relative inline-block px-2">Simulator<span className="absolute inset-0 bg-indigo-500/10 dark:bg-indigo-500/20 -skew-x-12 -z-10 rounded-xl"></span></span>.
+            Professional Australian <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-500 to-emerald-500 dark:from-indigo-400 dark:via-purple-400 dark:to-emerald-400 font-serif italic lowercase tracking-tight px-2">Luck</span> <span className="relative inline-block px-2">Tracker<span className="absolute inset-0 bg-indigo-500/10 dark:bg-indigo-500/20 -skew-x-12 -z-10 rounded-xl"></span></span>.
           </h1>
           
           <p className="text-lg md:text-xl text-gray-500 dark:text-gray-400 mb-14 max-w-2xl mx-auto font-medium leading-relaxed animate-in fade-in slide-in-from-bottom-12 duration-1000">
-            Check your lucky numbers with the #1 free Australian Lotto Simulator. Track real Oz Lotto, Powerball, and Tatts Lotto results risk-free.
+            Check your numbers against real Oz Lotto, Powerball, and Tatts Lotto results risk-free. Australia's most advanced <strong>Luck Tracking</strong> platform and <strong>Lotto Simulator</strong>.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-5 justify-center items-center animate-in fade-in slide-in-from-bottom-16 duration-1000">
             <Link 
-              href="/simulator" 
+              href="/luck" 
               className="group relative px-12 py-5 bg-indigo-600 text-white font-black rounded-2xl text-lg shadow-xl hover:bg-indigo-500 hover:-translate-y-1 active:scale-95 transition-all uppercase tracking-widest overflow-hidden"
             >
               <span className="relative z-10 flex items-center gap-2">
-                Launch Simulator
+                Track My Luck
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" className="group-hover:translate-x-1 transition-transform"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
               </span>
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-shimmer" />
             </Link>
             <Link 
-              href="/luck" 
+              href="/simulator" 
               className="px-12 py-5 bg-white dark:bg-white/5 border-2 border-gray-100 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/10 text-gray-900 dark:text-white font-black rounded-2xl text-lg transition-all backdrop-blur-xl shadow-md uppercase tracking-widest"
             >
-              Track My Luck
+              Lotto Simulator
             </Link>
           </div>
         </div>
@@ -227,7 +227,7 @@ export default function Home() {
         {/* Knowledge Hub / Articles Section */}
         <section className="mb-40">
           <div className="text-left mb-16 px-4">
-            <h2 className="text-4xl font-black text-gray-900 dark:text-white uppercase tracking-tighter italic">Lotto Simulator Knowledge Hub</h2>
+            <h2 className="text-4xl font-black text-gray-900 dark:text-white uppercase tracking-tighter italic">Luck Tracking Knowledge Hub</h2>
             <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Expert Insights & Mathematical Analysis</p>
           </div>
           
@@ -258,9 +258,9 @@ export default function Home() {
               <div className="w-12 h-12 bg-purple-50 dark:bg-purple-500/10 rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform">
                 <span className="text-2xl">🛡️</span>
               </div>
-              <h3 className="text-xl font-black mb-4 uppercase tracking-tight">Responsible Simulation</h3>
+              <h3 className="text-xl font-black mb-4 uppercase tracking-tight">Responsible Play</h3>
               <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed mb-8">
-                A lotto simulator is a powerful tool for financial awareness. By "playing" without spending, you can witness the reality of the house edge and make more informed decisions about your real-world entertainment budget.
+                Luck tracking is a powerful tool for financial awareness. By "playing" without spending, you can witness the reality of the house edge and make more informed decisions about your real-world entertainment budget.
               </p>
               <Link href="/responsible-play" className="text-[10px] font-black uppercase tracking-widest text-purple-600 dark:text-purple-400 border-b-2 border-purple-600/20 pb-1 hover:border-purple-600 transition-all">Safety First</Link>
             </article>
@@ -268,7 +268,7 @@ export default function Home() {
 
           <div className="mt-16 text-center">
             <Link href="/blog" className="inline-flex items-center gap-3 text-[11px] font-black uppercase tracking-[0.3em] text-gray-400 hover:text-indigo-500 transition-all group">
-              Explore the full simulator knowledge base
+              Explore the full knowledge base
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="group-hover:translate-x-1 transition-transform"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
             </Link>
           </div>
@@ -277,15 +277,15 @@ export default function Home() {
         {/* Feature Grid */}
         <section className="mb-40">
           <div className="text-center mb-20">
-            <h2 className="text-4xl md:text-5xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">How the Simulator Works</h2>
+            <h2 className="text-4xl md:text-5xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">How Luck Tracking Works</h2>
             <div className="w-24 h-1.5 bg-gradient-to-r from-indigo-600 to-emerald-500 mx-auto mt-4 rounded-full shadow-sm" />
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
             {[
-              { icon: 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z', title: 'Risk-Free Simulation', desc: 'No real money, no stress. Our lotto simulator provides a simple way to test your lucky numbers against the real world.' },
-              { icon: 'M22 11.08V12a10 10 0 1 1-5.93-9.14 M22 4 12 14.01 9 11.01', title: 'Instant Updates', desc: 'We check the official results for you as soon as they are announced and let you know if your simulated ticket won.' },
-              { icon: 'M12 8v4l3 3 M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z', title: 'Simulation History', desc: 'Keep a permanent record of your favorite numbers and see how they perform in our simulator over weeks and months.' }
+              { icon: 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z', title: 'Risk-Free Tracking', desc: 'No real money, no stress. Our platform provides a simple way to test your lucky numbers against the real world.' },
+              { icon: 'M22 11.08V12a10 10 0 1 1-5.93-9.14 M22 4 12 14.01 9 11.01', title: 'Instant Win Alerts', desc: 'We check the official results for you as soon as they are announced and let you know if your luck held up.' },
+              { icon: 'M12 8v4l3 3 M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z', title: 'Luck History', desc: 'Keep a permanent record of your favorite numbers and see how your "luck" performs over weeks and months.' }
             ].map((feature, i) => (
               <div key={i} className="text-center group p-4">
                 <div className="w-24 h-24 bg-gray-50 dark:bg-white/5 text-indigo-600 dark:text-indigo-400 rounded-3xl flex items-center justify-center text-4xl font-black mx-auto mb-8 shadow-sm group-hover:scale-105 transition-all duration-500 border border-gray-100 dark:border-white/5">
@@ -314,13 +314,13 @@ export default function Home() {
                 Our Growing <br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-blue-400 italic">Community</span>
               </h2>
               <p className="text-gray-400 text-lg mb-4 font-medium leading-relaxed max-w-md">
-                Thousands of players are using our free lotto simulator every day to track their luck and learn the odds.
+                Thousands of players are tracking their luck every day with our smart results checker.
               </p>
             </div>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 relative z-10">
               <div className="bg-white/5 p-8 rounded-[2.5rem] border border-white/10 backdrop-blur-xl group-hover:border-indigo-500/30 transition-all duration-700 text-center shadow-lg">
-                <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em] mb-4">Total Simulated Sets</p>
+                <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em] mb-4">Total Sets Checked</p>
                 <p className="text-5xl font-black text-white tracking-tighter group-hover:text-indigo-400 transition-colors duration-500 tabular-nums">{liveStats.totalTickets.toLocaleString()}</p>
               </div>
               <div className="bg-white/5 p-8 rounded-[2.5rem] border border-white/10 backdrop-blur-xl group-hover:border-emerald-500/30 transition-all duration-700 text-center shadow-lg">
@@ -336,13 +336,13 @@ export default function Home() {
           <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-800 transition-transform duration-[2s] group-hover:scale-105" />
           <div className="relative z-10 px-6">
             <h2 className="text-5xl md:text-7xl font-black mb-8 uppercase tracking-tighter leading-[0.9] group-hover:scale-[1.01] transition-transform duration-700 italic">Is it your lucky day?</h2>
-            <p className="text-indigo-100 mb-14 font-medium text-xl opacity-90 italic max-w-xl mx-auto">Join Australia's #1 lotto simulator and start imagining the win.</p>
+            <p className="text-indigo-100 mb-14 font-medium text-xl opacity-90 italic max-w-xl mx-auto">Join Australia's largest free lottery tracker and start imagining the win.</p>
             <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
               <Link 
-                href="/simulator" 
+                href="/luck" 
                 className="px-14 py-6 bg-white text-indigo-600 font-black rounded-2xl hover:bg-gray-50 shadow-xl transition-all uppercase tracking-widest text-xl active:scale-95 hover:-translate-y-1"
               >
-                Start Simulator
+                Track Now
               </Link>
               <Link 
                 href="/login" 
