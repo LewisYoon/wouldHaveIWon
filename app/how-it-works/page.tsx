@@ -1,89 +1,141 @@
+'use client';
+
 import Navbar from '../../components/Navbar';
+import Link from 'next/link';
 
-export default function HowItWorksPage() {
+export default function HowItWorks() {
   return (
-    <div className="bg-white dark:bg-gray-950 min-h-screen text-gray-900 dark:text-gray-100">
+    <div className="bg-white dark:bg-gray-950 min-h-screen text-gray-900 dark:text-gray-100 selection:bg-indigo-500 selection:text-white">
       <Navbar />
-      <main className="max-w-4xl mx-auto px-6 py-24">
-        <div className="text-center mb-20">
-          <h1 className="text-5xl md:text-7xl font-black uppercase tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-emerald-500 dark:from-indigo-400 dark:to-emerald-400">
-            How It Works
+      
+      <main className="max-w-5xl mx-auto px-6 py-24">
+        {/* Hero Section */}
+        <section className="text-center mb-24 animate-in fade-in slide-in-from-top-8 duration-1000">
+          <h1 className="text-6xl md:text-8xl font-black uppercase tracking-tighter mb-8 leading-tight">
+            How <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-emerald-500 dark:from-indigo-400 dark:to-emerald-400">WhatIFLotto</span> Works
           </h1>
-          <p className="mt-6 text-xl text-gray-500 dark:text-gray-400 max-w-2xl mx-auto">
-            WhatIFLotto is a free and fun way to see how your favorite numbers would have performed in real lottery draws. No money, no risk—just insight and fun.
+          <p className="text-xl md:text-2xl text-gray-500 dark:text-gray-400 max-w-3xl mx-auto font-medium leading-relaxed">
+            A comprehensive guide to Australia's premier risk-free lottery simulation and tracking platform.
           </p>
-        </div>
+        </section>
 
-        <div className="space-y-24">
+        {/* Detailed Content Sections */}
+        <div className="space-y-32">
           
-          {/* Step 1: Pick Your Numbers */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-            <div className="text-center md:text-left">
-              <span className="inline-block px-5 py-2 rounded-full bg-indigo-100 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-black text-sm uppercase tracking-widest mb-6">Step 1</span>
-              <h2 className="text-4xl font-black mb-6 tracking-tight">Choose Your Lucky Numbers</h2>
-              <p className="text-lg text-gray-600 dark:text-gray-300 leading-relaxed mb-4">
-                Dive into the excitement by selecting your preferred lottery game: Oz Lotto, Powerball, or TattsLotto. Head over to the <a href="/luck" className="text-indigo-500 font-bold underline">Luck Tracker</a>, where you can easily pick your numbers using our interactive interface. Whether you have a special set of digits or prefer a "Quick Pick" for instant random numbers, we've got you covered. You can save as many different ticket combinations as you wish for upcoming draws, all completely free and without any commitment.
-              </p>
-              <p className="text-sm text-gray-500 dark:text-gray-400 italic">
-                Our number selection process is designed to mimic the official lottery experience, ensuring accurate comparisons.
-              </p>
-            </div>
-            <div className="bg-gray-50 dark:bg-gray-900 p-8 rounded-3xl shadow-xl border border-gray-100 dark:border-white/5 flex items-center justify-center">
-              <div className="aspect-video w-full h-full bg-white dark:bg-gray-800 rounded-2xl flex items-center justify-center relative overflow-hidden">
-                <svg className="absolute w-full h-full text-indigo-300 dark:text-indigo-600 opacity-20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="0.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M15 9l-3 3-3-3"/><path d="M9 15h6"/></svg>
-                <div className="w-2/3 h-2/3 rounded-xl bg-indigo-500/10 border border-indigo-500/20 shadow-lg flex items-center justify-center text-indigo-600 font-black text-3xl z-10">
-                    Your Numbers
-                </div>
+          {/* Section 1: The Core Mission */}
+          <article className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            <div className="order-2 lg:order-1">
+              <h2 className="text-4xl font-black mb-8 tracking-tight italic">Bridging Reality and Imagination</h2>
+              <div className="space-y-6 text-lg text-gray-600 dark:text-gray-300 leading-relaxed font-medium text-left">
+                <p>
+                  WhatIFLotto was born from a simple question: "What if my lucky numbers actually came up?" Instead of spending thousands of dollars over a lifetime to find out, we provide a mathematically accurate simulation environment where you can test your numbers against real official Australian draw data.
+                </p>
+                <p>
+                  Our platform connects directly to verified draw results for Oz Lotto, Powerball, and Tatts Lotto (Saturday Lotto), providing you with instant feedback on your performance without ever risking a single cent of your hard-earned money.
+                </p>
               </div>
             </div>
-          </div>
+            <div className="order-1 lg:order-2 bg-indigo-50 dark:bg-indigo-500/10 rounded-[3rem] p-12 aspect-square flex items-center justify-center shadow-inner">
+              <div className="text-8xl animate-bounce">🎲</div>
+            </div>
+          </article>
 
-          {/* Step 2: Automated Draw Results & Alerts */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-            <div className="bg-gray-50 dark:bg-gray-900 p-8 rounded-3xl shadow-xl border border-gray-100 dark:border-white/5 flex items-center justify-center md:order-2">
-              <div className="aspect-video w-full h-full bg-white dark:bg-gray-800 rounded-2xl flex items-center justify-center relative overflow-hidden">
-                <svg className="absolute w-full h-full text-emerald-300 dark:text-emerald-600 opacity-20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="0.5"><path d="M21.5 12c0-5.25-4.25-9.5-9.5-9.5S2.5 6.75 2.5 12s4.25 9.5 9.5 9.5"/><path d="M22 12h-2"/><path d="M13 2.06V4a1 1 0 0 0 1 1h2.94"/><path d="M4 12H2"/><path d="M12 22v-2"/><path d="M11 12.06V11a1 1 0 0 1 1-1h2.94"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="m4.93 19.07 1.41-1.41"/><path d="m17.66 6.34 1.41-1.41"/></svg>
-                <div className="w-2/3 h-2/3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 shadow-lg flex flex-col items-center justify-center text-emerald-600 font-black text-2xl z-10">
-                    <span className="text-lg mb-2">Results In!</span>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                </div>
+          {/* Section 2: Tracking Your Luck */}
+          <article className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            <div className="bg-emerald-50 dark:bg-emerald-500/10 rounded-[3rem] p-12 aspect-square flex items-center justify-center shadow-inner">
+              <div className="text-8xl animate-pulse">📈</div>
+            </div>
+            <div className="text-left">
+              <h2 className="text-4xl font-black mb-8 tracking-tight italic">The Luck Tracker</h2>
+              <div className="space-y-6 text-lg text-gray-600 dark:text-gray-300 leading-relaxed font-medium">
+                <p>
+                  The "Track My Luck" feature is the heart of the WhatIFLotto experience. It allows you to save sets of numbers for specific upcoming draw dates. Once the official results are finalized (usually around 8:30 PM - 9:00 PM AEST on draw nights), our system automatically checks your sets.
+                </p>
+                <ul className="list-disc pl-6 space-y-4 font-medium text-gray-600 dark:text-gray-300">
+                  <li><strong>Verified Accuracy:</strong> We use the exact same division logic as the official Australian lottery providers.</li>
+                  <li><strong>Jackpot Bridging:</strong> Even if there is no official Division 1 winner, we bridge the estimated jackpot data so you know exactly how much you would have won.</li>
+                  <li><strong>Historical Archive:</strong> Build a permanent record of your luck across weeks, months, or years.</li>
+                </ul>
               </div>
             </div>
-            <div className="text-center md:text-left md:order-1">
-              <span className="inline-block px-5 py-2 rounded-full bg-emerald-100 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-black text-sm uppercase tracking-widest mb-6">Step 2</span>
-              <h2 className="text-4xl font-black mb-6 tracking-tight">Instant Result Notifications</h2>
-              <p className="text-lg text-gray-600 dark:text-gray-300 leading-relaxed mb-4">
-                Forget manually checking tickets. Our advanced system automatically fetches and processes the official lottery results the moment they are announced. If any of your saved tickets match a winning division, we'll send you an instant, personalized email notification straight to your inbox. It's a hands-free experience designed to keep you informed without lifting a finger.
-              </p>
-              <p className="text-sm text-gray-500 dark:text-gray-400 italic">
-                We synchronize directly with official data sources to ensure accuracy and timely alerts.
-              </p>
-            </div>
-          </div>
+          </article>
 
-          {/* Step 3: Review and Analyze */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-            <div className="text-center md:text-left">
-              <span className="inline-block px-5 py-2 rounded-full bg-red-100 dark:bg-red-500/10 text-red-600 dark:text-red-400 font-black text-sm uppercase tracking-widest mb-6">Step 3</span>
-              <h2 className="text-4xl font-black mb-6 tracking-tight">Detailed Performance Insights</h2>
-              <p className="text-lg text-gray-600 dark:text-gray-300 leading-relaxed mb-4">
-                After each draw, revisit your <a href="/luck" className="text-indigo-500 font-bold underline">Luck Tracker</a> history for an in-depth performance review. Our analysis will clearly show you which numbers matched, reveal the specific divisions you would have won, and quantify the "what if" prize money you would have collected. It's a fascinating way to monitor your numbers' long-term trends and discover just how close you've been to hitting that elusive jackpot.
-              </p>
-              <p className="text-sm text-gray-500 dark:text-gray-400 italic">
-                Gain valuable insights into your number selection strategy over weeks, months, or even years.
-              </p>
+          {/* Section 3: High-Speed Simulation */}
+          <article className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            <div className="order-2 lg:order-1 text-left">
+              <h2 className="text-4xl font-black mb-8 tracking-tight italic">Turbo Simulation (The Time Machine)</h2>
+              <div className="space-y-6 text-lg text-gray-600 dark:text-gray-300 leading-relaxed font-medium">
+                <p>
+                  Want to know what 50 years of playing 10 tickets a week looks like? Our Turbo Mode simulator allows you to compress a lifetime of play into mere minutes.
+                </p>
+                <p>
+                  The "Time Machine" mode generates mathematically perfect random draws and checks them against your batches at speeds of up to 50 draws per second. It provides a visceral "Reality Check" by comparing your total virtual spending to real-world luxuries like luxury cars or house deposits.
+                </p>
+              </div>
             </div>
-            <div className="bg-gray-50 dark:bg-gray-900 p-8 rounded-3xl shadow-xl border border-gray-100 dark:border-white/5 flex items-center justify-center">
-              <div className="aspect-video w-full h-full bg-white dark:bg-gray-800 rounded-2xl flex items-center justify-center relative overflow-hidden">
-                 <svg className="absolute w-full h-full text-red-300 dark:text-red-600 opacity-20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="0.5"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-6"/><path d="M9 15h6"/></svg>
-                 <div className="w-2/3 h-2/3 rounded-xl bg-red-500/10 border border-red-500/20 shadow-lg flex flex-col items-center justify-center text-red-600 font-black text-2xl z-10">
-                    <span className="text-lg mb-2">Your Stats</span>
-                    <span className="text-3xl">📊</span>
+            <div className="order-1 lg:order-2 bg-purple-50 dark:bg-purple-500/10 rounded-[3rem] p-12 aspect-square flex items-center justify-center shadow-inner">
+              <div className="text-8xl animate-spin-slow">🚀</div>
+            </div>
+          </article>
+
+          {/* Section 4: Data Integrity */}
+          <section className="bg-gray-950 rounded-[4rem] p-12 md:p-20 text-white shadow-2xl relative overflow-hidden border border-white/5">
+            <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-600/10 rounded-full blur-[100px] -mr-48 -mt-48" />
+            <div className="relative z-10 text-center">
+              <h2 className="text-4xl md:text-5xl font-black mb-10 tracking-tight uppercase">Verified Data Integrity</h2>
+              <div className="max-w-3xl mx-auto space-y-8 text-lg text-gray-400 font-medium leading-relaxed">
+                <p>
+                  We pride ourselves on using verified, official data. Our automated systems sync with the latest Australian lottery results every Tuesday, Thursday, and Saturday night.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 pt-8">
+                  <div className="p-6 bg-white/5 rounded-3xl border border-white/10">
+                    <p className="text-2xl font-black text-indigo-400 mb-2">100%</p>
+                    <p className="text-xs font-bold uppercase tracking-widest text-gray-500">Risk Free</p>
+                  </div>
+                  <div className="p-6 bg-white/5 rounded-3xl border border-white/10">
+                    <p className="text-2xl font-black text-emerald-400 mb-2">Live</p>
+                    <p className="text-xs font-bold uppercase tracking-widest text-gray-500">Result Sync</p>
+                  </div>
+                  <div className="p-6 bg-white/5 rounded-3xl border border-white/10">
+                    <p className="text-2xl font-black text-purple-400 mb-2">Instant</p>
+                    <p className="text-xs font-bold uppercase tracking-widest text-gray-500">Notifications</p>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-          
+          </section>
+
+          {/* FAQ Section */}
+          <section className="text-left py-20">
+            <h2 className="text-4xl font-black mb-16 tracking-tighter uppercase italic">Frequently Asked Questions</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+              {[
+                { q: "Is this a gambling site?", a: "No. WhatIFLotto is a simulation and tracking platform. You cannot spend real money or place actual bets on this site. It is designed for educational and entertainment purposes only." },
+                { q: "Are the odds accurate?", a: "Yes. Our simulation and division check logic strictly follows the official rules and probabilities published by Australian lottery providers." },
+                { q: "Do I need an account?", a: "While you can use the simulator anonymously, creating an account allows you to build a permanent history and receive automated result notifications via email." },
+                { q: "When are results updated?", a: "We sync results shortly after the official draws conclude—typically around 8:35 PM AEST on Tuesday, Thursday, and Saturday nights." }
+              ].map((item, i) => (
+                <div key={i} className="space-y-4">
+                  <h4 className="text-xl font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-tight leading-tight">Q: {item.q}</h4>
+                  <p className="text-gray-600 dark:text-gray-400 font-medium leading-relaxed">{item.a}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* CTA */}
+          <section className="bg-indigo-600 rounded-[3rem] p-16 text-center text-white shadow-2xl relative overflow-hidden group">
+            <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 to-purple-700 group-hover:scale-105 transition-transform duration-[2s]" />
+            <div className="relative z-10">
+              <h2 className="text-4xl md:text-5xl font-black mb-8 tracking-tighter italic">Ready to test your luck?</h2>
+              <p className="text-lg text-indigo-100 mb-12 max-w-xl mx-auto font-medium">Join thousands of Australians visualizing their lottery dreams risk-free.</p>
+              <div className="flex flex-col sm:flex-row gap-6 justify-center">
+                <Link href="/luck" className="px-12 py-5 bg-white text-indigo-600 font-black rounded-2xl shadow-xl hover:-translate-y-1 transition-all uppercase tracking-widest text-sm">Start Tracking</Link>
+                <Link href="/simulator" className="px-12 py-5 bg-indigo-950/30 text-white border-2 border-white/20 font-black rounded-2xl shadow-xl hover:-translate-y-1 transition-all uppercase tracking-widest text-sm backdrop-blur-md">Enter Simulator</Link>
+              </div>
+            </div>
+          </section>
+
         </div>
       </main>
     </div>
