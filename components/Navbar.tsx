@@ -16,6 +16,7 @@ export default function Navbar() {
   const navLinks = [
     { name: 'Luck', href: '/luck' },
     { name: 'Simulator', href: '/simulator' },
+    { name: 'Stats', href: '/dashboard', authOnly: true },
     { name: 'Guides', href: '/blog' },
   ];
 
@@ -28,17 +29,20 @@ export default function Navbar() {
           </Link>
 
           <div className="hidden md:flex items-center gap-8">
-            {navLinks.map((link) => (
-              <Link 
-                key={link.href} 
-                href={link.href}
-                className={`text-sm font-bold uppercase tracking-widest transition-colors ${
-                  pathname === link.href ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
-                }`}
-              >
-                {link.name}
-              </Link>
-            ))}
+            {navLinks.map((link) => {
+              if (link.authOnly && !user) return null;
+              return (
+                <Link 
+                  key={link.href} 
+                  href={link.href}
+                  className={`text-sm font-bold uppercase tracking-widest transition-colors ${
+                    pathname === link.href ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
+                  }`}
+                >
+                  {link.name}
+                </Link>
+              );
+            })}
           </div>
 
           <div className="flex items-center gap-4">
