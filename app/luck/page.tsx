@@ -8,6 +8,7 @@ import DivisionRules from '../../components/DivisionRules';
 import Countdown from '../../components/Countdown';
 import { getNextDrawDates, compareNumbers, generateQuickPick } from '../../lib/lotto-utils';
 import { supabase } from '../../lib/supabase';
+import Link from 'next/link';
 
 interface Ticket {
   id: string;
@@ -26,9 +27,10 @@ interface DrawResult {
 }
 
 const TICKET_COST = 1.45;
+const FREE_TICKET_LIMIT = 10;
 
 export default function LuckPage() {
-  const { user, isLoading: isAuthLoading } = useAuth();
+  const { user, isPremium, isLoading: isAuthLoading } = useAuth();
   const [game, setGame] = useState<'Oz Lotto' | 'Powerball' | 'Tatts Lotto'>('Oz Lotto');
   const upcomingDates = useMemo(() => getNextDrawDates(5, game), [game]);
   const [selectedDate, setSelectedDate] = useState(upcomingDates[0]);
@@ -46,7 +48,6 @@ export default function LuckPage() {
   const isOz = game === 'Oz Lotto';
   const isTatts = game === 'Tatts Lotto';
   const brandColor = isOz ? 'emerald' : isTatts ? 'red' : 'indigo';
-  const brandHex = isOz ? '#10b981' : isTatts ? '#ef4444' : '#4f46e5';
   
   const brandStyles = {
     text: isOz ? 'text-emerald-600 dark:text-emerald-400' : isTatts ? 'text-red-600 dark:text-red-400' : 'text-indigo-600 dark:text-indigo-400',
@@ -173,6 +174,13 @@ export default function LuckPage() {
   const handleSaveTicket = async () => {
     const required = game === 'Oz Lotto' ? 7 : game === 'Powerball' ? 8 : 6;
     if (currentNumbers.filter(n => n > 0).length !== required) { alert(`Select ${required} numbers`); return; }
+    
+    // Premium Limit Check
+    if (!isPremium && myTickets.length >= FREE_TICKET_LIMIT) {
+      alert(`Free limit reached (${FREE_TICKET_LIMIT} tickets). Please upgrade to PRO for unlimited tracking!`);
+      return;
+    }
+
     if (user) {
       const { data } = await supabase.from('tickets').insert({ draw_date: selectedDate, numbers: currentNumbers, user_id: user.id, game }).select();
       if (data) saveTicketsState([{ id: data[0].id, drawDate: data[0].draw_date, numbers: data[0].numbers, game: data[0].game }, ...myTickets]);
@@ -184,6 +192,26 @@ export default function LuckPage() {
   };
 
   const handleMultiQuickPick = async () => {
+    // Premium Limit Check
+    if (!isPremium && myTickets.length + quickPickQty > FREE_TICKET_LIMIT) {
+      const allowed = FREE_TICKET_LIMIT - myTickets.length;
+      if (allowed <= 0) {
+        alert(`Free limit reached (${FREE_TICKET_LIMIT} tickets). Upgrade to PRO for unlimited quick picks!`);
+        return;
+      }
+      if (!window.confirm(`You only have ${allowed} free slots left. Generate ${allowed} tickets instead?`)) return;
+      
+      const newSets = Array.from({ length: allowed }, () => generateQuickPick(game));
+      if (user) {
+        const { data } = await supabase.from('tickets').insert(newSets.map(n => ({ user_id: user.id, draw_date: selectedDate, numbers: n, game }))).select();
+        if (data) saveTicketsState([...data.map(t => ({ id: t.id, drawDate: t.draw_date, numbers: t.numbers, game: t.game })), ...myTickets]);
+      } else {
+        const updated = [...newSets.map((n, i) => ({ id: `${Date.now()}-${i}`, drawDate: selectedDate, numbers: n, game })), ...myTickets];
+        saveTicketsState(updated);
+      }
+      return;
+    }
+
     const newSets = Array.from({ length: quickPickQty }, () => generateQuickPick(game));
     if (user) {
       const { data } = await supabase.from('tickets').insert(newSets.map(n => ({ user_id: user.id, draw_date: selectedDate, numbers: n, game }))).select();
@@ -254,6 +282,13 @@ export default function LuckPage() {
 
       <main className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-16 px-4 sm:px-6 relative z-10">
         <div className="lg:col-span-5 space-y-8 sm:space-y-10 animate-in fade-in slide-in-from-bottom-8 duration-1000 text-left">
+          {!isPremium && myTickets.length >= FREE_TICKET_LIMIT && (
+            <div className="bg-gradient-to-r from-amber-500 to-orange-600 p-6 rounded-[2rem] text-white shadow-xl animate-bounce">
+              <p className="font-black uppercase tracking-widest text-xs mb-2">Free Limit Reached! 🚀</p>
+              <p className="text-sm font-bold opacity-90 mb-4">You are tracking {myTickets.length} tickets. Upgrade to PRO for unlimited tracking and advanced analytics.</p>
+              <Link href="/dashboard" className="inline-block bg-white text-orange-600 px-6 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-orange-50 transition-all">Upgrade Now</Link>
+            </div>
+          )}
           <div className={`rounded-[2rem] sm:rounded-[3rem] p-6 sm:p-10 border transition-all duration-700 shadow-2xl hover:scale-[1.02] group relative overflow-hidden ${brandStyles.bgLight} ${brandStyles.border}`}>
             <div className={`absolute top-0 right-0 w-32 h-32 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-700 ${game === 'Oz Lotto' ? 'bg-emerald-500/5' : game === 'Tatts Lotto' ? 'bg-red-500/5' : 'bg-indigo-500/5'}`} />
             <p className={`text-[9px] sm:text-[11px] font-black uppercase tracking-[0.3em] mb-6 sm:mb-8 ${brandStyles.text}`}>Luck Dashboard</p>
