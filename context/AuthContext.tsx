@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { User, AuthError, SignInWithPasswordCredentials, SignUpWithPasswordCredentials } from '@supabase/supabase-js';
 import { useRouter } from 'next/navigation';
@@ -24,27 +24,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isPremium, setIsPremium] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+  const isInitial Mount = useRef(true);
 
+  // 프리미엄 상태 가져오기 함수
   const fetchPremiumStatus = useCallback(async (userId: string) => {
     try {
       const { data, error } = await supabase
         .from('user_preferences')
         .select('is_premium')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle(); // single() 대신 maybeSingle() 사용 (안정성)
       
       if (data) {
-        setIsPremium(data.is_premium);
-      } else if (error && error.code === 'PGRST116') {
-        // RLS might be preventing access or row doesn't exist. Default to false.
-        console.warn("User preference record not found. Defaulting to non-premium.");
+        setIsPremium(!!data.is_premium);
+      } else {
         setIsPremium(false);
-      } else if (error) {
-        throw error;
       }
     } catch (err) {
-      console.error("Critical error fetching premium status:", err);
-      setIsPremium(false); // Default to false on error to prevent locking out users
+      console.error("Premium check error:", err);
+      setIsPremium(false);
     }
   }, []);
 
@@ -53,81 +51,89 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [user, fetchPremiumStatus]);
 
   useEffect(() => {
-    const getInitialSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+    // 1. 초기 세션 확인
+    const initAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const currentUser = session?.user ?? null;
+        setUser(currentUser);
+        
+        if (currentUser) {
+          await fetchPremiumStatus(currentUser.id);
+        }
+      } catch (err) {
+        console.error("Init auth error:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initAuth();
+
+    // 2. 인증 상태 변경 감시
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       const currentUser = session?.user ?? null;
       
+      // 세션이 바뀔 때만 상태 업데이트 (무한 루프 방지)
       setUser(currentUser);
-      if (currentUser) {
-        await fetchPremiumStatus(currentUser.id);
-      } else {
+
+      if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
+        if (currentUser) {
+          await fetchPremiumStatus(currentUser.id);
+        }
+        
+        // 로그인 페이지에서 로그인 성공 시 이동
+        if (typeof window !== 'undefined' && window.location.pathname === '/login') {
+          router.push('/luck');
+        }
+      } else if (event === 'SIGNED_OUT') {
         setIsPremium(false);
+        setUser(null);
       }
       
       setIsLoading(false);
-    };
-
-    getInitialSession();
-
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        const currentUser = session?.user ?? null;
-        setUser(currentUser);
-
-        if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
-          if (currentUser) {
-             await fetchPremiumStatus(currentUser.id);
-          }
-        } else if (event === 'SIGNED_OUT') {
-          setIsPremium(false);
-        }
-        
-        if (event === 'SIGNED_IN' && window.location.pathname === '/login') {
-            router.push('/luck');
-        }
-      }
-    );
+    });
 
     return () => {
-      authListener.subscription.unsubscribe();
+      subscription.unsubscribe();
     };
   }, [router, fetchPremiumStatus]);
 
-
   const signIn = async (credentials: SignInWithPasswordCredentials) => {
-    const { error } = await supabase.auth.signInWithPassword(credentials);
-    return { error };
+    return await supabase.auth.signInWithPassword(credentials);
   };
 
   const signUp = async (credentials: SignUpWithPasswordCredentials) => {
-    const { error } = await supabase.auth.signUp(credentials);
-    return { error };
+    return await supabase.auth.signUp(credentials);
   };
 
   const signInWithGoogle = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
+    return await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: window.location.origin,
+        redirectTo: typeof window !== 'undefined' ? window.location.origin : '',
       },
     });
-    return { error };
   };
 
   const resetPassword = async (email: string) => {
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/login`,
+    return await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/login` : '',
     });
-    return { error };
   };
 
   const logout = async () => {
     setIsLoading(true);
-    await supabase.auth.signOut();
-    setUser(null);
-    setIsPremium(false);
-    router.push('/');
-    setIsLoading(false);
+    try {
+      await supabase.auth.signOut();
+      setUser(null);
+      setIsPremium(false);
+      router.push('/');
+    } catch (err) {
+      console.error("Logout error:", err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
