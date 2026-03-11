@@ -17,6 +17,7 @@ export default function Navbar() {
     { name: 'Luck', href: '/luck/' },
     { name: 'Simulator', href: '/simulator/' },
     { name: 'Analytics', href: '/analytics/' },
+    { name: 'Hall of Fame', href: '/leaderboard/' },
     { name: 'Stats', href: '/dashboard/', authOnly: true },
     { name: 'Guides', href: '/blog/' },
   ];
