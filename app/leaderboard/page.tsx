@@ -3,14 +3,14 @@
 import { useState, useEffect, useMemo } from 'react';
 import Navbar from '../../components/Navbar';
 import { supabase } from '../../lib/supabase';
-import { compareNumbers } from '../../lib/lotto-utils';
 
 type GameType = 'All' | 'Oz Lotto' | 'Powerball' | 'Tatts Lotto';
 
 interface WinnerRecord {
-  email: string;
+  id: string;
+  user_nickname: string;
   prize: number;
-  drawDate: string;
+  draw_date: string;
   game: string;
   division: string;
 }
@@ -24,45 +24,22 @@ export default function LeaderboardPage() {
     const fetchRankings = async () => {
       setLoading(true);
       try {
-        // 1. Fetch tickets and draw results
-        // Note: For a real production app with millions of records, 
-        // you would use a dedicated 'leaderboard' table updated via database triggers.
-        // For now, we process top recent tickets to show activity.
-        const { data: tickets } = await supabase
-          .from('tickets')
-          .select('user_id, numbers, game, draw_date');
+        // Now fetching from the PUBLIC leaderboard table
+        // This works even when logged out!
+        let query = supabase
+          .from('leaderboard')
+          .select('*')
+          .order('prize', { ascending: false })
+          .limit(50);
 
-        const { data: results } = await supabase
-          .from('draw_results')
-          .select('*');
+        if (filterGame !== 'All') {
+          query = query.eq('game', filterGame);
+        }
 
-        const { data: users } = await supabase.rpc('get_user_emails_masked'); 
-        // We'll use a safer approach since admin.listUsers is server-only.
-        // For this demo, we'll use a mocked masking or a fallback.
+        const { data, error } = await query;
+        if (error) throw error;
         
-        const winners: WinnerRecord[] = [];
-
-        tickets?.forEach(t => {
-          const res = results?.find(r => r.draw_date === t.draw_date && r.game === t.game);
-          if (res) {
-            const c = compareNumbers(t.numbers, res.numbers, res.bonus, t.game);
-            const prize = res.prizes[c.prizeTier] || 0;
-            
-            if (prize > 0) {
-              winners.push({
-                email: 'Anonymous Player', // Masking happens below
-                prize,
-                drawDate: t.draw_date,
-                game: t.game,
-                division: c.prizeTier
-              });
-            }
-          }
-        });
-
-        // Sort by prize desc and take top 50
-        const sorted = winners.sort((a, b) => b.prize - a.prize).slice(0, 50);
-        setRankings(sorted);
+        setRankings(data || []);
       } catch (err) {
         console.error("Leaderboard error:", err);
       } finally {
@@ -71,20 +48,7 @@ export default function LeaderboardPage() {
     };
 
     fetchRankings();
-  }, []);
-
-  const filteredRankings = useMemo(() => {
-    if (filterGame === 'All') return rankings;
-    return rankings.filter(r => r.game === filterGame);
-  }, [rankings, filterGame]);
-
-  const maskEmail = (email: string) => {
-    // In a real app, IDs would be linked to usernames. 
-    // Here we generate a stable placeholder name for anonymity.
-    const names = ["LuckyPanda", "WealthyKoala", "DreamChaser", "LottoWizard", "GoldenKangaroo", "FortuneSeeker", "JackpotHunter"];
-    const hash = email.length % names.length;
-    return names[hash] + "****";
-  };
+  }, [filterGame]); // Refetch when filter changes
 
   const formatCurrency = (val: number) => new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(val);
 
@@ -98,7 +62,7 @@ export default function LeaderboardPage() {
             Hall of <span className="text-indigo-600 dark:text-indigo-400">Fame</span>
           </h1>
           <p className="text-xl text-gray-500 dark:text-gray-400 max-w-2xl mx-auto font-medium leading-relaxed">
-            Real-time rankings of the luckiest players in the WhatIFLotto community.
+            Celebrating the luckiest risk-free wins in our community. Anyone can witness the magic!
           </p>
         </header>
 
@@ -122,15 +86,15 @@ export default function LeaderboardPage() {
         {loading ? (
           <div className="py-40 flex flex-col items-center gap-6">
             <div className="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-            <p className="text-gray-400 font-black uppercase tracking-widest text-xs">Crunching numbers...</p>
+            <p className="text-gray-400 font-black uppercase tracking-widest text-xs">Fetching legends...</p>
           </div>
-        ) : filteredRankings.length > 0 ? (
+        ) : rankings.length > 0 ? (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-8 duration-1000">
-            {filteredRankings.map((record, index) => {
-              const isTop3 = index < 3;
+            {rankings.map((record, index) => {
+              const isTop3 = index < 3 && filterGame === 'All';
               return (
                 <div 
-                  key={index} 
+                  key={record.id} 
                   className={`flex flex-col sm:flex-row items-center justify-between p-8 rounded-[2.5rem] border transition-all duration-500 hover:-translate-y-1 ${
                     isTop3 
                       ? 'bg-white dark:bg-gray-900 border-indigo-200 dark:border-indigo-500/30 shadow-2xl scale-[1.02] z-10' 
@@ -148,10 +112,10 @@ export default function LeaderboardPage() {
                     </div>
                     <div className="text-left">
                       <p className="font-black uppercase tracking-tight text-lg flex items-center gap-2">
-                        {maskEmail(record.game + index)} 
+                        {record.user_nickname} 
                         {index === 0 && <span className="text-sm">👑</span>}
                       </p>
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">{record.game} — {record.drawDate}</p>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">{record.game} — {record.draw_date}</p>
                     </div>
                   </div>
 
@@ -167,7 +131,7 @@ export default function LeaderboardPage() {
           </div>
         ) : (
           <div className="py-40 text-center bg-gray-50 dark:bg-white/5 rounded-[4rem] border-2 border-dashed border-gray-100 dark:border-white/10">
-            <p className="text-gray-400 font-bold italic uppercase tracking-widest text-sm">No winners recorded for this category yet.</p>
+            <p className="text-gray-400 font-bold italic uppercase tracking-widest text-sm">No legends found in this category.</p>
           </div>
         )}
 

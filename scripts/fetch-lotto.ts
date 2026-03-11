@@ -77,7 +77,7 @@ function getEmailTemplate(game: string, drawDate: string, status: { won: boolean
   `;
 }
 
-async function notifyUsers(game: string, drawDate: string, winningNumbers: number[], bonusNumbers: number[]) {
+async function notifyUsers(game: string, drawDate: string, winningNumbers: number[], bonusNumbers: number[], prizes: Record<string, number>) {
   if (!resend) return;
 
   const { data: tickets } = await supabase
@@ -95,15 +95,42 @@ async function notifyUsers(game: string, drawDate: string, winningNumbers: numbe
   
   const prefMap = new Map(prefs?.map(p => [p.user_id, p.email_results]) || []);
 
-  const userResults = new Map<string, { won: boolean }>();
+  const userResults = new Map<string, { won: boolean; prize: number; division: string }>();
   for (const ticket of tickets) {
-    // Skip if user opted out
-    const isEnabled = prefMap.has(ticket.user_id) ? prefMap.get(ticket.user_id) : true;
-    if (!isEnabled) continue;
-
     const result = compareNumbers(ticket.numbers, winningNumbers, bonusNumbers, game as any);
-    const current = userResults.get(ticket.user_id) || { won: false };
-    userResults.set(ticket.user_id, { won: current.won || result.prizeTier !== "No Prize" });
+    
+    if (result.prizeTier !== "No Prize") {
+      const prize = prizes[result.prizeTier] || 0;
+      const current = userResults.get(ticket.user_id) || { won: false, prize: 0, division: '' };
+      
+      if (prize > current.prize) {
+        userResults.set(ticket.user_id, { 
+          won: true, 
+          prize: prize, 
+          division: result.prizeTier 
+        });
+      }
+    } else {
+      if (!userResults.has(ticket.user_id)) {
+        userResults.set(ticket.user_id, { won: false, prize: 0, division: 'No Prize' });
+      }
+    }
+  }
+
+  // Populate public leaderboard for winners
+  for (const [userId, res] of userResults.entries()) {
+    if (res.won && res.prize > 0) {
+      const names = ["LuckyPanda", "WealthyKoala", "DreamChaser", "LottoWizard", "GoldenKangaroo", "FortuneSeeker", "JackpotHunter"];
+      const nickname = names[Math.floor(Math.random() * names.length)] + "****";
+
+      await supabase.from('leaderboard').insert({
+        user_nickname: nickname,
+        prize: res.prize,
+        draw_date: drawDate,
+        game: game,
+        division: res.division
+      });
+    }
   }
 
   const emailBatch: any[] = [];
@@ -114,10 +141,15 @@ async function notifyUsers(game: string, drawDate: string, winningNumbers: numbe
     const results = await Promise.all(chunk.map(id => supabase.auth.admin.getUserById(id)));
 
     for (let j = 0; j < results.length; j++) {
-      const { data: { user } } = results[j];
+      const userRes = results[j];
+      if (userRes.error) continue;
+      
+      const { data: { user } } = userRes;
       const status = userResults.get(chunk[j]);
+      
+      const isEnabled = prefMap.has(chunk[j]) ? prefMap.get(chunk[j]) : true;
 
-      if (user?.email && status) {
+      if (user?.email && status && isEnabled) {
         const subject = status.won ? `You hit a match in the ${game}` : `The ${game} results are ready for you`;
         
         emailBatch.push({
@@ -160,15 +192,11 @@ async function fetchUpcomingDraws() {
     const games = ['OzLotto', 'Powerball', 'TattsLotto'];
     const upcomingToStore: any[] = [];
 
-    // Capture ALL draws returned by the API for each game
     games.forEach(g => {
       const draws = data.Draws.filter((d: any) => d.ProductId === g);
       draws.forEach((draw: any) => {
         const displayName = g === 'OzLotto' ? 'Oz Lotto' : g === 'Powerball' ? 'Powerball' : 'Tatts Lotto';
-        
-        // Cache jackpot for current process run
         jackpotCache.set(`${g}-${draw.DrawNumber}`, draw.Div1Amount);
-
         upcomingToStore.push({
           game: displayName,
           draw_number: draw.DrawNumber,
@@ -179,16 +207,9 @@ async function fetchUpcomingDraws() {
       });
     });
 
-    // Upsert the entire ledger
     for (const draw of upcomingToStore) {
-      const { error } = await supabase
-        .from('upcoming_draws')
-        .upsert(draw, { onConflict: 'game,draw_number' });
-      
-      if (error) console.error(`Error upserting upcoming draw for ${draw.game} #${draw.draw_number}:`, error.message);
+      await supabase.from('upcoming_draws').upsert(draw, { onConflict: 'game,draw_number' });
     }
-    console.log(`Successfully synchronized ${upcomingToStore.length} upcoming draws across all games.`);
-
   } catch (error: any) {
     console.error('Upcoming Draw Sync Error:', error.message);
   }
@@ -213,12 +234,7 @@ async function fetchGame(game: 'OzLotto' | 'Powerball' | 'TattsLotto') {
 
     const text = await response.text();
     let data;
-    try {
-      data = JSON.parse(text);
-    } catch (e) {
-      console.error(`Result Parsing Error: Non-JSON response received.`);
-      return;
-    }
+    try { data = JSON.parse(text); } catch (e) { return; }
 
     if (!data.Success || !data.DrawResults?.length) return;
 
@@ -227,39 +243,22 @@ async function fetchGame(game: 'OzLotto' | 'Powerball' | 'TattsLotto') {
     const drawDate = latest.DrawDate.split('T')[0];
 
     const { data: existing } = await supabase.from('draw_results').select('id').eq('draw_number', drawNumber).eq('game', displayName).maybeSingle();
-    if (existing) {
-      console.log(`${displayName} Block #${drawNumber} already exists in history.`);
-      return;
-    }
+    if (existing) return;
 
     const prizes: Record<string, number> = {};
     latest.Dividends.forEach((div: any) => {
       let amount = div.BlocDividend;
-      // Bridge Jackpot if needed
       if (div.Division === 1 && amount === 0) {
         const cachedAmount = jackpotCache.get(`${game}-${drawNumber}`);
-        if (cachedAmount) {
-          amount = cachedAmount;
-          console.log(`Jackpot found in memory: $${amount.toLocaleString()}`);
-        }
+        if (cachedAmount) amount = cachedAmount;
       }
       prizes[`Division ${div.Division}`] = amount;
     });
     prizes['No Prize'] = 0;
 
-    // Second level bridge check: query DB ledger if memory cache missed
     if (prizes['Division 1'] === 0) {
-      const { data: dbEntry } = await supabase
-        .from('upcoming_draws')
-        .select('jackpot')
-        .eq('game', displayName)
-        .eq('draw_number', drawNumber)
-        .maybeSingle();
-      
-      if (dbEntry) {
-        prizes['Division 1'] = dbEntry.jackpot;
-        console.log(`Jackpot retrieved from DB Ledger: $${dbEntry.jackpot.toLocaleString()}`);
-      }
+      const { data: dbEntry } = await supabase.from('upcoming_draws').select('jackpot').eq('game', displayName).eq('draw_number', drawNumber).maybeSingle();
+      if (dbEntry) prizes['Division 1'] = dbEntry.jackpot;
     }
 
     await supabase.from('draw_results').insert({
@@ -271,12 +270,8 @@ async function fetchGame(game: 'OzLotto' | 'Powerball' | 'TattsLotto') {
       prizes: prizes,
     });
 
-    console.log(`Sync Complete: ${displayName} Block #${drawNumber}`);
-    
-    // Cleanup ledger
     await supabase.from('upcoming_draws').delete().eq('game', displayName).eq('draw_number', drawNumber);
-
-    await notifyUsers(displayName, drawDate, latest.PrimaryNumbers, latest.SecondaryNumbers);
+    await notifyUsers(displayName, drawDate, latest.PrimaryNumbers, latest.SecondaryNumbers, prizes);
 
   } catch (error: any) {
     console.error(`Processing Failure:`, error.message);
