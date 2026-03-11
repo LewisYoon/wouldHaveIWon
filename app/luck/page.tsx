@@ -269,32 +269,30 @@ export default function LuckPage() {
   };
 
   const handleDeleteDateGroup = async (date: string) => {
-    // 현재 선택된 게임 명칭을 확실히 고정 (Oz Lotto, Powerball 등)
     const currentGame = game; 
     
     if (!window.confirm(`Delete all ${currentGame} tickets for ${date}?`)) return;
     
     if (user) {
-      // DB에서 삭제: 사용자ID, 게임명, 날짜가 모두 일치해야 함
-      const { error } = await supabase.from('tickets')
-        .delete()
+      // DB에서 삭제 시도
+      const { error, count } = await supabase.from('tickets')
+        .delete({ count: 'exact' }) // 삭제된 개수 확인
         .eq('user_id', user.id)
         .eq('game', currentGame)
         .eq('draw_date', date);
       
       if (error) {
         console.error("Database deletion failed:", error.message);
-        alert("Failed to delete from server.");
+        alert(`Failed to delete from server: ${error.message}`);
         return;
       }
+      
+      console.log(`Successfully deleted ${count} tickets from server.`);
     }
     
-    // UI 상태 업데이트: 
-    // 현재 메모리에 있는 티켓 중 (날짜가 일치) AND (게임이 일치) 하는 것만 제외하고 유지
+    // UI 상태 업데이트
     setMyTickets(prev => {
       const updated = prev.filter(t => !(t.drawDate === date && t.game === currentGame));
-      
-      // 로그아웃 상태일 경우 로컬 스토리지도 업데이트
       if (!user) {
         localStorage.setItem(`luckTickets_${currentGame.replace(/\s/g, '')}`, JSON.stringify(updated));
       }
@@ -305,14 +303,20 @@ export default function LuckPage() {
   const handleDeleteSingleTicket = async (id: string) => {
     const currentGame = game;
     if (user) {
-      const { error } = await supabase.from('tickets')
-        .delete()
+      const { error, count } = await supabase.from('tickets')
+        .delete({ count: 'exact' })
         .eq('id', id)
-        .eq('user_id', user.id); // 보안상 내 티켓인지 한 번 더 확인
+        .eq('user_id', user.id);
         
       if (error) { 
-        console.error("Single deletion failed:", error.message); 
+        console.error("Single deletion failed:", error.message);
+        alert(`Error: ${error.message}`);
         return; 
+      }
+      
+      if (count === 0) {
+        alert("Permission denied or ticket not found. (Check if this ticket belongs to you)");
+        return;
       }
     }
     
