@@ -68,8 +68,23 @@ async function performAutoTrack(draws: any[]) {
 
   if (!premiumUsers?.length) return;
 
+  // Filter draws to only include those within a reasonable window (e.g., last 7 days to next 7 days)
+  const now = new Date();
+  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+  const relevantDraws = draws.filter(draw => {
+    const drawDate = new Date(draw.draw_date);
+    return drawDate >= sevenDaysAgo && drawDate <= sevenDaysFromNow;
+  });
+
+  if (relevantDraws.length === 0) {
+    console.log('No relevant draws within the 14-day window for auto-tracking.');
+    return;
+  }
+
   for (const user of premiumUsers) {
-    for (const draw of draws) {
+    for (const draw of relevantDraws) {
       // Check if user already has tickets for this draw
       const { count } = await supabase
         .from('tickets')
@@ -87,8 +102,12 @@ async function performAutoTrack(draws: any[]) {
         numbers: generateQuickPick(draw.game)
       }));
 
-      await supabase.from('tickets').insert(newTickets);
-      console.log(`Auto-tracked ${user.auto_track_qty} tickets for user ${user.user_id} (${draw.game} - ${draw.draw_date})`);
+      const { error } = await supabase.from('tickets').insert(newTickets);
+      if (error) {
+        console.error(`Auto-track insert error for user ${user.user_id}:`, error.message);
+      } else {
+        console.log(`Auto-tracked ${user.auto_track_qty} tickets for user ${user.user_id} (${draw.game} - ${draw.draw_date})`);
+      }
     }
   }
 }
