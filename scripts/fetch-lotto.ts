@@ -25,6 +25,74 @@ if (!supabaseUrl || !serviceRoleKey) {
 const supabase = createClient(supabaseUrl, serviceRoleKey);
 const resend = resendApiKey ? new Resend(resendApiKey) : null;
 
+// Helper for generating quick picks in the script
+function generateQuickPick(game: string): number[] {
+  const isOz = game === 'Oz Lotto';
+  const isPB = game === 'Powerball';
+  
+  if (isOz) {
+    const nums: number[] = [];
+    while (nums.length < 7) {
+      const n = Math.floor(Math.random() * 47) + 1;
+      if (!nums.includes(n)) nums.push(n);
+    }
+    return nums.sort((a, b) => a - b);
+  } else if (isPB) {
+    const nums: number[] = [];
+    while (nums.length < 7) {
+      const n = Math.floor(Math.random() * 35) + 1;
+      if (!nums.includes(n)) nums.push(n);
+    }
+    const pb = Math.floor(Math.random() * 20) + 1;
+    return [...nums.sort((a, b) => a - b), pb];
+  } else {
+    // Tatts Lotto
+    const nums: number[] = [];
+    while (nums.length < 6) {
+      const n = Math.floor(Math.random() * 45) + 1;
+      if (!nums.includes(n)) nums.push(n);
+    }
+    return nums.sort((a, b) => a - b);
+  }
+}
+
+async function performAutoTrack(draws: any[]) {
+  console.log('Running Auto-Tracker for premium users...');
+  
+  const { data: premiumUsers } = await supabase
+    .from('user_preferences')
+    .select('user_id, auto_track_qty')
+    .eq('is_premium', true)
+    .eq('is_auto_track_enabled', true)
+    .gt('auto_track_qty', 0);
+
+  if (!premiumUsers?.length) return;
+
+  for (const user of premiumUsers) {
+    for (const draw of draws) {
+      // Check if user already has tickets for this draw
+      const { count } = await supabase
+        .from('tickets')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.user_id)
+        .eq('draw_date', draw.draw_date)
+        .eq('game', draw.game);
+
+      if (count && count > 0) continue; // Skip if already tracked
+
+      const newTickets = Array.from({ length: user.auto_track_qty }, () => ({
+        user_id: user.user_id,
+        game: draw.game,
+        draw_date: draw.draw_date,
+        numbers: generateQuickPick(draw.game)
+      }));
+
+      await supabase.from('tickets').insert(newTickets);
+      console.log(`Auto-tracked ${user.auto_track_qty} tickets for user ${user.user_id} (${draw.game} - ${draw.draw_date})`);
+    }
+  }
+}
+
 // Global cache for upcoming jackpot amounts
 const jackpotCache = new Map<string, number>();
 
@@ -210,6 +278,9 @@ async function fetchUpcomingDraws() {
     for (const draw of upcomingToStore) {
       await supabase.from('upcoming_draws').upsert(draw, { onConflict: 'game,draw_number' });
     }
+
+    // Trigger auto-tracking for premium users
+    await performAutoTrack(upcomingToStore);
   } catch (error: any) {
     console.error('Upcoming Draw Sync Error:', error.message);
   }

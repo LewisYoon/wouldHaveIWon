@@ -27,7 +27,7 @@ interface DrawResult {
 }
 
 const TICKET_COST = 1.45;
-const FREE_TICKET_LIMIT = 10;
+const FREE_TICKET_LIMIT = 30;
 
 export default function LuckPage() {
   const { user, isPremium, isLoading: isAuthLoading } = useAuth();

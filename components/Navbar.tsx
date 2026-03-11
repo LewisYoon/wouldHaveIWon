@@ -9,7 +9,7 @@ import ThemeToggle from './ThemeToggle';
 import SettingsModal from './SettingsModal';
 
 export default function Navbar() {
-  const { user, logout } = useAuth();
+  const { user, logout, isPremium } = useAuth();
   const pathname = usePathname();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -58,9 +58,16 @@ export default function Navbar() {
             
             {user ? (
               <div className="flex items-center gap-2 sm:gap-4 bg-gray-100 dark:bg-white/5 p-1 sm:p-1.5 sm:pl-4 rounded-2xl border border-gray-200 dark:border-white/10">
-                <span className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-tighter hidden lg:block truncate max-w-[120px]">
-                  {user.email}
-                </span>
+                <div className="hidden lg:flex flex-col items-start leading-none pr-2">
+                  <span className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-tighter truncate max-w-[120px]">
+                    {user.email}
+                  </span>
+                  {isPremium ? (
+                    <span className="text-[8px] font-black text-amber-500 uppercase tracking-widest mt-0.5">PRO Member</span>
+                  ) : (
+                    <Link href="/dashboard" className="text-[8px] font-black text-indigo-500 uppercase tracking-widest mt-0.5 hover:underline transition-all">Upgrade to PRO</Link>
+                  )}
+                </div>
                 <div className="flex gap-1 sm:gap-2">
                   <button
                     onClick={() => setIsSettingsOpen(true)}
@@ -104,6 +111,15 @@ export default function Navbar() {
         {isMobileMenuOpen && (
           <div className="lg:hidden bg-white dark:bg-gray-950 border-t border-gray-100 dark:border-white/5 animate-in slide-in-from-top-4 duration-300">
             <div className="flex flex-col p-6 space-y-4">
+              {!isPremium && (
+                <Link 
+                  href="/dashboard" 
+                  onClick={closeMobileMenu}
+                  className="bg-gradient-to-r from-amber-400 to-orange-500 p-4 rounded-2xl text-center shadow-lg transform active:scale-95 transition-all"
+                >
+                  <span className="text-sm font-black text-white uppercase tracking-widest">🚀 Upgrade to PRO</span>
+                </Link>
+              )}
               {navLinks.map((link) => {
                 if (link.authOnly && !user) return null;
                 return (

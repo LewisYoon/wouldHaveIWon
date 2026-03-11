@@ -7,41 +7,68 @@ import { useRouter } from 'next/navigation';
 
 interface AuthContextType {
   user: User | null;
+  isPremium: boolean;
   signIn: (credentials: SignInWithPasswordCredentials) => Promise<{ error: AuthError | null }>;
   signUp: (credentials: SignUpWithPasswordCredentials) => Promise<{ error: AuthError | null }>;
   signInWithGoogle: () => Promise<{ error: AuthError | null }>;
   resetPassword: (email: string) => Promise<{ error: AuthError | null }>;
   logout: () => Promise<void>;
   isLoading: boolean;
+  refreshPremiumStatus: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [isPremium, setIsPremium] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+
+  const fetchPremiumStatus = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('user_preferences')
+        .select('is_premium')
+        .eq('user_id', userId)
+        .single();
+      
+      if (data) {
+        setIsPremium(data.is_premium);
+      } else if (error && error.code === 'PGRST116') {
+        // Preference record doesn't exist yet, try to create it
+        await supabase.from('user_preferences').insert({ user_id: userId, is_premium: false });
+        setIsPremium(false);
+      }
+    } catch (err) {
+      console.error("Error fetching premium status:", err);
+    }
+  };
 
   useEffect(() => {
     // Get initial session
     const initAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      setUser(session?.user ?? null);
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+      if (currentUser) await fetchPremiumStatus(currentUser.id);
       setIsLoading(false);
     };
     initAuth();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user ?? null);
-      setIsLoading(false);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
       
-      // Handle password recovery redirect
-      if (event === 'PASSWORD_RECOVERY') {
-        // You might want to redirect to a special 'update-password' page here
-        // For now, we'll just log it or handle it in the UI
+      if (currentUser) {
+        await fetchPremiumStatus(currentUser.id);
+      } else {
+        setIsPremium(false);
       }
 
+      setIsLoading(false);
+      
       if (event === 'SIGNED_IN' && window.location.pathname === '/login') {
         router.push('/luck');
       }
@@ -49,6 +76,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return () => subscription.unsubscribe();
   }, [router]);
+
+  const refreshPremiumStatus = async () => {
+    if (user) await fetchPremiumStatus(user.id);
+  };
 
   const signIn = async (credentials: SignInWithPasswordCredentials) => {
     const { error } = await supabase.auth.signInWithPassword(credentials);
@@ -83,7 +114,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, signIn, signUp, signInWithGoogle, resetPassword, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, isPremium, signIn, signUp, signInWithGoogle, resetPassword, logout, isLoading, refreshPremiumStatus }}>
       {children}
     </AuthContext.Provider>
   );
