@@ -66,27 +66,27 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
     <div className="bg-white dark:bg-gray-950 min-h-screen text-gray-900 dark:text-gray-100 selection:bg-indigo-500 selection:text-white">
       <Navbar />
       
-      <main className="max-w-4xl mx-auto px-6 py-24">
-        <header className="mb-16 text-left">
-          <Link href="/blog" className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-600 dark:text-indigo-400 mb-8 block hover:translate-x-[-4px] transition-transform">← Back to Blog</Link>
-          <div className="flex items-center gap-4 mb-6">
-            <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full bg-gray-100 dark:bg-white/5 text-gray-500">{post.category}</span>
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{post.date}</span>
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 py-12 sm:py-24">
+        <header className="mb-10 sm:mb-16 text-left">
+          <Link href="/blog" className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.3em] text-indigo-600 dark:text-indigo-400 mb-6 sm:mb-8 block hover:translate-x-[-4px] transition-transform">← Back to Blog</Link>
+          <div className="flex items-center gap-4 mb-4 sm:mb-6">
+            <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full bg-gray-100 dark:bg-white/5 text-gray-500">{post.category}</span>
+            <span className="text-[9px] sm:text-[10px] font-bold text-gray-400 uppercase tracking-widest">{post.date}</span>
           </div>
-          <h1 className="text-4xl md:text-6xl font-black tracking-tighter leading-tight">{post.title}</h1>
+          <h1 className="text-3xl sm:text-4xl md:text-6xl font-black tracking-tighter leading-[1.1] sm:leading-tight">{post.title}</h1>
         </header>
 
         <div 
-          className="prose prose-lg prose-indigo dark:prose-invert max-w-none text-gray-600 dark:text-gray-300 font-medium leading-relaxed"
+          className="prose prose-base sm:prose-lg prose-indigo dark:prose-invert max-w-none text-gray-600 dark:text-gray-300 font-medium leading-relaxed"
           dangerouslySetInnerHTML={{ __html: post.content }}
         />
 
-        <footer className="mt-24 pt-16 border-t border-gray-100 dark:border-white/5">
-            <div className="bg-indigo-50 dark:bg-indigo-500/10 p-12 rounded-[3rem] text-center">
-                <h4 className="text-2xl font-black mb-4 tracking-tight italic">Try the Simulation</h4>
-                <p className="text-gray-500 dark:text-gray-400 mb-10 max-w-md mx-auto">Experience the mathematics discussed in this article first-hand with our risk-free simulator.</p>
-                <div className="flex justify-center gap-6">
-                    <Link href="/simulator" className="bg-indigo-600 text-white font-black uppercase tracking-widest px-10 py-4 rounded-2xl text-sm hover:bg-indigo-500 shadow-xl transition-all active:scale-95">Launch Simulator</Link>
+        <footer className="mt-16 sm:mt-24 pt-12 sm:pt-16 border-t border-gray-100 dark:border-white/5">
+            <div className="bg-indigo-50 dark:bg-indigo-500/10 p-8 sm:p-12 rounded-[2.5rem] sm:rounded-[3rem] text-center">
+                <h4 className="text-xl sm:text-2xl font-black mb-3 sm:mb-4 tracking-tight italic">Try the Simulation</h4>
+                <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400 mb-8 sm:mb-10 max-w-md mx-auto">Experience the mathematics discussed in this article first-hand with our risk-free simulator.</p>
+                <div className="flex justify-center">
+                    <Link href="/simulator" className="w-full sm:w-auto bg-indigo-600 text-white font-black uppercase tracking-widest px-8 sm:px-10 py-4 rounded-2xl text-[10px] sm:text-sm hover:bg-indigo-500 shadow-xl transition-all active:scale-95 text-center">Launch Simulator</Link>
                 </div>
             </div>
         </footer>

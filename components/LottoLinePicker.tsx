@@ -90,13 +90,22 @@ export default function LottoLinePicker({
   const pbNumbers = Array.from({ length: PB_BALL_MAX }, (_, i) => i + 1);
 
   return (
-    <div className="group relative bg-white dark:bg-gray-900 border border-gray-100 dark:border-white/5 p-6 rounded-[2.5rem] shadow-sm hover:shadow-xl transition-all duration-500 animate-in fade-in zoom-in-95">
-      <div className="flex flex-wrap items-center gap-4">
-        <div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-black text-xs shadow-inner ${brandBg} ${brandColor} border border-black/5`}>
-          {displayIndex}
+    <div className="group relative bg-white dark:bg-gray-900 border border-gray-100 dark:border-white/5 p-4 sm:p-6 rounded-[2rem] sm:rounded-[2.5rem] shadow-sm hover:shadow-xl transition-all duration-500 animate-in fade-in zoom-in-95">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+        <div className="flex items-center justify-between w-full sm:w-auto">
+          <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl flex items-center justify-center font-black text-[10px] sm:text-xs shadow-inner ${brandBg} ${brandColor} border border-black/5`}>
+            {displayIndex}
+          </div>
+          <div className="flex sm:hidden items-center gap-2">
+            <button onClick={() => setShowGrid(!showGrid)} className={`p-2 rounded-lg border font-black text-[9px] uppercase tracking-widest transition-all ${showGrid ? `${brandBall} text-white border-transparent shadow-lg` : 'bg-gray-50 dark:bg-white/5 text-gray-400 border-gray-100 dark:border-white/10'}`}>
+              {showGrid ? 'Close' : 'Pick'}
+            </button>
+            <button onClick={handleQuickPick} className={`p-2 rounded-lg ${brandBg} ${brandColor} transition-all text-[9px] font-black uppercase tracking-widest border border-black/5`}>Auto</button>
+            <button onClick={() => onDeleteLine(lineId)} className="p-2 rounded-lg bg-red-50 dark:bg-red-500/10 text-red-500 border border-red-100 dark:border-red-500/20"><TrashIcon /></button>
+          </div>
         </div>
 
-        <div className="flex flex-wrap gap-2.5 items-center flex-grow">
+        <div className="flex flex-wrap gap-2 items-center flex-grow justify-center sm:justify-start">
           {activeNumbers.map((num, idx) => {
             const isPowerballSlot = game === 'Powerball' && idx === 7;
             const max = isPowerballSlot ? PB_BALL_MAX : mainMax;
@@ -119,7 +128,7 @@ export default function LottoLinePicker({
                     if (v > max) v = max;
                     updateNumberAt(idx, v);
                   }}
-                  className={`w-11 h-11 rounded-full text-center font-black text-sm transition-all focus:ring-4 focus:outline-none shadow-md border-b-4 border-black/10
+                  className={`w-9 h-9 sm:w-11 sm:h-11 rounded-full text-center font-black text-xs sm:text-sm transition-all focus:ring-4 focus:outline-none shadow-md border-b-4 border-black/10
                     ${num > 0 
                       ? (isPowerballSlot ? 'bg-amber-400 text-amber-950 border-amber-600 focus:ring-amber-200' : `${brandBall} text-white border-black/20 focus:ring-indigo-200`)
                       : 'bg-gray-100 dark:bg-white/5 text-gray-400 dark:text-gray-600 border-gray-200 dark:border-white/10 focus:ring-gray-200'
@@ -132,7 +141,7 @@ export default function LottoLinePicker({
           })}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="hidden sm:flex items-center gap-2">
           <button onClick={() => setShowGrid(!showGrid)} className={`p-2.5 rounded-xl border font-black text-[10px] uppercase tracking-widest transition-all ${showGrid ? `${brandBall} text-white border-transparent shadow-lg` : 'bg-gray-50 dark:bg-white/5 text-gray-400 border-gray-100 dark:border-white/10 hover:bg-gray-100'}`}>
             {showGrid ? 'Close' : 'Pick'}
           </button>
