@@ -175,9 +175,10 @@ export default function LuckPage() {
     const required = game === 'Oz Lotto' ? 7 : game === 'Powerball' ? 8 : 6;
     if (currentNumbers.filter(n => n > 0).length !== required) { alert(`Select ${required} numbers`); return; }
     
-    // Premium Limit Check
-    if (!isPremium && myTickets.length >= FREE_TICKET_LIMIT) {
-      alert(`Free limit reached (${FREE_TICKET_LIMIT} tickets). Please upgrade to PRO for unlimited tracking!`);
+    // Premium Limit Check: Count tickets for THIS SPECIFIC DRAW
+    const ticketsForThisDraw = myTickets.filter(t => t.drawDate === selectedDate).length;
+    if (!isPremium && ticketsForThisDraw >= FREE_TICKET_LIMIT) {
+      alert(`Free limit reached (${FREE_TICKET_LIMIT} tickets per draw). Please upgrade to PRO for unlimited tracking!`);
       return;
     }
 
@@ -192,14 +193,16 @@ export default function LuckPage() {
   };
 
   const handleMultiQuickPick = async () => {
-    // Premium Limit Check
-    if (!isPremium && myTickets.length + quickPickQty > FREE_TICKET_LIMIT) {
-      const allowed = FREE_TICKET_LIMIT - myTickets.length;
+    const ticketsForThisDraw = myTickets.filter(t => t.drawDate === selectedDate).length;
+    
+    // Premium Limit Check: Per draw
+    if (!isPremium && ticketsForThisDraw + quickPickQty > FREE_TICKET_LIMIT) {
+      const allowed = FREE_TICKET_LIMIT - ticketsForThisDraw;
       if (allowed <= 0) {
-        alert(`Free limit reached (${FREE_TICKET_LIMIT} tickets). Upgrade to PRO for unlimited quick picks!`);
+        alert(`Free limit reached (${FREE_TICKET_LIMIT} tickets for this draw). Upgrade to PRO for unlimited quick picks!`);
         return;
       }
-      if (!window.confirm(`You only have ${allowed} free slots left. Generate ${allowed} tickets instead?`)) return;
+      if (!window.confirm(`You only have ${allowed} free slots left for this draw. Generate ${allowed} tickets instead?`)) return;
       
       const newSets = Array.from({ length: allowed }, () => generateQuickPick(game));
       if (user) {
@@ -282,10 +285,10 @@ export default function LuckPage() {
 
       <main className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-16 px-4 sm:px-6 relative z-10">
         <div className="lg:col-span-5 space-y-8 sm:space-y-10 animate-in fade-in slide-in-from-bottom-8 duration-1000 text-left">
-          {!isPremium && myTickets.length >= FREE_TICKET_LIMIT && (
+          {!isPremium && myTickets.filter(t => t.drawDate === selectedDate).length >= FREE_TICKET_LIMIT && (
             <div className="bg-gradient-to-r from-amber-500 to-orange-600 p-6 rounded-[2rem] text-white shadow-xl animate-bounce">
-              <p className="font-black uppercase tracking-widest text-xs mb-2">Free Limit Reached! 🚀</p>
-              <p className="text-sm font-bold opacity-90 mb-4">You are tracking {myTickets.length} tickets. Upgrade to PRO for unlimited tracking and advanced analytics.</p>
+              <p className="font-black uppercase tracking-widest text-xs mb-2">Draw Limit Reached! 🚀</p>
+              <p className="text-sm font-bold opacity-90 mb-4">You are tracking {FREE_TICKET_LIMIT} tickets for this draw. Upgrade to PRO for unlimited tracking and advanced analytics.</p>
               <Link href="/dashboard" className="inline-block bg-white text-orange-600 px-6 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-orange-50 transition-all">Upgrade Now</Link>
             </div>
           )}
@@ -316,6 +319,22 @@ export default function LuckPage() {
             </div>
             <label className="block text-[9px] sm:text-[11px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em] mb-4 sm:mb-6 ml-2">2. Choose Your Numbers</label>
             <LottoLinePicker lineId="luck-picker" displayIndex={1} selectedNumbers={currentNumbers} onNumbersChange={(_, numbers) => setCurrentNumbers(numbers)} onDeleteLine={() => setCurrentNumbers([])} game={game} />
+            
+            {!isPremium && (
+              <div className="mt-6 flex items-center justify-between px-2">
+                <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Draw Slots Used</span>
+                <div className="flex items-center gap-3">
+                  <div className="w-24 h-1.5 bg-gray-100 dark:bg-white/5 rounded-full overflow-hidden">
+                    <div 
+                      className={`h-full transition-all duration-1000 ${myTickets.filter(t => t.drawDate === selectedDate).length >= FREE_TICKET_LIMIT ? 'bg-orange-500' : 'bg-indigo-500'}`}
+                      style={{ width: `${Math.min(100, (myTickets.filter(t => t.drawDate === selectedDate).length / FREE_TICKET_LIMIT) * 100)}%` }}
+                    />
+                  </div>
+                  <span className="text-[10px] font-black text-gray-500 dark:text-gray-400">{myTickets.filter(t => t.drawDate === selectedDate).length} / {FREE_TICKET_LIMIT}</span>
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 gap-4 sm:gap-5 mt-8 sm:mt-12">
               <button onClick={handleSaveTicket} className={`py-4 sm:py-6 text-white font-black rounded-2xl sm:rounded-3xl transition-all uppercase tracking-[0.2em] text-xs sm:text-sm active:scale-95 shadow-xl hover:brightness-110 ${brandStyles.bg} ${brandStyles.shadow}`}>Save This Ticket</button>
               <div className="flex gap-3 sm:gap-4">
