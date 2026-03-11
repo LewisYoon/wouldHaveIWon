@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { User, AuthError, SignInWithPasswordCredentials, SignUpWithPasswordCredentials } from '@supabase/supabase-js';
 import { useRouter } from 'next/navigation';
@@ -25,7 +25,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
-  const fetchPremiumStatus = async (userId: string) => {
+  const fetchPremiumStatus = useCallback(async (userId: string) => {
     try {
       const { data, error } = await supabase
         .from('user_preferences')
@@ -36,50 +36,63 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (data) {
         setIsPremium(data.is_premium);
       } else if (error && error.code === 'PGRST116') {
-        // Preference record doesn't exist yet, try to create it
-        await supabase.from('user_preferences').insert({ user_id: userId, is_premium: false });
+        // RLS might be preventing access or row doesn't exist. Default to false.
+        console.warn("User preference record not found. Defaulting to non-premium.");
         setIsPremium(false);
+      } else if (error) {
+        throw error;
       }
     } catch (err) {
-      console.error("Error fetching premium status:", err);
+      console.error("Critical error fetching premium status:", err);
+      setIsPremium(false); // Default to false on error to prevent locking out users
     }
-  };
+  }, []);
+
+  const refreshPremiumStatus = useCallback(async () => {
+    if (user) await fetchPremiumStatus(user.id);
+  }, [user, fetchPremiumStatus]);
 
   useEffect(() => {
-    // Get initial session
-    const initAuth = async () => {
+    const getInitialSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       const currentUser = session?.user ?? null;
-      setUser(currentUser);
-      if (currentUser) await fetchPremiumStatus(currentUser.id);
-      setIsLoading(false);
-    };
-    initAuth();
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      const currentUser = session?.user ?? null;
-      setUser(currentUser);
       
+      setUser(currentUser);
       if (currentUser) {
         await fetchPremiumStatus(currentUser.id);
       } else {
         setIsPremium(false);
       }
-
-      setIsLoading(false);
       
-      if (event === 'SIGNED_IN' && window.location.pathname === '/login') {
-        router.push('/luck');
+      setIsLoading(false);
+    };
+
+    getInitialSession();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        const currentUser = session?.user ?? null;
+        setUser(currentUser);
+
+        if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
+          if (currentUser) {
+             await fetchPremiumStatus(currentUser.id);
+          }
+        } else if (event === 'SIGNED_OUT') {
+          setIsPremium(false);
+        }
+        
+        if (event === 'SIGNED_IN' && window.location.pathname === '/login') {
+            router.push('/luck');
+        }
       }
-    });
+    );
 
-    return () => subscription.unsubscribe();
-  }, [router]);
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, [router, fetchPremiumStatus]);
 
-  const refreshPremiumStatus = async () => {
-    if (user) await fetchPremiumStatus(user.id);
-  };
 
   const signIn = async (credentials: SignInWithPasswordCredentials) => {
     const { error } = await supabase.auth.signInWithPassword(credentials);
@@ -109,8 +122,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = async () => {
+    setIsLoading(true);
     await supabase.auth.signOut();
+    setUser(null);
+    setIsPremium(false);
     router.push('/');
+    setIsLoading(false);
   };
 
   return (
