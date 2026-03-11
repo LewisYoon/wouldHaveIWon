@@ -24,7 +24,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isPremium, setIsPremium] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
-  const isInitial Mount = useRef(true);
+  const isInitialMount = useRef(true);
 
   // 프리미엄 상태 가져오기 함수
   const fetchPremiumStatus = useCallback(async (userId: string) => {
