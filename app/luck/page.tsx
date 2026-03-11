@@ -511,13 +511,17 @@ export default function LuckPage() {
             )}
           </div>
 
-          <div className="space-y-6">
-            <div className="flex items-center justify-between px-4 sm:px-6">
-              <h2 className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tighter italic">My History</h2>
-              <span className="text-[9px] sm:text-[11px] font-black text-gray-400 dark:text-gray-500 bg-gray-200 dark:bg-white/5 px-4 sm:px-5 py-1.5 sm:py-2 rounded-full uppercase tracking-widest">{myTickets.length} Tickets</span>
+          <div className="space-y-8 sm:space-y-12">
+            <div className="flex items-center justify-between px-4 sm:px-8">
+              <div className="flex flex-col text-left">
+                <h2 className="text-3xl sm:text-4xl font-black text-gray-900 dark:text-white uppercase tracking-tighter italic">My History</h2>
+                <p className="text-[9px] sm:text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mt-1">Archived Ticket Results</p>
+              </div>
+              <span className="text-[10px] sm:text-[12px] font-black text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 px-4 sm:px-6 py-2 sm:py-3 rounded-2xl uppercase tracking-widest shadow-sm">{myTickets.length} Tickets</span>
             </div>
 
-            <div className="max-h-[800px] overflow-y-auto pr-2 custom-scrollbar space-y-4 sm:space-y-6">
+            {/* Scrollable Container with explicit max-height and custom scrollbar */}
+            <div className="max-h-[700px] sm:max-h-[900px] overflow-y-auto pr-2 sm:pr-4 custom-scrollbar space-y-6 sm:space-y-8 pb-10">
               {isDataLoading ? (
                 <div className="py-20 sm:py-40 flex flex-col items-center gap-6 animate-pulse"><div className={`w-12 h-12 sm:w-16 sm:h-16 border-4 ${brandStyles.text.replace('text-', 'border-')} border-t-transparent rounded-full animate-spin`} /><p className="text-gray-400 font-black uppercase tracking-[0.3em] text-[10px] sm:text-xs italic">Loading history...</p></div>
               ) : Object.keys(ticketsByDate).length === 0 ? (
