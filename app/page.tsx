@@ -20,15 +20,8 @@ export default function Home() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const { count: ticketCount } = await supabase
-          .from('tickets')
-          .select('*', { count: 'exact', head: true });
-
-        const { data: users } = await supabase
-          .from('tickets')
-          .select('user_id');
-        
-        const uniqueUsers = new Set(users?.map(u => u.user_id)).size;
+        // Fetch site-wide statistics via secure RPC
+        const { data: statsData } = await supabase.rpc('get_site_stats');
 
         const { data: resultsData } = await supabase
           .from('draw_results')
@@ -60,10 +53,13 @@ export default function Home() {
 
         setLatestResults(latestResultsArray);
         setUpcomingDraws(upcomingDrawsArray);
-        setLiveStats({
-          totalTickets: ticketCount || 0,
-          activeTrackers: uniqueUsers || 0,
-        });
+        
+        if (statsData) {
+          setLiveStats({
+            totalTickets: statsData.total_tickets || 0,
+            activeTrackers: statsData.total_users || 0,
+          });
+        }
       } catch (err) {
         console.error("Data fetch failed:", err);
       } finally {
