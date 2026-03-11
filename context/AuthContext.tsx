@@ -63,52 +63,61 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [user, fetchPremiumStatus]);
 
   useEffect(() => {
-    // 1. 초기 세션 확인 및 구독 설정
     let mounted = true;
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    // 1. 로딩 세이프티 타이머 (최대 2초 후에는 무조건 로딩 해제)
+    const failsafeTimer = setTimeout(() => {
+      if (mounted) setIsLoading(false);
+    }, 2000);
+
+    // 2. 초기 세션 체크
+    const initAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!mounted) return;
+
+        const initialUser = session?.user ?? null;
+        setUser(initialUser);
+
+        if (initialUser) {
+          // 프리미엄 체크는 백그라운드에서 수행 (await 하지 않음)
+          fetchPremiumStatus(initialUser.id);
+        }
+      } catch (err) {
+        console.error("Auth init error:", err);
+      } finally {
+        if (mounted) setIsLoading(false);
+      }
+    };
+
+    initAuth();
+
+    // 3. 상태 변경 구독
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!mounted) return;
+
       const currentUser = session?.user ?? null;
-      
-      // 유저 상태 업데이트
       setUser(currentUser);
-      
+
       if (currentUser) {
-        // 프리미엄 상태 확인
-        await fetchPremiumStatus(currentUser.id);
+        fetchPremiumStatus(currentUser.id);
       } else {
         setIsPremium(false);
+      }
+
+      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'INITIAL_SESSION') {
+        setIsLoading(false);
       }
 
       if (event === 'SIGNED_IN' && window.location.pathname === '/login') {
         router.push('/luck');
       }
-
-      if (mounted) {
-        setIsLoading(false);
-      }
     });
-
-    // Supabase Auth의 초기화가 늦어지는 경우를 대비해 수동으로 한번 더 확인 (Fallback)
-    const checkInitialSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (mounted && session?.user) {
-        setUser(session.user);
-        await fetchPremiumStatus(session.user.id);
-        setIsLoading(false);
-      } else if (mounted && !session) {
-        // onAuthStateChange가 먼저 처리될 것이므로 여기서의 처리는 보조적임
-        // 다만 어떤 이유로든 이벤트가 안 올 경우를 대비해 일정 시간 후 로딩 해제
-        setTimeout(() => {
-          if (mounted) setIsLoading(false);
-        }, 2000);
-      }
-    };
-
-    checkInitialSession();
 
     return () => {
       mounted = false;
       subscription.unsubscribe();
+      clearTimeout(failsafeTimer);
     };
   }, [fetchPremiumStatus, router]);
 
