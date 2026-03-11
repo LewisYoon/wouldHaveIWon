@@ -59,7 +59,10 @@ export default function AnalyticsPage() {
     const hotNumbers = sortedFreq.slice(0, 6);
     const coldNumbers = [...sortedFreq].reverse().slice(0, 6);
 
-    return { hotNumbers, coldNumbers, sortedFreq, totalDraws, lastSeenMap };
+    const startDate = results[results.length - 1]?.draw_date;
+    const endDate = results[0]?.draw_date;
+
+    return { hotNumbers, coldNumbers, sortedFreq, totalDraws, lastSeenMap, startDate, endDate };
   }, [results, game]);
 
   const brandColor = game === 'Oz Lotto' ? 'emerald' : game === 'Tatts Lotto' ? 'red' : 'indigo';
@@ -73,9 +76,15 @@ export default function AnalyticsPage() {
           <h1 className="text-6xl md:text-8xl font-black uppercase tracking-tighter leading-none mb-8 italic">
             Lotto <span className={`text-${brandColor}-600 dark:text-${brandColor}-400`}>Analytics</span>
           </h1>
-          <p className="text-xl text-gray-500 dark:text-gray-400 max-w-3xl font-medium leading-relaxed">
+          <p className="text-xl text-gray-500 dark:text-gray-400 max-w-3xl font-medium leading-relaxed mb-6">
             Data-driven insights into the most frequent and rarest numbers in Australian lotteries based on historical draw history.
           </p>
+          {stats && (
+            <div className="inline-flex items-center gap-3 px-5 py-2 bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest text-gray-500">
+              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+              Analysis Period: {stats.startDate} — {stats.endDate} ({stats.totalDraws} Draws)
+            </div>
+          )}
         </header>
 
         <div className="flex flex-wrap gap-4 mb-16">
