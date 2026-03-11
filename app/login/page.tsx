@@ -183,31 +183,22 @@ export default function LoginPage() {
           </div>
 
           <div className="mt-8 sm:mt-12 pt-6 sm:pt-8 border-t border-gray-100 dark:border-white/5 text-center">
-            {mode === 'signin' ? (
-              <p className="text-xs sm:text-sm font-bold text-gray-400">
+          {mode === 'signin' ? (
+              <p className="text-sm font-bold text-gray-400">
                 New to WhatIFLotto?{' '}
                 <button onClick={() => setMode('signup')} className="text-indigo-500 hover:underline">Sign Up Free</button>
               </p>
             ) : (
-              <p className="text-xs sm:text-sm font-bold text-gray-400">
+              <p className="text-sm font-bold text-gray-400">
                 Back to basics?{' '}
                 <button onClick={() => setMode('signin')} className="text-indigo-500 hover:underline">Sign In Instead</button>
               </p>
             )}
+    
           </div>
         </div>
-            {mode === 'signin' ? (
-              <p className="text-sm font-bold text-gray-400">
-                New to WhatIFLotto?{' '}
-                <button onClick={() => setMode('signup')} className="text-indigo-500 hover:underline">Sign Up Free</button>
-              </p>
-            ) : (
-              <p className="text-sm font-bold text-gray-400">
-                Back to basics?{' '}
-                <button onClick={() => setMode('signin')} className="text-indigo-500 hover:underline">Sign In Instead</button>
-              </p>
-            )}
-          </div>
+            
+         </div>
         </div>
 
 

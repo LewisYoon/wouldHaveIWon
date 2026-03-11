@@ -44,6 +44,10 @@ export default function LuckPage() {
   const [isRulesModalOpen, setIsRulesModalOpen] = useState(false);
   const [selectedJackpot, setSelectedJackpot] = useState<number | null>(null);
 
+  // Auto-Tracker State
+  const [autoTrackPrefs, setAutoTrackPrefs] = useState({ enabled: false, qty: 0 });
+  const [isUpdatingPrefs, setIsUpdatingPrefs] = useState(false);
+
   // Branding Helpers
   const isOz = game === 'Oz Lotto';
   const isTatts = game === 'Tatts Lotto';
@@ -102,6 +106,18 @@ export default function LuckPage() {
     };
     loadLedger();
   }, []);
+
+  useEffect(() => {
+    const fetchPrefs = async () => {
+      if (user) {
+        const { data } = await supabase.from('user_preferences').select('is_auto_track_enabled, auto_track_qty').eq('user_id', user.id).maybeSingle();
+        if (data) {
+          setAutoTrackPrefs({ enabled: data.is_auto_track_enabled, qty: data.auto_track_qty || 0 });
+        }
+      }
+    };
+    if (!isAuthLoading) fetchPrefs();
+  }, [user, isAuthLoading]);
 
   useEffect(() => {
     const fetchJackpot = async () => {
@@ -170,6 +186,19 @@ export default function LuckPage() {
     });
     return groups;
   }, [myTickets]);
+
+  const handleUpdateAutoTrack = async (updates: Partial<{ enabled: boolean, qty: number }>) => {
+    if (!user || !isPremium) return;
+    const next = { ...autoTrackPrefs, ...updates };
+    setAutoTrackPrefs(next);
+    setIsUpdatingPrefs(true);
+    await supabase.from('user_preferences').upsert({
+      user_id: user.id,
+      is_auto_track_enabled: next.enabled,
+      auto_track_qty: next.qty
+    });
+    setIsUpdatingPrefs(false);
+  };
 
   const handleSaveTicket = async () => {
     const required = game === 'Oz Lotto' ? 7 : game === 'Powerball' ? 8 : 6;
@@ -292,6 +321,7 @@ export default function LuckPage() {
               <Link href="/dashboard" className="inline-block bg-white text-orange-600 px-6 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-orange-50 transition-all">Upgrade Now</Link>
             </div>
           )}
+          
           <div className={`rounded-[2rem] sm:rounded-[3rem] p-6 sm:p-10 border transition-all duration-700 shadow-2xl hover:scale-[1.02] group relative overflow-hidden ${brandStyles.bgLight} ${brandStyles.border}`}>
             <div className={`absolute top-0 right-0 w-32 h-32 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-700 ${game === 'Oz Lotto' ? 'bg-emerald-500/5' : game === 'Tatts Lotto' ? 'bg-red-500/5' : 'bg-indigo-500/5'}`} />
             <p className={`text-[9px] sm:text-[11px] font-black uppercase tracking-[0.3em] mb-6 sm:mb-8 ${brandStyles.text}`}>Luck Dashboard</p>
@@ -305,6 +335,76 @@ export default function LuckPage() {
                 <div><p className="text-[8px] sm:text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1">Best Win</p><p className={`text-xl sm:text-2xl font-black ${brandStyles.text}`}>{stats.bestDivision}</p></div>
               </div>
             </div>
+          </div>
+
+          {/* Auto-Tracker Feature Card */}
+          <div className={`rounded-[2rem] sm:rounded-[3rem] p-6 sm:p-10 border border-gray-100 dark:border-white/5 shadow-xl relative overflow-hidden transition-all duration-500 ${!isPremium ? 'bg-gray-50/50 dark:bg-white/5 grayscale-[0.5]' : 'bg-white dark:bg-gray-900 border-amber-100 dark:border-amber-500/20 shadow-amber-500/5'}`}>
+            <div className="flex justify-between items-start mb-6 sm:mb-8">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <h3 className="text-lg sm:text-xl font-black text-gray-900 dark:text-white uppercase tracking-tighter italic">Auto-Tracker</h3>
+                  <span className="text-[8px] font-black bg-amber-400 text-amber-950 px-1.5 py-0.5 rounded-md">PRO</span>
+                </div>
+                <p className="text-[10px] sm:text-xs font-medium text-gray-500 dark:text-gray-400">Set it and forget it. We'll track for you.</p>
+              </div>
+              
+              {isPremium ? (
+                <button 
+                  onClick={() => handleUpdateAutoTrack({ enabled: !autoTrackPrefs.enabled })}
+                  disabled={isUpdatingPrefs}
+                  className={`w-12 h-7 sm:w-14 sm:h-8 rounded-full transition-colors relative flex-shrink-0 ${autoTrackPrefs.enabled ? 'bg-amber-500' : 'bg-gray-200 dark:bg-gray-800'}`}
+                >
+                  <div className={`absolute top-1 left-1 w-5 h-5 sm:w-6 sm:h-6 bg-white rounded-full transition-transform shadow-sm ${autoTrackPrefs.enabled ? 'translate-x-5 sm:translate-x-6' : 'translate-x-0'}`} />
+                </button>
+              ) : (
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-100 dark:bg-white/5 rounded-2xl flex items-center justify-center text-gray-400 border border-gray-200 dark:border-white/10">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                </div>
+              )}
+            </div>
+
+            {isPremium ? (
+              <div className="space-y-6 animate-in slide-in-from-top-2 duration-500">
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center px-1">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Tickets per Draw</label>
+                    <span className="text-sm font-black text-amber-600 dark:text-amber-400">{autoTrackPrefs.qty}</span>
+                  </div>
+                  <input 
+                    type="range" 
+                    min="1" 
+                    max="1000" 
+                    step="1"
+                    value={autoTrackPrefs.qty} 
+                    onChange={(e) => handleUpdateAutoTrack({ qty: parseInt(e.target.value) })}
+                    className="w-full accent-amber-500 h-1.5 bg-gray-100 dark:bg-white/5 rounded-full appearance-none cursor-pointer"
+                  />
+                  <div className="flex justify-between text-[8px] font-black text-gray-300 uppercase tracking-tighter">
+                    <span>1 Ticket</span>
+                    <span>500</span>
+                    <span>1,000 Tickets</span>
+                  </div>
+                </div>
+                <div className="p-4 bg-amber-50 dark:bg-amber-500/5 rounded-2xl border border-amber-100 dark:border-amber-500/10">
+                  <p className="text-[10px] text-amber-700 dark:text-amber-400 font-medium leading-relaxed italic">
+                    Our system will automatically generate <strong>{autoTrackPrefs.qty} tickets</strong> for every new Oz Lotto, Powerball, and Tatts Lotto draw.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="h-1.5 bg-gray-100 dark:bg-white/5 rounded-full w-full overflow-hidden">
+                  <div className="h-full bg-gray-200 dark:bg-white/10 w-1/3" />
+                </div>
+                <p className="text-[10px] sm:text-xs font-bold text-gray-400 dark:text-gray-500 leading-relaxed italic">
+                  Automatically generate up to 1,000 tickets per draw without lifting a finger. PRO members never miss a chance to win.
+                </p>
+                <Link href="/dashboard" className="inline-flex items-center gap-2 text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest group">
+                  Unlock Auto-Tracking
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="group-hover:translate-x-1 transition-transform"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                </Link>
+              </div>
+            )}
           </div>
 
           <div className="bg-white dark:bg-gray-900 p-6 sm:p-10 rounded-[2rem] sm:rounded-[3rem] border border-gray-100 dark:border-white/5 shadow-xl transition-all duration-500">
@@ -469,35 +569,6 @@ export default function LuckPage() {
           </div>
         </div>
       </main>
-
-      {/* Static Educational Content for AdSense/SEO */}
-      <section className="max-w-4xl mx-auto px-6 py-32 text-left border-t border-gray-100 dark:border-white/5 mt-20">
-        <h2 className="text-4xl font-black mb-12 uppercase tracking-tighter italic">Guide to Lottery Tracking</h2>
-        <div className="prose prose-indigo dark:prose-invert max-w-none space-y-10 text-lg text-gray-600 dark:text-gray-400 font-medium leading-relaxed text-left">
-          <p>
-            The WhatIFLotto Luck Tracker is designed as a psychological and mathematical tool to help Australians understand the reality of lottery participation. By tracking your "lucky numbers" against real official results from Oz Lotto, Powerball, and Tatts Lotto, you can experience the highs and lows of the game without any financial risk.
-          </p>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 not-prose">
-            <div className="space-y-4">
-              <h3 className="text-xl font-black uppercase text-gray-900 dark:text-white">1. Psychological Distance</h3>
-              <p className="text-sm">Seeing a "Division 1 Miss" in a simulation creates a healthy psychological distance between the desire to win and the financial impulse to play. It allows you to visualize the outcome objectively.</p>
-            </div>
-            <div className="space-y-4">
-              <h3 className="text-xl font-black uppercase text-gray-900 dark:text-white">2. Data-Driven Awareness</h3>
-              <p className="text-sm">Our platform uses verified data to show you exactly how much you would have spent over time. For many, seeing the "Money Saved" statistic is more rewarding than the occasional virtual win.</p>
-            </div>
-          </div>
-
-          <p>
-            Our automated systems sync with official Australian lottery providers every Tuesday, Thursday, and Saturday. We ensure that every division check—from a simple Division 9 Powerball win to a multi-million dollar Oz Lotto jackpot—is calculated with 100% mathematical accuracy.
-          </p>
-
-          <blockquote className="border-l-4 border-indigo-500 pl-6 italic font-bold text-gray-900 dark:text-white bg-indigo-50 dark:bg-indigo-500/5 p-8 rounded-r-3xl">
-            "The best way to understand the odds is to witness them in action. Our tracker provides a front-row seat to the mathematics of probability."
-          </blockquote>
-        </div>
-      </section>
 
       <DivisionRules game={game} isOpen={isRulesModalOpen} onClose={() => setIsRulesModalOpen(false)} />
     </div>
