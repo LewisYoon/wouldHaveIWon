@@ -24,22 +24,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isPremium, setIsPremium] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
-  const isInitialMount = useRef(true);
+  const initialized = useRef(false);
 
-  // 프리미엄 상태 가져오기 함수
   const fetchPremiumStatus = useCallback(async (userId: string) => {
     try {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('user_preferences')
         .select('is_premium')
         .eq('user_id', userId)
-        .maybeSingle(); // single() 대신 maybeSingle() 사용 (안정성)
+        .maybeSingle();
       
-      if (data) {
-        setIsPremium(!!data.is_premium);
-      } else {
-        setIsPremium(false);
-      }
+      setIsPremium(!!data?.is_premium);
     } catch (err) {
       console.error("Premium check error:", err);
       setIsPremium(false);
@@ -51,53 +46,53 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [user, fetchPremiumStatus]);
 
   useEffect(() => {
-    // 1. 초기 세션 확인
-    const initAuth = async () => {
+    if (initialized.current) return;
+    initialized.current = true;
+
+    // 초기 세션 동기 확인
+    const setupAuth = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        const currentUser = session?.user ?? null;
-        setUser(currentUser);
+        const initialUser = session?.user ?? null;
         
-        if (currentUser) {
-          await fetchPremiumStatus(currentUser.id);
+        if (initialUser) {
+          setUser(initialUser);
+          await fetchPremiumStatus(initialUser.id);
         }
       } catch (err) {
-        console.error("Init auth error:", err);
+        console.error("Auth setup error:", err);
       } finally {
         setIsLoading(false);
       }
     };
 
-    initAuth();
+    setupAuth();
 
-    // 2. 인증 상태 변경 감시
+    // 상태 변경 구독
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       const currentUser = session?.user ?? null;
       
-      // 세션이 바뀔 때만 상태 업데이트 (무한 루프 방지)
-      setUser(currentUser);
-
-      if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
+      // 유저가 바뀌었을 때만 로직 실행 (무한 루프 핵심 방지)
+      if (currentUser?.id !== user?.id) {
+        setUser(currentUser);
         if (currentUser) {
           await fetchPremiumStatus(currentUser.id);
+        } else {
+          setIsPremium(false);
         }
-        
-        // 로그인 페이지에서 로그인 성공 시 이동
-        if (typeof window !== 'undefined' && window.location.pathname === '/login') {
-          router.push('/luck');
-        }
-      } else if (event === 'SIGNED_OUT') {
-        setIsPremium(false);
-        setUser(null);
       }
-      
+
+      if (event === 'SIGNED_IN' && window.location.pathname === '/login') {
+        router.push('/luck');
+      }
+
       setIsLoading(false);
     });
 
     return () => {
       subscription.unsubscribe();
     };
-  }, [router, fetchPremiumStatus]);
+  }, [user?.id, fetchPremiumStatus, router]);
 
   const signIn = async (credentials: SignInWithPasswordCredentials) => {
     return await supabase.auth.signInWithPassword(credentials);
