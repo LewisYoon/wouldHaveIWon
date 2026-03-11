@@ -270,16 +270,34 @@ export default function LuckPage() {
 
   const handleDeleteDateGroup = async (date: string) => {
     if (!window.confirm(`Delete all ${game} tickets for ${date}?`)) return;
-    if (user) await supabase.from('tickets').delete().eq('draw_date', date).eq('game', game).eq('user_id', user.id);
-    const updated = myTickets.filter(t => t.drawDate !== date);
+    
+    if (user) {
+      const { error } = await supabase.from('tickets')
+        .delete()
+        .eq('draw_date', date)
+        .eq('game', game)
+        .eq('user_id', user.id);
+      
+      if (error) {
+        console.error("Deletion failed:", error.message);
+        return;
+      }
+    }
+    
+    // UI 상태 업데이트: 동일 날짜와 동일 게임인 티켓만 제외
+    const updated = myTickets.filter(t => !(t.drawDate === date && t.game === game));
     saveTicketsState(updated);
   };
 
   const handleDeleteSingleTicket = async (id: string) => {
     if (user) {
-      const { error = null } = await supabase.from('tickets').delete().eq('id', id);
-      if (error) { console.error("Deletion failed:", error.message); return; }
+      const { error } = await supabase.from('tickets').delete().eq('id', id);
+      if (error) { 
+        console.error("Deletion failed:", error.message); 
+        return; 
+      }
     }
+    
     const updated = myTickets.filter(t => t.id !== id);
     saveTicketsState(updated);
   };
