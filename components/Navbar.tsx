@@ -14,10 +14,11 @@ export default function Navbar() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   const navLinks = [
-    { name: 'Luck', href: '/luck' },
-    { name: 'Simulator', href: '/simulator' },
-    { name: 'Stats', href: '/dashboard', authOnly: true },
-    { name: 'Guides', href: '/blog' },
+    { name: 'Luck', href: '/luck/' },
+    { name: 'Simulator', href: '/simulator/' },
+    { name: 'Analytics', href: '/analytics/' },
+    { name: 'Stats', href: '/dashboard/', authOnly: true },
+    { name: 'Guides', href: '/blog/' },
   ];
 
   return (
