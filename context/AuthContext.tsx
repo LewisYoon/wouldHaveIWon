@@ -24,19 +24,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isPremium, setIsPremium] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
-  const initialized = useRef(false);
 
-  const fetchPremiumStatus = useCallback(async (userId: string) => {
+  const fetchPremiumStatus = useCallback(async (userId: string, retryCount = 0) => {
+    if (!userId) return;
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('user_preferences')
         .select('is_premium')
         .eq('user_id', userId)
         .maybeSingle();
       
+      if (error) {
+        console.error("Premium check error:", error);
+        // RLS error인 경우 재시도 (최대 1회)
+        if (retryCount < 1) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+          return fetchPremiumStatus(userId, retryCount + 1);
+        }
+        setIsPremium(false);
+        return;
+      }
+      
+      // 만약 data가 null인데 user는 있는 경우, RLS 때문에 못 가져왔을 가능성이 있음
+      if (!data && retryCount < 1) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+        return fetchPremiumStatus(userId, retryCount + 1);
+      }
+
       setIsPremium(!!data?.is_premium);
     } catch (err) {
-      console.error("Premium check error:", err);
+      console.error("Premium check unexpected error:", err);
       setIsPremium(false);
     }
   }, []);
@@ -46,53 +63,54 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [user, fetchPremiumStatus]);
 
   useEffect(() => {
-    if (initialized.current) return;
-    initialized.current = true;
+    // 1. 초기 세션 확인 및 구독 설정
+    let mounted = true;
 
-    // 초기 세션 동기 확인
-    const setupAuth = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        const initialUser = session?.user ?? null;
-        
-        if (initialUser) {
-          setUser(initialUser);
-          await fetchPremiumStatus(initialUser.id);
-        }
-      } catch (err) {
-        console.error("Auth setup error:", err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    setupAuth();
-
-    // 상태 변경 구독
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       const currentUser = session?.user ?? null;
       
-      // 유저가 바뀌었을 때만 로직 실행 (무한 루프 핵심 방지)
-      if (currentUser?.id !== user?.id) {
-        setUser(currentUser);
-        if (currentUser) {
-          await fetchPremiumStatus(currentUser.id);
-        } else {
-          setIsPremium(false);
-        }
+      // 유저 상태 업데이트
+      setUser(currentUser);
+      
+      if (currentUser) {
+        // 프리미엄 상태 확인
+        await fetchPremiumStatus(currentUser.id);
+      } else {
+        setIsPremium(false);
       }
 
       if (event === 'SIGNED_IN' && window.location.pathname === '/login') {
         router.push('/luck');
       }
 
-      setIsLoading(false);
+      if (mounted) {
+        setIsLoading(false);
+      }
     });
 
+    // Supabase Auth의 초기화가 늦어지는 경우를 대비해 수동으로 한번 더 확인 (Fallback)
+    const checkInitialSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (mounted && session?.user) {
+        setUser(session.user);
+        await fetchPremiumStatus(session.user.id);
+        setIsLoading(false);
+      } else if (mounted && !session) {
+        // onAuthStateChange가 먼저 처리될 것이므로 여기서의 처리는 보조적임
+        // 다만 어떤 이유로든 이벤트가 안 올 경우를 대비해 일정 시간 후 로딩 해제
+        setTimeout(() => {
+          if (mounted) setIsLoading(false);
+        }, 2000);
+      }
+    };
+
+    checkInitialSession();
+
     return () => {
+      mounted = false;
       subscription.unsubscribe();
     };
-  }, [user?.id, fetchPremiumStatus, router]);
+  }, [fetchPremiumStatus, router]);
 
   const signIn = async (credentials: SignInWithPasswordCredentials) => {
     return await supabase.auth.signInWithPassword(credentials);

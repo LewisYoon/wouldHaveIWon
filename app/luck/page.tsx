@@ -108,12 +108,25 @@ export default function LuckPage() {
   }, []);
 
   useEffect(() => {
-    const fetchPrefs = async () => {
-      if (user) {
-        const { data } = await supabase.from('user_preferences').select('is_auto_track_enabled, auto_track_qty').eq('user_id', user.id).maybeSingle();
-        if (data) {
-          setAutoTrackPrefs({ enabled: data.is_auto_track_enabled ?? false, qty: data.auto_track_qty ?? 0 });
+    const fetchPrefs = async (retryCount = 0) => {
+      if (!user) return;
+      
+      const { data, error } = await supabase
+        .from('user_preferences')
+        .select('is_auto_track_enabled, auto_track_qty')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (error || !data) {
+        if (retryCount < 1) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+          return fetchPrefs(retryCount + 1);
         }
+        return;
+      }
+
+      if (data) {
+        setAutoTrackPrefs({ enabled: data.is_auto_track_enabled ?? false, qty: data.auto_track_qty ?? 0 });
       }
     };
     if (!isAuthLoading) fetchPrefs();

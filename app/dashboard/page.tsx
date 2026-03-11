@@ -24,7 +24,12 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!user) return;
+      if (isAuthLoading) return;
+      if (!user) {
+        setIsDataLoading(false);
+        return;
+      }
+
       setIsDataLoading(true);
       try {
         const { data: ticketsData } = await supabase
@@ -51,7 +56,7 @@ export default function DashboardPage() {
     };
 
     fetchData();
-  }, [user]);
+  }, [user, isAuthLoading]);
 
   const stats = useMemo(() => {
     let globalMissed = 0;
