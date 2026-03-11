@@ -360,6 +360,9 @@ async function fetchGame(game: 'OzLotto' | 'Powerball' | 'TattsLotto') {
       prizes: prizes,
     });
 
+    // Ensure tickets are generated for this latest result if missing (Auto-Track)
+    await performAutoTrack([{ game: displayName, draw_date: drawDate }]);
+
     await supabase.from('upcoming_draws').delete().eq('game', displayName).eq('draw_number', drawNumber);
     await notifyUsers(displayName, drawDate, latest.PrimaryNumbers, latest.SecondaryNumbers, prizes);
 
