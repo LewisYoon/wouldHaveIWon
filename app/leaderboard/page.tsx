@@ -95,14 +95,14 @@ export default function LeaderboardPage() {
               return (
                 <div 
                   key={record.id} 
-                  className={`flex flex-col sm:flex-row items-center justify-between p-8 rounded-[2.5rem] border transition-all duration-500 hover:-translate-y-1 ${
+                  className={`flex flex-col sm:flex-row items-center justify-between p-6 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] border transition-all duration-500 hover:-translate-y-1 ${
                     isTop3 
                       ? 'bg-white dark:bg-gray-900 border-indigo-200 dark:border-indigo-500/30 shadow-2xl scale-[1.02] z-10' 
                       : 'bg-white/50 dark:bg-white/5 border-gray-100 dark:border-white/5'
                   }`}
                 >
-                  <div className="flex items-center gap-8">
-                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center font-black text-xl ${
+                  <div className="flex items-center gap-4 sm:gap-8 w-full sm:w-auto">
+                    <div className={`w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex-shrink-0 flex items-center justify-center font-black text-sm sm:text-xl ${
                       index === 0 ? 'bg-amber-400 text-amber-950 shadow-lg shadow-amber-400/20' :
                       index === 1 ? 'bg-gray-300 text-gray-800' :
                       index === 2 ? 'bg-orange-400 text-orange-950' :
@@ -110,20 +110,20 @@ export default function LeaderboardPage() {
                     }`}>
                       {index + 1}
                     </div>
-                    <div className="text-left">
-                      <p className="font-black uppercase tracking-tight text-lg flex items-center gap-2">
+                    <div className="text-left truncate">
+                      <p className="font-black uppercase tracking-tight text-base sm:text-lg flex items-center gap-2 truncate">
                         {record.user_nickname} 
                         {index === 0 && <span className="text-sm">👑</span>}
                       </p>
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">{record.game} — {record.draw_date}</p>
+                      <p className="text-[9px] sm:text-[10px] font-bold text-gray-400 uppercase tracking-[0.1em] sm:tracking-[0.2em]">{record.game} — {record.draw_date}</p>
                     </div>
                   </div>
 
-                  <div className="text-center sm:text-right mt-6 sm:mt-0">
-                    <p className={`text-3xl font-black tracking-tighter ${isTop3 ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-700 dark:text-gray-300'}`}>
+                  <div className="flex flex-row sm:flex-col items-baseline sm:items-end justify-between sm:justify-center w-full sm:w-auto mt-6 sm:mt-0 pt-6 sm:pt-0 border-t sm:border-0 border-gray-100 dark:border-white/5">
+                    <p className={`text-2xl sm:text-3xl font-black tracking-tighter ${isTop3 ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-700 dark:text-gray-300'}`}>
                       {formatCurrency(record.prize)}
                     </p>
-                    <p className="text-[10px] font-bold text-gray-400 uppercase">{record.division}</p>
+                    <p className="text-[9px] sm:text-[10px] font-bold text-gray-400 uppercase ml-2 sm:ml-0">{record.division}</p>
                   </div>
                 </div>
               );

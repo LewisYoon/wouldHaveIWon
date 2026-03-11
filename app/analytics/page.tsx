@@ -72,27 +72,31 @@ export default function AnalyticsPage() {
       <Navbar />
       
       <main className="max-w-6xl mx-auto px-6 py-20">
-        <header className="text-left mb-16 animate-in fade-in slide-in-from-top-8 duration-1000">
-          <h1 className="text-6xl md:text-8xl font-black uppercase tracking-tighter leading-none mb-8 italic">
+        <header className="text-left mb-12 sm:mb-16 animate-in fade-in slide-in-from-top-8 duration-1000">
+          <h1 className="text-5xl md:text-8xl font-black uppercase tracking-tighter leading-none mb-6 sm:mb-8 italic">
             Lotto <span className={`text-${brandColor}-600 dark:text-${brandColor}-400`}>Analytics</span>
           </h1>
-          <p className="text-xl text-gray-500 dark:text-gray-400 max-w-3xl font-medium leading-relaxed mb-6">
+          <p className="text-lg sm:text-xl text-gray-500 dark:text-gray-400 max-w-3xl font-medium leading-relaxed mb-8">
             Data-driven insights into the most frequent and rarest numbers in Australian lotteries based on historical draw history.
           </p>
           {stats && (
-            <div className="inline-flex items-center gap-3 px-5 py-2 bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest text-gray-500">
-              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-              Analysis Period: {stats.startDate} — {stats.endDate} ({stats.totalDraws} Draws)
+            <div className="inline-flex flex-wrap items-center gap-3 px-4 sm:px-5 py-2.5 sm:py-2 bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-2xl text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-gray-500">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                <span>{stats.startDate} — {stats.endDate}</span>
+              </div>
+              <span className="hidden sm:inline text-gray-300">|</span>
+              <span>{stats.totalDraws} Draws</span>
             </div>
           )}
         </header>
 
-        <div className="flex flex-wrap gap-4 mb-16">
+        <div className="flex flex-wrap gap-2 sm:gap-4 mb-12 sm:mb-16">
           {(['Oz Lotto', 'Powerball', 'Tatts Lotto'] as GameType[]).map((g) => (
             <button
               key={g}
               onClick={() => setGame(g)}
-              className={`px-10 py-4 rounded-[2rem] text-sm font-black uppercase tracking-[0.2em] transition-all transform active:scale-95 ${
+              className={`flex-1 sm:flex-none px-6 sm:px-10 py-3.5 sm:py-4 rounded-xl sm:rounded-[2rem] text-[10px] sm:text-sm font-black uppercase tracking-[0.1em] sm:tracking-[0.2em] transition-all transform active:scale-95 ${
                 game === g 
                   ? `bg-${brandColor}-600 text-white shadow-xl scale-105` 
                   : 'bg-white dark:bg-white/5 text-gray-400 dark:text-gray-500 border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/10'
@@ -112,59 +116,58 @@ export default function AnalyticsPage() {
           <div className="space-y-24">
             
             {/* Summary Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 sm:gap-12">
               {/* Hot Numbers */}
-              <section className="bg-white dark:bg-gray-900 p-12 rounded-[4rem] border border-gray-100 dark:border-white/5 shadow-2xl relative overflow-hidden">
+              <section className="bg-white dark:bg-gray-900 p-8 sm:p-12 rounded-[2.5rem] sm:rounded-[4rem] border border-gray-100 dark:border-white/5 shadow-2xl relative overflow-hidden">
                 <div className={`absolute top-0 right-0 w-32 h-32 bg-${brandColor}-500/5 rounded-full -mr-16 -mt-16`} />
-                <h2 className="text-3xl font-black mb-10 tracking-tight uppercase italic flex items-center gap-3">
-                  <span className="text-orange-500">🔥</span> Hot Numbers
+                <h2 className="text-2xl sm:text-3xl font-black mb-8 sm:mb-10 tracking-tight uppercase italic flex items-center gap-3">
+                  <span className="text-orange-500 text-3xl">🔥</span> Hot Numbers
                 </h2>
-                <div className="grid grid-cols-3 gap-6">
+                <div className="grid grid-cols-3 gap-4 sm:gap-6">
                   {stats.hotNumbers.map((item) => (
-                    <div key={item.num} className="text-center p-6 bg-gray-50 dark:bg-white/5 rounded-3xl border border-gray-100 dark:border-white/5 group hover:scale-105 transition-all">
-                      <p className={`text-4xl font-black mb-2 text-${brandColor}-600 dark:text-${brandColor}-400`}>{item.num}</p>
-                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{item.count} Draws</p>
+                    <div key={item.num} className="text-center p-4 sm:p-6 bg-gray-50 dark:bg-white/5 rounded-2xl sm:rounded-3xl border border-gray-100 dark:border-white/5 group hover:scale-105 transition-all">
+                      <p className={`text-2xl sm:text-4xl font-black mb-1 sm:mb-2 text-${brandColor}-600 dark:text-${brandColor}-400`}>{item.num}</p>
+                      <p className="text-[8px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest">{item.count} Draws</p>
                     </div>
                   ))}
                 </div>
-                <p className="mt-8 text-xs text-gray-400 font-medium italic text-center">Numbers that appeared most frequently in the last {stats.totalDraws} draws.</p>
+                <p className="mt-8 text-[10px] sm:text-xs text-gray-400 font-medium italic text-center">Numbers that appeared most frequently in the last {stats.totalDraws} draws.</p>
               </section>
 
               {/* Cold Numbers */}
-              <section className="bg-white dark:bg-gray-900 p-12 rounded-[4rem] border border-gray-100 dark:border-white/5 shadow-2xl relative overflow-hidden">
+              <section className="bg-white dark:bg-gray-900 p-8 sm:p-12 rounded-[2.5rem] sm:rounded-[4rem] border border-gray-100 dark:border-white/5 shadow-2xl relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full -mr-16 -mt-16" />
-                <h2 className="text-3xl font-black mb-10 tracking-tight uppercase italic flex items-center gap-3">
-                  <span className="text-blue-400">❄️</span> Cold Numbers
+                <h2 className="text-2xl sm:text-3xl font-black mb-8 sm:mb-10 tracking-tight uppercase italic flex items-center gap-3">
+                  <span className="text-blue-400 text-3xl">❄️</span> Cold Numbers
                 </h2>
-                <div className="grid grid-cols-3 gap-6">
+                <div className="grid grid-cols-3 gap-4 sm:gap-6">
                   {stats.coldNumbers.map((item) => (
-                    <div key={item.num} className="text-center p-6 bg-gray-50 dark:bg-white/5 rounded-3xl border border-gray-100 dark:border-white/5 group hover:scale-105 transition-all">
-                      <p className="text-4xl font-black mb-2 text-gray-400">{item.num}</p>
-                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{item.count} Draws</p>
+                    <div key={item.num} className="text-center p-4 sm:p-6 bg-gray-50 dark:bg-white/5 rounded-2xl sm:rounded-3xl border border-gray-100 dark:border-white/5 group hover:scale-105 transition-all">
+                      <p className="text-2xl sm:text-4xl font-black mb-1 sm:mb-2 text-gray-400">{item.num}</p>
+                      <p className="text-[8px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest">{item.count} Draws</p>
                     </div>
                   ))}
                 </div>
-                <p className="mt-8 text-xs text-gray-400 font-medium italic text-center">Numbers that have been absent for the longest period.</p>
+                <p className="mt-8 text-[10px] sm:text-xs text-gray-400 font-medium italic text-center">Numbers that have been absent for the longest period.</p>
               </section>
             </div>
 
             {/* Frequency Chart (Simplified) */}
-            <section className="bg-gray-950 p-12 md:p-20 rounded-[4rem] text-white shadow-2xl relative overflow-hidden border border-white/5">
+            <section className="bg-gray-950 p-8 sm:p-12 md:p-20 rounded-[2.5rem] sm:rounded-[4rem] text-white shadow-2xl relative overflow-hidden border border-white/5">
               <div className="absolute top-0 left-0 w-full h-full opacity-5 bg-[radial-gradient(#fff_1px,transparent_1px)] bg-[size:24px_24px]" />
-              <h2 className="text-4xl font-black mb-16 tracking-tight uppercase italic text-center relative z-10">All Number Frequency (%)</h2>
-              <div className="flex flex-wrap justify-center gap-3 relative z-10">
+              <h2 className="text-3xl sm:text-4xl font-black mb-12 sm:mb-16 tracking-tight uppercase italic text-center relative z-10 leading-tight">All Number Frequency (%)</h2>
+              <div className="flex flex-wrap justify-center gap-2 sm:gap-3 relative z-10">
                 {stats.sortedFreq.sort((a,b) => a.num - b.num).map((item) => {
-                  const intensity = Math.min(1, item.percent / 20); // Normalized for coloring
+                  const intensity = Math.min(1, item.percent / 20);
                   return (
                     <div key={item.num} className="group relative">
                       <div 
-                        className={`w-12 h-12 md:w-14 md:h-14 rounded-xl flex items-center justify-center font-black text-sm transition-all duration-500 border border-white/10 hover:scale-110 cursor-default`}
+                        className={`w-10 h-10 sm:w-14 sm:h-14 rounded-lg sm:rounded-xl flex items-center justify-center font-black text-xs sm:text-sm transition-all duration-500 border border-white/10 hover:scale-110 cursor-default`}
                         style={{ backgroundColor: `rgba(79, 70, 229, ${intensity + 0.1})` }}
                       >
                         {item.num}
                       </div>
-                      {/* Tooltip */}
-                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 px-4 py-2 bg-white text-gray-950 rounded-xl text-[10px] font-black opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-xl z-20">
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 px-4 py-2 bg-white text-gray-950 rounded-xl text-[10px] font-black opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-xl z-20 hidden sm:block">
                         {item.count} Draws ({item.percent.toFixed(1)}%)
                       </div>
                     </div>
