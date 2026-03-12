@@ -61,15 +61,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (data) {
-        console.log(`Premium Status for ${userId}:`, data.is_premium);
-        setIsPremium(!!data.is_premium);
+        const isPremiumUser = !!data.is_premium;
+        console.log(`Premium Status for ${userId}:`, isPremiumUser);
+
+        setIsPremium(isPremiumUser);
         setSubscriptionInfo({
           status: data.subscription_status || null,
           currentPeriodEnd: data.current_period_end || null,
           cancelAtPeriodEnd: !!data.cancel_at_period_end,
-          planType: data.plan_type || null,
+          planType: data.plan_type || (isPremiumUser ? 'monthly' : null), // Fallback to monthly if premium but type is missing
         });
-      } else {
+      }
+ else {
         console.log(`No preferences found for ${userId}, defaulting to non-premium.`);
         setIsPremium(false);
         setSubscriptionInfo(null);
