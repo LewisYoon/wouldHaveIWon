@@ -55,6 +55,7 @@ export async function POST(req: Request) {
         userId: userId,
         planType: planType,
       },
+      client_reference_id: userId,
       customer_email: userEmail,
     });
 

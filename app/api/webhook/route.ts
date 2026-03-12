@@ -51,17 +51,19 @@ export async function POST(req: Request) {
     if (relevantEvents.includes(event.type)) {
       const dataObject = event.data.object as any;
       
-      let userId = dataObject.metadata?.userId;
+      // 1. Try to find userId via different fields
+      let userId = dataObject.metadata?.userId || dataObject.client_reference_id;
       let customerId = dataObject.customer as string;
+      let customerEmail = dataObject.customer_email || dataObject.billing_details?.email;
       let subscriptionId = '';
       let status = '';
       let currentPeriodEnd = null;
       let cancelAtPeriodEnd = false;
       let planType = dataObject.metadata?.planType;
 
-      addLog(`Event ${event.type} for Customer ${customerId}. Initial UserId: ${userId}`);
+      addLog(`Event ${event.type} for Customer ${customerId}. Email: ${customerEmail}, RefID: ${dataObject.client_reference_id}`);
 
-      // 1. 객체 종류별 ID 추출
+      // 2. ID Extraction based on event type
       if (event.type === 'checkout.session.completed') {
         subscriptionId = dataObject.subscription as string;
         status = dataObject.payment_status === 'paid' ? 'active' : 'incomplete';
@@ -73,48 +75,51 @@ export async function POST(req: Request) {
         status = dataObject.status;
       }
 
-      // 2. 구독 정보가 있다면 무조건 Stripe에서 최신 정보 가져오기 (날짜 및 메타데이터 확보)
-      if (subscriptionId) {
-        addLog(`Fetching latest subscription data for ${subscriptionId}...`);
+      // 3. Robust UserId Resolution
+      // Step A: Check Subscription Metadata
+      if (!userId && subscriptionId) {
+        addLog(`Fetching Subscription ${subscriptionId} for metadata...`);
         try {
           const sub = await stripe.subscriptions.retrieve(subscriptionId) as any;
-          
-          // 구독 객체 내의 메타데이터에서 userId 찾기 (가장 확실함)
-          if (!userId) userId = sub.metadata?.userId;
-          if (!planType) planType = sub.metadata?.planType;
-          
-          status = sub.status;
+          userId = sub.metadata?.userId;
+          planType = planType || sub.metadata?.planType;
+          status = status || sub.status;
           currentPeriodEnd = new Date(sub.current_period_end * 1000).toISOString();
           cancelAtPeriodEnd = sub.cancel_at_period_end;
-          
-          addLog(`Subscription Sync: Status=${status}, Expiry=${currentPeriodEnd}, CancelAtEnd=${cancelAtPeriodEnd}`);
-        } catch (subErr: any) {
-          addLog(`Subscription Fetch Error: ${subErr.message}`);
-        }
+          addLog(`Resolved from Subscription: ${userId}`);
+        } catch (subErr: any) { addLog(`Sub Fetch Error: ${subErr.message}`); }
       }
 
-      // 3. 그래도 userId가 없다면 DB에서 customerId로 유저 찾기 (백업 로직)
+      // Step B: Search DB by Customer ID
       if (!userId && customerId) {
-        addLog(`UserId still missing, searching DB for customerId: ${customerId}`);
+        addLog(`Searching DB by customerId: ${customerId}`);
         const { data: prefData } = await supabase
           .from('user_preferences')
           .select('user_id, plan_type')
           .eq('stripe_customer_id', customerId)
           .maybeSingle();
-        
         if (prefData) {
           userId = prefData.user_id;
           planType = planType || prefData.plan_type;
-          addLog(`Resolved UserId from DB fallback: ${userId}`);
+          addLog(`Resolved from DB (Customer): ${userId}`);
         }
       }
 
-      // 4. DB 업데이트 (데이터 무결성 보장)
+      // Step C: Search Auth by Email (Last Resort)
+      if (!userId && customerEmail) {
+        addLog(`Searching Auth by email: ${customerEmail}`);
+        const { data: authData } = await supabase.auth.admin.listUsers();
+        const userMatch = authData.users.find(u => u.email === customerEmail);
+        if (userMatch) {
+          userId = userMatch.id;
+          addLog(`Resolved from Auth (Email): ${userId}`);
+        }
+      }
+
+      // 4. Final Database Sync
       if (userId) {
-        // 프리미엄 유지 조건: 상태가 active, trialing, past_due 이거나 방금 결제 성공한 경우
         const isPremium = (status === 'active' || status === 'trialing' || status === 'past_due' || event.type === 'checkout.session.completed');
-        
-        addLog(`Final DB Upsert: User=${userId}, Premium=${isPremium}, Plan=${planType || 'monthly'}`);
+        addLog(`Syncing DB: Premium=${isPremium}, Plan=${planType || 'monthly'}`);
 
         const { error: upsertError } = await supabase
           .from('user_preferences')
@@ -126,14 +131,14 @@ export async function POST(req: Request) {
             subscription_status: status || null,
             current_period_end: currentPeriodEnd,
             cancel_at_period_end: cancelAtPeriodEnd,
-            plan_type: planType || 'monthly', // 기본값 monthly
+            plan_type: planType || 'monthly',
             updated_at: new Date().toISOString(),
           }, { onConflict: 'user_id' });
 
         if (upsertError) throw new Error(`Supabase Upsert Error: ${upsertError.message}`);
-        addLog(`Successfully synced user ${userId}`);
+        addLog(`SUCCESS: Synced user ${userId}`);
       } else {
-        addLog(`CRITICAL: Could not resolve UserId for Customer ${customerId}. Event skipped.`);
+        addLog(`FATAL: No identification found for Customer ${customerId}`);
       }
     }
 
