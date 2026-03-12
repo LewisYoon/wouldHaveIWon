@@ -66,7 +66,7 @@ export default function Navbar() {
                     <span className="text-[8px] font-black text-amber-500 uppercase tracking-widest mt-0.5">PRO Member</span>
                   ) : (
                     <button 
-                      onClick={upgradeToPro}
+                      onClick={() => upgradeToPro()}
                       className="text-[8px] font-black text-indigo-500 uppercase tracking-widest mt-0.5 hover:underline transition-all cursor-pointer text-left"
                     >
                       Upgrade to PRO
