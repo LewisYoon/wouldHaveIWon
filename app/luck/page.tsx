@@ -553,6 +553,11 @@ export default function LuckPage() {
                     });
                   }
                   const isWinner = res && (totalPrize > 0 || div1Win);
+                  
+                  // Financial calculations for the group
+                  const groupSpent = tickets.length * TICKET_COST;
+                  const groupWon = totalPrize;
+                  const groupProfit = groupWon - groupSpent;
 
                   return (
                     <div key={date} className={`bg-white dark:bg-gray-900 rounded-[2rem] sm:rounded-[3rem] border transition-all duration-500 ${isWinner ? `border-${brandColor}-200 dark:border-${brandColor}-500 shadow-2xl` : 'border-gray-100 dark:border-white/5 shadow-sm hover:shadow-xl'} animate-in fade-in slide-in-from-bottom-4`} style={{ transitionDelay: `${idx * 100}ms` }}>
@@ -584,6 +589,26 @@ export default function LuckPage() {
                       </div>
                       {isExpanded && (
                         <div className={`p-6 sm:p-10 border-t dark:border-white/5 animate-in slide-in-from-top-4 duration-500 ${isWinner ? `${brandStyles.bgLight} dark:bg-${brandColor}-500/5` : 'bg-gray-50/50 dark:bg-white/5'}`}>
+                          {/* Detailed Financial Summary (Visible only when expanded) */}
+                          {res && (
+                            <div className="mb-8 sm:mb-12 grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+                              <div className="bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-[1.5rem] sm:rounded-[2rem] border border-gray-100 dark:border-white/5 shadow-sm text-center">
+                                <p className="text-[9px] sm:text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2">Total Invested</p>
+                                <p className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white tracking-tighter">{formatCurrency(groupSpent)}</p>
+                              </div>
+                              <div className="bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-[1.5rem] sm:rounded-[2rem] border border-gray-100 dark:border-white/5 shadow-sm text-center">
+                                <p className="text-[9px] sm:text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em] mb-2">Winnings</p>
+                                <p className="text-xl sm:text-2xl font-black text-emerald-500 tracking-tighter">{formatCurrency(groupWon)}</p>
+                              </div>
+                              <div className="bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-[1.5rem] sm:rounded-[2rem] border border-gray-100 dark:border-white/5 shadow-sm text-center">
+                                <p className="text-[9px] sm:text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2">Net Balance</p>
+                                <p className={`text-xl sm:text-2xl font-black tracking-tighter ${groupProfit >= 0 ? 'text-emerald-400' : 'text-red-500'}`}>
+                                  {groupProfit >= 0 ? '+' : ''}{formatCurrency(groupProfit)}
+                                </p>
+                              </div>
+                            </div>
+                          )}
+
                           {res && (
                             <div className="mb-8 sm:mb-12 bg-white dark:bg-gray-800 p-6 sm:p-10 rounded-[2rem] sm:rounded-[3rem] border border-gray-100 dark:border-white/5 flex flex-col items-center shadow-inner relative overflow-hidden group">
                               <p className="text-[8px] sm:text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase mb-6 sm:mb-8 tracking-[0.4em] relative z-10">Winning Numbers</p>
