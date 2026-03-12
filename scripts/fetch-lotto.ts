@@ -85,21 +85,27 @@ async function performAutoTrack(draws: any[]) {
 
   for (const user of premiumUsers) {
     for (const draw of relevantDraws) {
-      // Check if user already has tickets for this draw
-      const { count } = await supabase
+      // Check if we already auto-tracked this specific draw for this user
+      const { data: existingAutoTickets } = await supabase
         .from('tickets')
-        .select('*', { count: 'exact', head: true })
+        .select('id')
         .eq('user_id', user.user_id)
         .eq('draw_date', draw.draw_date)
-        .eq('game', draw.game);
+        .eq('game', draw.game)
+        .eq('is_auto_tracked', true)
+        .limit(1);
 
-      if (count && count > 0) continue; // Skip if already tracked
+      if (existingAutoTickets && existingAutoTickets.length > 0) {
+        console.log(`Skipping: Already auto-tracked ${draw.game} (${draw.draw_date}) for user ${user.user_id}`);
+        continue;
+      }
 
       const newTickets = Array.from({ length: user.auto_track_qty }, () => ({
         user_id: user.user_id,
         game: draw.game,
         draw_date: draw.draw_date,
-        numbers: generateQuickPick(draw.game)
+        numbers: generateQuickPick(draw.game),
+        is_auto_tracked: true
       }));
 
       const { error } = await supabase.from('tickets').insert(newTickets);

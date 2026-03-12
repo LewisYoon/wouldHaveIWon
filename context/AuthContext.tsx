@@ -14,6 +14,7 @@ interface AuthContextType {
   resetPassword: (email: string) => Promise<{ error: AuthError | null }>;
   logout: () => Promise<void>;
   isLoading: boolean;
+  upgradeToPro: () => Promise<void>;
   refreshPremiumStatus: () => Promise<void>;
 }
 
@@ -158,8 +159,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const upgradeToPro = async () => {
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id, userEmail: user.email }),
+      });
+
+      const { sessionId, error } = await response.json();
+      if (error) throw new Error(error);
+
+      // Redirect to Stripe Checkout
+      const { loadStripe } = await import('@stripe/stripe-js');
+      const stripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '');
+      if (stripe) {
+        await stripe.redirectToCheckout({ sessionId });
+      }
+    } catch (err: any) {
+      console.error('Upgrade Error:', err);
+      alert('Failed to start checkout. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, isPremium, signIn, signUp, signInWithGoogle, resetPassword, logout, isLoading, refreshPremiumStatus }}>
+    <AuthContext.Provider value={{ user, isPremium, signIn, signUp, signInWithGoogle, resetPassword, logout, isLoading, refreshPremiumStatus, upgradeToPro }}>
       {children}
     </AuthContext.Provider>
   );

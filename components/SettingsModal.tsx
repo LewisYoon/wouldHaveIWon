@@ -12,7 +12,7 @@ interface UserPreferences {
 }
 
 export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
-  const { user, isPremium } = useAuth();
+  const { user, isPremium, upgradeToPro } = useAuth();
   const [prefs, setPreferences] = useState<UserPreferences>({
     email_notifications: true,
     email_results: true,
@@ -157,10 +157,16 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
                 )}
 
                 {!isPremium && (
-                  <div className="bg-amber-50 dark:bg-amber-500/10 p-4 rounded-2xl border border-amber-100 dark:border-amber-500/20 text-left">
+                  <div className="bg-amber-50 dark:bg-amber-500/10 p-6 rounded-3xl border border-amber-100 dark:border-amber-500/20 text-center space-y-4">
                     <p className="text-xs font-bold text-amber-700 dark:text-amber-400 leading-relaxed">
                       Upgrade to PRO to unlock the <strong>Auto-Tracker</strong>. Never miss a draw again!
                     </p>
+                    <button 
+                      onClick={upgradeToPro}
+                      className="w-full py-3 bg-amber-500 text-white font-black uppercase text-[10px] tracking-widest rounded-xl shadow-lg shadow-amber-200 dark:shadow-none hover:bg-amber-600 transition-all cursor-pointer"
+                    >
+                      Upgrade to PRO
+                    </button>
                   </div>
                 )}
               </div>
