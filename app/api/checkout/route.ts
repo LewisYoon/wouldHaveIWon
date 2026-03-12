@@ -40,8 +40,17 @@ export async function POST(req: Request) {
         },
       ],
       mode: mode,
+      // 구독 데이터에 메타데이터 추가 (구독 관련 웹훅에서 userId를 바로 확인하기 위함)
+      ...(isMonthly && {
+        subscription_data: {
+          metadata: {
+            userId: userId,
+            planType: planType,
+          },
+        },
+      }),
       success_url: `${origin}/luck/?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/dashboard/`,
+      cancel_url: `${origin}/billing/`,
       metadata: {
         userId: userId,
         planType: planType,

@@ -40,69 +40,84 @@ export async function POST(req: Request) {
   ];
 
   if (relevantEvents.includes(event.type)) {
-    const session = event.data.object as any;
-    let userId = session.metadata?.userId;
+    const dataObject = event.data.object as any;
+    
+    let userId = dataObject.metadata?.userId;
+    let customerId = dataObject.customer as string;
     let subscriptionId = '';
     let status = '';
     let currentPeriodEnd = null;
     let cancelAtPeriodEnd = false;
+    let planType = dataObject.metadata?.planType;
 
-    // 1. Get Subscription details if available
-    if (session.subscription) {
-      const sub = await stripe.subscriptions.retrieve(session.subscription as string) as any;
-      subscriptionId = sub.id;
-      status = sub.status;
-      currentPeriodEnd = new Date(sub.current_period_end * 1000).toISOString();
-      cancelAtPeriodEnd = sub.cancel_at_period_end;
-    } else if (event.type.startsWith('customer.subscription.')) {
-      subscriptionId = session.id;
-      status = session.status;
-      currentPeriodEnd = new Date(session.current_period_end * 1000).toISOString();
-      cancelAtPeriodEnd = session.cancel_at_period_end;
+    // 1. 데이터 추출 분기 처리
+    if (event.type === 'checkout.session.completed') {
+      // Checkout Session 객체인 경우
+      subscriptionId = dataObject.subscription as string;
+      if (subscriptionId) {
+        // 구독 결제라면 상세 정보 가져오기
+        const sub = await stripe.subscriptions.retrieve(subscriptionId) as any;
+        status = sub.status;
+        currentPeriodEnd = new Date(sub.current_period_end * 1000).toISOString();
+        cancelAtPeriodEnd = sub.cancel_at_period_end;
+        if (!userId) userId = sub.metadata?.userId;
+        if (!planType) planType = sub.metadata?.planType || 'monthly';
+      } else {
+        // 단건 결제(Lifetime)인 경우
+        status = 'active';
+        planType = planType || 'lifetime';
+      }
+    } else {
+      // Subscription 객체인 경우 (updated, deleted)
+      subscriptionId = dataObject.id;
+      status = dataObject.status;
+      currentPeriodEnd = new Date(dataObject.current_period_end * 1000).toISOString();
+      cancelAtPeriodEnd = dataObject.cancel_at_period_end;
+      if (!planType) planType = dataObject.metadata?.planType || 'monthly';
     }
 
-    // 2. Find User ID if not in metadata (for update/delete events)
-    if (!userId && session.customer) {
-      const { data: userData } = await supabase
+    // 2. UserId가 메타데이터에 없다면 DB에서 검색 (매우 중요)
+    if (!userId && customerId) {
+      console.log(`Lookup user by customerId: ${customerId}`);
+      const { data: prefData } = await supabase
         .from('user_preferences')
-        .select('user_id')
-        .eq('stripe_customer_id', session.customer)
+        .select('user_id, plan_type')
+        .eq('stripe_customer_id', customerId)
         .maybeSingle();
-      userId = userData?.user_id;
+      
+      if (prefData) {
+        userId = prefData.user_id;
+        if (!planType) planType = prefData.plan_type;
+      }
     }
 
     if (userId) {
-      console.log(`Syncing subscription for user ${userId}. Event: ${event.type}`);
+      console.log(`Syncing DB for User: ${userId}, Event: ${event.type}, Status: ${status}`);
 
-      const planType = session.metadata?.planType || (subscriptionId ? 'monthly' : 'lifetime');
+      const isPremium = (status === 'active' || status === 'trialing' || event.type === 'checkout.session.completed');
 
-      const updateData: any = { 
-        user_id: userId, 
-        is_premium: status === 'active' || status === 'trialing' || !status,
-        stripe_customer_id: session.customer as string,
-        plan_type: planType
-      };
-
-      if (subscriptionId) {
-        updateData.stripe_subscription_id = subscriptionId;
-        updateData.subscription_status = status;
-        updateData.current_period_end = currentPeriodEnd;
-        updateData.cancel_at_period_end = cancelAtPeriodEnd;
-        
-        // 구독 상태가 active가 아니더라도, 기간이 남았다면 프리미엄 유지
-        if (status === 'canceled' || status === 'incomplete_expired') {
-          updateData.is_premium = false;
-        }
-      }
-
-      const { error: prefError } = await supabase
+      const { error: upsertError } = await supabase
         .from('user_preferences')
-        .upsert(updateData, { onConflict: 'user_id' });
+        .upsert({
+          user_id: userId,
+          is_premium: isPremium,
+          stripe_customer_id: customerId,
+          stripe_subscription_id: subscriptionId || null,
+          subscription_status: status || null,
+          current_period_end: currentPeriodEnd,
+          cancel_at_period_end: cancelAtPeriodEnd,
+          plan_type: planType || 'monthly',
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'user_id' });
 
-      if (prefError) {
-        console.error('Database Sync Failed:', prefError.message);
-        return NextResponse.json({ error: 'DB Sync Failed' }, { status: 500 });
+      if (upsertError) {
+        console.error('Supabase Upsert Error:', upsertError.message);
+        return NextResponse.json({ error: 'Database Update Failed' }, { status: 500 });
       }
+      
+      console.log(`Successfully synced ${userId} to DB.`);
+    } else {
+      console.warn('No UserID found for this event. Customer ID:', customerId);
     }
   }
 
