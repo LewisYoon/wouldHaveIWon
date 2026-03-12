@@ -132,21 +132,31 @@ export async function POST(req: Request) {
 
       // 4. 최종 DB 업데이트
       if (userId) {
-        const isPremium = (status === 'active' || status === 'trialing' || status === 'past_due' || event.type === 'checkout.session.completed');
-        
+        addLog(`Preparing to sync for user ${userId}.`);
+
+        // Get existing data first to avoid overwriting with null
+        const { data: existingData } = await supabase
+          .from('user_preferences')
+          .select('*')
+          .eq('user_id', userId)
+          .maybeSingle();
+
+        // Premium 유지 조건: 구독이 활성(active/trialing/past_due)이거나, 취소 예약 상태라도 아직 기간이 남은 경우
+        const isPremium = (status === 'active' || status === 'trialing' || status === 'past_due' || (status === 'canceled' && new Date(currentPeriodEnd || 0) > new Date()));
+
         const upsertData = {
           user_id: userId,
           is_premium: isPremium,
           stripe_customer_id: customerId,
-          stripe_subscription_id: subscriptionId || null,
-          subscription_status: status || null,
-          current_period_end: currentPeriodEnd,
+          stripe_subscription_id: subscriptionId || existingData?.stripe_subscription_id || null,
+          subscription_status: status || existingData?.subscription_status || null,
+          current_period_end: currentPeriodEnd || existingData?.current_period_end || null,
           cancel_at_period_end: cancelAtPeriodEnd,
-          plan_type: planType || 'monthly',
+          plan_type: planType || existingData?.plan_type || 'monthly',
           updated_at: new Date().toISOString(),
         };
 
-        addLog(`Upserting: Premium=${isPremium}, CancelAtEnd=${cancelAtPeriodEnd}, Expiry=${currentPeriodEnd}`);
+        addLog(`Upserting: ${JSON.stringify(upsertData)}`);
 
         const { error: upsertError } = await supabase
           .from('user_preferences')
