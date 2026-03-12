@@ -173,14 +173,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify({ userId: user.id, userEmail: user.email }),
       });
 
-      const { sessionId, error } = await response.json();
+      const { url, error } = await response.json();
       if (error) throw new Error(error);
 
-      // Redirect to Stripe Checkout
-      const { loadStripe } = await import('@stripe/stripe-js');
-      const stripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '');
-      if (stripe) {
-        await stripe.redirectToCheckout({ sessionId });
+      if (url) {
+        window.location.href = url;
       }
     } catch (err: any) {
       console.error('Upgrade Error:', err);

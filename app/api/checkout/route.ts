@@ -35,7 +35,7 @@ export async function POST(req: Request) {
       customer_email: userEmail,
     });
 
-    return NextResponse.json({ sessionId: session.id });
+    return NextResponse.json({ url: session.url });
   } catch (err: any) {
     console.error('Stripe Session Error:', err);
     return NextResponse.json({ error: err.message }, { status: 500 });
