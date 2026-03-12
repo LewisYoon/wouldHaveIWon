@@ -6,6 +6,7 @@ export const runtime = 'edge';
 
 export async function POST(req: Request) {
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
+  const origin = req.headers.get('origin') || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
   
   try {
     const { userId } = await req.json();
@@ -34,7 +35,7 @@ export async function POST(req: Request) {
     // 2. Create Stripe Customer Portal session
     const session = await stripe.billingPortal.sessions.create({
       customer: data.stripe_customer_id,
-      return_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/dashboard`,
+      return_url: `${origin}/dashboard/`,
     });
 
     return NextResponse.json({ url: session.url });

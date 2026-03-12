@@ -5,6 +5,7 @@ export const runtime = 'edge';
 
 export async function POST(req: Request) {
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
+  const origin = req.headers.get('origin') || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
   try {
     const { userId, userEmail, planType } = await req.json();
 
@@ -39,8 +40,8 @@ export async function POST(req: Request) {
         },
       ],
       mode: mode,
-      success_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/luck?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/dashboard`,
+      success_url: `${origin}/luck/?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}/dashboard/`,
       metadata: {
         userId: userId,
         planType: planType,

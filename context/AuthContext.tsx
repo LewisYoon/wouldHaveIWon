@@ -149,17 +149,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signInWithGoogle = async () => {
+    // Determine the redirect URL dynamically based on current location
+    const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/luck/` : '';
+    
     return await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: typeof window !== 'undefined' ? window.location.origin : '',
+        redirectTo: redirectTo,
       },
     });
   };
 
   const resetPassword = async (email: string) => {
+    const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/login/` : '';
+    
     return await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/login` : '',
+      redirectTo: redirectTo,
     });
   };
 
