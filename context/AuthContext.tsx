@@ -8,6 +8,11 @@ import { useRouter } from 'next/navigation';
 interface AuthContextType {
   user: User | null;
   isPremium: boolean;
+  subscriptionInfo: {
+    status: string | null;
+    currentPeriodEnd: string | null;
+    cancelAtPeriodEnd: boolean;
+  } | null;
   signIn: (credentials: SignInWithPasswordCredentials) => Promise<{ error: AuthError | null }>;
   signUp: (credentials: SignUpWithPasswordCredentials) => Promise<{ error: AuthError | null }>;
   signInWithGoogle: () => Promise<{ error: AuthError | null }>;
@@ -24,6 +29,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isPremium, setIsPremium] = useState(false);
+  const [subscriptionInfo, setSubscriptionInfo] = useState<AuthContextType['subscriptionInfo']>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
@@ -32,7 +38,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const { data, error } = await supabase
         .from('user_preferences')
-        .select('is_premium')
+        .select('is_premium, subscription_status, current_period_end, cancel_at_period_end')
         .eq('user_id', userId)
         .maybeSingle();
       
@@ -54,6 +60,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       setIsPremium(!!data?.is_premium);
+      setSubscriptionInfo({
+        status: data?.subscription_status || null,
+        currentPeriodEnd: data?.current_period_end || null,
+        cancelAtPeriodEnd: !!data?.cancel_at_period_end,
+      });
     } catch (err) {
       console.error("Premium check unexpected error:", err);
       setIsPremium(false);
@@ -219,7 +230,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, isPremium, signIn, signUp, signInWithGoogle, resetPassword, logout, isLoading, refreshPremiumStatus, upgradeToPro, manageSubscription }}>
+    <AuthContext.Provider value={{ user, isPremium, subscriptionInfo, signIn, signUp, signInWithGoogle, resetPassword, logout, isLoading, refreshPremiumStatus, upgradeToPro, manageSubscription }}>
       {children}
     </AuthContext.Provider>
   );

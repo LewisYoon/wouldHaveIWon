@@ -31,51 +31,74 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: `Verification Error: ${err.message}` }, { status: 400 });
   }
 
-  // Handle the event
-  if (event.type === 'checkout.session.completed' || event.type === 'invoice.payment_succeeded') {
-    const session = event.data.object as any;
-    
-    let userId = session.metadata?.userId;
+  // Handle the events
+  const relevantEvents = [
+    'checkout.session.completed',
+    'invoice.payment_succeeded',
+    'customer.subscription.updated',
+    'customer.subscription.deleted'
+  ];
 
+  if (relevantEvents.includes(event.type)) {
+    const session = event.data.object as any;
+    let userId = session.metadata?.userId;
+    let subscriptionId = '';
+    let status = '';
+    let currentPeriodEnd = null;
+    let cancelAtPeriodEnd = false;
+
+    // 1. Get Subscription details if available
+    if (session.subscription) {
+      const sub = await stripe.subscriptions.retrieve(session.subscription as string);
+      subscriptionId = sub.id;
+      status = sub.status;
+      currentPeriodEnd = new Date(sub.current_period_end * 1000).toISOString();
+      cancelAtPeriodEnd = sub.cancel_at_period_end;
+    } else if (event.type.startsWith('customer.subscription.')) {
+      subscriptionId = session.id;
+      status = session.status;
+      currentPeriodEnd = new Date(session.current_period_end * 1000).toISOString();
+      cancelAtPeriodEnd = session.cancel_at_period_end;
+    }
+
+    // 2. Find User ID if not in metadata (for update/delete events)
     if (!userId && session.customer) {
-      console.log(`Looking up user by customer ID: ${session.customer}`);
-      const { data: userData, error: userError } = await supabase
+      const { data: userData } = await supabase
         .from('user_preferences')
         .select('user_id')
         .eq('stripe_customer_id', session.customer)
         .maybeSingle();
-      
-      if (userError) {
-        console.error("User lookup error:", userError.message);
-      }
       userId = userData?.user_id;
     }
 
     if (userId) {
-      console.log(`Upgrading user ${userId} to PRO...`);
+      console.log(`Syncing subscription for user ${userId}. Status: ${status || 'active'}`);
 
-      // Try-catch for the database update to see specific DB errors
-      try {
-        const { error: prefError } = await supabase
-          .from('user_preferences')
-          .upsert({ 
-            user_id: userId, 
-            is_premium: true,
-            stripe_customer_id: session.customer as string
-          }, { onConflict: 'user_id' });
+      const updateData: any = { 
+        user_id: userId, 
+        is_premium: status === 'active' || status === 'trialing' || !status, // status가 없으면 단건 결제(Lifetime)로 간주
+        stripe_customer_id: session.customer as string,
+      };
 
-        if (prefError) {
-          throw new Error(`Supabase Upsert Error: ${prefError.message}`);
+      if (subscriptionId) {
+        updateData.stripe_subscription_id = subscriptionId;
+        updateData.subscription_status = status;
+        updateData.current_period_end = currentPeriodEnd;
+        updateData.cancel_at_period_end = cancelAtPeriodEnd;
+        // 구독이 취소되거나 만료된 경우 처리
+        if (status === 'canceled' || status === 'incomplete_expired') {
+          updateData.is_premium = false;
         }
-
-        console.log(`User ${userId} successfully upgraded to PRO.`);
-      } catch (dbErr: any) {
-        console.error('Database Operation Failed:', dbErr.message);
-        return NextResponse.json({ error: `Database Error: ${dbErr.message}` }, { status: 500 });
       }
-    } else {
-      console.warn('No User ID found for session:', session.id);
-      return NextResponse.json({ error: 'No User ID found' }, { status: 400 });
+
+      const { error: prefError } = await supabase
+        .from('user_preferences')
+        .upsert(updateData, { onConflict: 'user_id' });
+
+      if (prefError) {
+        console.error('Database Sync Failed:', prefError.message);
+        return NextResponse.json({ error: 'DB Sync Failed' }, { status: 500 });
+      }
     }
   }
 

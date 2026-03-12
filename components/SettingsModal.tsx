@@ -12,7 +12,7 @@ interface UserPreferences {
 }
 
 export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
-  const { user, isPremium, upgradeToPro, manageSubscription } = useAuth();
+  const { user, isPremium, upgradeToPro, manageSubscription, subscriptionInfo } = useAuth();
   const [prefs, setPreferences] = useState<UserPreferences>({
     email_notifications: true,
     email_results: true,
@@ -122,6 +122,32 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
 
               {/* Premium Auto-Tracker Section */}
               <div className={`pt-8 border-t border-gray-100 dark:border-white/5 space-y-8 ${!isPremium ? 'opacity-50 grayscale' : ''}`}>
+                {isPremium && subscriptionInfo && (
+                  <div className="bg-indigo-50/50 dark:bg-indigo-500/5 p-6 rounded-3xl border border-indigo-100 dark:border-indigo-500/10 space-y-4 animate-in fade-in slide-in-from-top-2 duration-500">
+                    <div className="flex justify-between items-center">
+                      <p className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest">Membership Status</p>
+                      <span className={`text-[9px] font-black px-2 py-0.5 rounded-md uppercase ${subscriptionInfo.status === 'active' ? 'bg-emerald-500 text-white' : 'bg-amber-500 text-white'}`}>
+                        {subscriptionInfo.status || 'Lifetime'}
+                      </span>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-[8px] font-bold text-gray-400 uppercase mb-1">Next Billing / Expiry</p>
+                        <p className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-tighter">
+                          {subscriptionInfo.currentPeriodEnd ? new Date(subscriptionInfo.currentPeriodEnd).toLocaleDateString() : 'Lifetime'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[8px] font-bold text-gray-400 uppercase mb-1">Auto-Renew</p>
+                        <p className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-tighter">
+                          {subscriptionInfo.status === 'active' ? (subscriptionInfo.cancelAtPeriodEnd ? 'OFF' : 'ON') : 'N/A'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div className="flex items-center justify-between">
                   <div className="text-left pr-4">
                     <div className="flex items-center gap-2 mb-1">
