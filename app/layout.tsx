@@ -88,8 +88,10 @@ export default function RootLayout({
                     <h4 className="font-black text-gray-900 dark:text-white uppercase tracking-widest text-xs mb-6">Information</h4>
                     <ul className="space-y-4 text-sm font-bold text-gray-400 uppercase tracking-tighter">
                       <li><Link href="/how-it-works" className="hover:text-indigo-600 transition-colors">How It Works</Link></li>
+                      <li><Link href="/contact" className="hover:text-indigo-600 transition-colors">Contact Us</Link></li>
                       <li><Link href="/responsible-play" className="hover:text-indigo-600 transition-colors">Responsible Play</Link></li>
                       <li><Link href="/privacy" className="hover:text-indigo-600 transition-colors">Privacy Policy</Link></li>
+                      <li><Link href="/refund-policy" className="hover:text-indigo-600 transition-colors">Refund Policy</Link></li>
                       <li><Link href="/terms" className="hover:text-indigo-600 transition-colors">Terms of Service</Link></li>
                     </ul>
                   </div>

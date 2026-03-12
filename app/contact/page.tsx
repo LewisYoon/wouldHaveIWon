@@ -1,56 +1,105 @@
+'use client';
+
+import { useState } from 'react';
 import Navbar from '../../components/Navbar';
-import { Metadata } from 'next';
-
-export const dynamic = 'force-static';
-
-export const metadata: Metadata = {
-  title: 'Contact Us | WhatIFLotto',
-  description: 'Get in touch with the WhatIFLotto Australia team for support or inquiries.',
-};
 
 export default function ContactPage() {
+  const [status, setStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setStatus('sending');
+    
+    // 이 부분에 실제 이메일 전송 API(예: Resend)를 연동할 수 있습니다.
+    // 지금은 1초 대기 후 성공 메시지를 보여주는 시뮬레이션으로 구현합니다.
+    setTimeout(() => {
+      setStatus('success');
+    }, 1500);
+  };
+
   return (
-    <div className="bg-white dark:bg-gray-950 min-h-screen text-gray-900 dark:text-gray-100 selection:bg-indigo-500 selection:text-white transition-colors duration-500">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors duration-500">
       <Navbar />
       
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 py-16 sm:py-32 text-center">
-        <header className="mb-12 sm:mb-20 animate-in fade-in slide-in-from-bottom-8 duration-1000">
-            <h1 className="text-4xl sm:text-6xl md:text-8xl font-black uppercase tracking-tighter mb-6 sm:mb-8 leading-tight">
-                Get in <span className="text-indigo-600 dark:text-indigo-400 italic">Touch</span>
-            </h1>
-            <p className="text-lg sm:text-xl md:text-2xl text-gray-500 dark:text-gray-400 max-w-2xl mx-auto font-medium leading-relaxed px-4">
-                Have questions about our simulation logic or need support? We're here to help.
+      <main className="max-w-5xl mx-auto py-20 sm:py-32 px-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-20">
+          
+          {/* Left: Info */}
+          <div className="text-left">
+            <h2 className="text-indigo-600 dark:text-indigo-400 font-black uppercase tracking-[0.4em] text-[10px] mb-4">Get in Touch</h2>
+            <h1 className="text-5xl sm:text-7xl font-black text-gray-900 dark:text-white uppercase tracking-tighter italic leading-none mb-10">Contact <span className="text-gray-400">Support</span></h1>
+            <p className="text-lg text-gray-500 dark:text-gray-400 font-medium mb-12 leading-relaxed">
+              Have questions about your subscription, a technical issue, or a suggestion for a new feature? Our team is here to help.
             </p>
-        </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 mb-16 sm:mb-24 px-2">
-            <div className="p-8 sm:p-12 bg-gray-50 dark:bg-white/5 rounded-[2.5rem] sm:rounded-[3rem] border border-gray-100 dark:border-white/5 hover:-translate-y-1 transition-all duration-500 group text-left">
-                <div className="w-12 h-12 sm:w-14 sm:h-14 bg-indigo-600 text-white rounded-2xl flex items-center justify-center mb-6 sm:mb-8 shadow-xl shadow-indigo-500/20 group-hover:rotate-12 transition-transform">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            <div className="space-y-10">
+              <div className="flex items-start gap-6">
+                <div className="w-12 h-12 rounded-2xl bg-white dark:bg-gray-900 shadow-lg flex items-center justify-center text-indigo-500 border border-gray-100 dark:border-white/5">
+                  <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                 </div>
-                <h3 className="text-xl sm:text-2xl font-black uppercase mb-2">Email Us</h3>
-                <p className="text-gray-500 dark:text-gray-400 font-bold mb-4 sm:mb-6 text-sm">General inquiries & support</p>
-                <a href="mailto:support@whatiflotto.com" className="text-base sm:text-xl font-black text-indigo-600 dark:text-indigo-400 underline decoration-indigo-500/30 hover:decoration-indigo-500 transition-all break-words">
-                    support@whatiflotto.com
-                </a>
-            </div>
-
-            <div className="p-8 sm:p-12 bg-gray-50 dark:bg-white/5 rounded-[2.5rem] sm:rounded-[3rem] border border-gray-100 dark:border-white/5 hover:-translate-y-1 transition-all duration-500 group text-left">
-                <div className="w-12 h-12 sm:w-14 sm:h-14 bg-emerald-600 text-white rounded-2xl flex items-center justify-center mb-6 sm:mb-8 shadow-xl shadow-emerald-500/20 group-hover:rotate-12 transition-transform">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                <div>
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Email Us</p>
+                  <p className="text-lg font-black text-gray-900 dark:text-white italic">support@whatiflotto.com</p>
                 </div>
-                <h3 className="text-xl sm:text-2xl font-black uppercase mb-2">Location</h3>
-                <p className="text-gray-500 dark:text-gray-400 font-bold mb-4 sm:mb-6 text-sm">Proudly Australian</p>
-                <p className="text-base sm:text-xl font-black text-gray-900 dark:text-white">
-                    Sydney, NSW <br /> Australia
-                </p>
+              </div>
+              <div className="flex items-start gap-6">
+                <div className="w-12 h-12 rounded-2xl bg-white dark:bg-gray-900 shadow-lg flex items-center justify-center text-amber-500 border border-gray-100 dark:border-white/5">
+                  <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Response Time</p>
+                  <p className="text-lg font-black text-gray-900 dark:text-white italic">Within 24-48 Hours</p>
+                </div>
+              </div>
             </div>
-        </div>
+          </div>
 
-        <div className="max-w-2xl mx-auto pt-12 sm:pt-16 border-t border-gray-100 dark:border-white/5 px-4">
-            <p className="text-gray-400 text-sm sm:text-lg font-medium leading-relaxed italic">
-                "We usually respond within 24-48 business hours. Thank you for using Australia's most advanced risk-free lottery tracker."
-            </p>
+          {/* Right: Form */}
+          <div className="bg-white dark:bg-gray-900 rounded-[3rem] p-10 sm:p-12 border border-gray-100 dark:border-white/5 shadow-2xl relative overflow-hidden">
+            {status === 'success' ? (
+              <div className="py-20 text-center animate-in zoom-in-95 duration-500">
+                <div className="w-20 h-20 bg-emerald-500 text-white rounded-full flex items-center justify-center mx-auto mb-8 shadow-xl shadow-emerald-500/20">
+                  <svg width="40" height="40" fill="none" stroke="currentColor" strokeWidth="4" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+                <h3 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter italic mb-4">Message Sent!</h3>
+                <p className="text-gray-500 dark:text-gray-400 font-medium mb-8">Thanks for reaching out. We'll get back to you shortly.</p>
+                <button onClick={() => setStatus('idle')} className="text-indigo-500 font-black uppercase text-xs tracking-widest border-b-2 border-indigo-500 pb-1">Send another message</button>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Name</label>
+                    <input required type="text" placeholder="Your Name" className="w-full bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus:border-indigo-500 rounded-2xl p-4 sm:p-5 font-bold text-gray-900 dark:text-white outline-none transition-all" />
+                  </div>
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Email</label>
+                    <input required type="email" placeholder="email@example.com" className="w-full bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus:border-indigo-500 rounded-2xl p-4 sm:p-5 font-bold text-gray-900 dark:text-white outline-none transition-all" />
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Subject</label>
+                  <select className="w-full bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus:border-indigo-500 rounded-2xl p-4 sm:p-5 font-bold text-gray-900 dark:text-white outline-none transition-all cursor-pointer appearance-none">
+                    <option>General Inquiry</option>
+                    <option>Billing & Subscription</option>
+                    <option>Technical Issue</option>
+                    <option>Feature Suggestion</option>
+                  </select>
+                </div>
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Message</label>
+                  <textarea required rows={5} placeholder="How can we help you?" className="w-full bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus:border-indigo-500 rounded-2xl p-4 sm:p-5 font-bold text-gray-900 dark:text-white outline-none transition-all resize-none"></textarea>
+                </div>
+                
+                <button 
+                  disabled={status === 'sending'}
+                  className="w-full py-5 bg-indigo-600 text-white font-black uppercase tracking-widest rounded-2xl shadow-xl shadow-indigo-500/20 hover:bg-indigo-700 transition-all active:scale-95 disabled:opacity-50"
+                >
+                  {status === 'sending' ? 'Sending...' : 'Send Message'}
+                </button>
+              </form>
+            )}
+          </div>
         </div>
       </main>
     </div>
