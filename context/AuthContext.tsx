@@ -114,6 +114,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (event === 'SIGNED_IN' && window.location.pathname === '/login') {
         router.push('/luck');
       }
+
+      // 결제 성공 후 돌아온 경우 즉시 상태 갱신 시도
+      if (currentUser && typeof window !== 'undefined' && window.location.search.includes('session_id=')) {
+        console.log("Payment return detected, refreshing status...");
+        fetchPremiumStatus(currentUser.id);
+      }
     });
 
     return () => {

@@ -22,36 +22,50 @@ export async function POST(req: Request) {
 
   try {
     event = stripe.webhooks.constructEvent(body, signature, webhookSecret || '');
+    console.log(`Webhook Event Verified: ${event.type}`);
   } catch (err: any) {
     console.error(`Webhook signature verification failed: ${err.message}`);
     return NextResponse.json({ error: `Webhook Error: ${err.message}` }, { status: 400 });
   }
 
   // Handle the event
-  if (event.type === 'checkout.session.completed') {
-    const session = event.data.object as Stripe.Checkout.Session;
-    const userId = session.metadata?.userId;
+  if (event.type === 'checkout.session.completed' || event.type === 'invoice.payment_succeeded') {
+    const session = event.data.object as any;
+    
+    // session.metadata.userId 가 있는 경우 (단건 결제 또는 구독 시작)
+    // 혹은 session.subscription (구독 갱신) 처리
+    let userId = session.metadata?.userId;
+
+    // 만약 인보이스 성공 이벤트인데 메타데이터가 없다면, 고객 정보를 통해 유저를 찾아야 할 수도 있음
+    if (!userId && session.customer) {
+      console.log(`Looking up user by customer ID: ${session.customer}`);
+      const { data: userData } = await supabase
+        .from('user_preferences')
+        .select('user_id')
+        .eq('stripe_customer_id', session.customer)
+        .maybeSingle();
+      userId = userData?.user_id;
+    }
 
     if (userId) {
-      console.log(`Payment successful for user: ${userId}. Upgrading to PRO...`);
+      console.log(`Processing premium for user: ${userId}`);
 
-      // 1. Update user_preferences to PRO and store customer ID
       const { error: prefError } = await supabase
         .from('user_preferences')
         .upsert({ 
           user_id: userId, 
           is_premium: true,
-          is_auto_track_enabled: true,
-          auto_track_qty: 10,
           stripe_customer_id: session.customer as string
         }, { onConflict: 'user_id' });
 
       if (prefError) {
-        console.error('Error updating user premium status:', prefError.message);
+        console.error('Database Update Failed:', prefError.message);
         return NextResponse.json({ error: 'DB Update Failed' }, { status: 500 });
       }
 
-      console.log(`Successfully upgraded user ${userId} to PRO.`);
+      console.log(`User ${userId} successfully upgraded to PRO.`);
+    } else {
+      console.warn('Webhook received but no User ID found in metadata or DB.');
     }
   }
 
