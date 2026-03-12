@@ -65,12 +65,12 @@ export default function Navbar() {
                   {isPremium ? (
                     <span className="text-[8px] font-black text-amber-500 uppercase tracking-widest mt-0.5">PRO Member</span>
                   ) : (
-                    <button 
-                      onClick={() => upgradeToPro()}
+                    <Link 
+                      href="/premium/"
                       className="text-[8px] font-black text-indigo-500 uppercase tracking-widest mt-0.5 hover:underline transition-all cursor-pointer text-left"
                     >
                       Upgrade to PRO
-                    </button>
+                    </Link>
                   )}
                 </div>
                 <div className="flex gap-1 sm:gap-2">
@@ -117,12 +117,13 @@ export default function Navbar() {
           <div className="lg:hidden bg-white dark:bg-gray-950 border-t border-gray-100 dark:border-white/5 animate-in slide-in-from-top-4 duration-300">
             <div className="flex flex-col p-6 space-y-4">
               {!isPremium && (
-                <button 
-                  onClick={() => { upgradeToPro('monthly'); closeMobileMenu(); }}
+                <Link 
+                  href="/premium/" 
+                  onClick={closeMobileMenu}
                   className="bg-gradient-to-r from-amber-400 to-orange-500 p-4 rounded-2xl text-center shadow-lg transform active:scale-95 transition-all cursor-pointer w-full"
                 >
-                  <span className="text-sm font-black text-white uppercase tracking-widest">🚀 Upgrade to PRO ($2.99)</span>
-                </button>
+                  <span className="text-sm font-black text-white uppercase tracking-widest">🚀 Upgrade to PRO</span>
+                </Link>
               )}
               {navLinks.map((link) => {
                 if (link.authOnly && !user) return null;

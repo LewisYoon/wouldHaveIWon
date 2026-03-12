@@ -503,20 +503,12 @@ export default function LuckPage() {
                 <p className="text-[10px] sm:text-xs font-bold text-gray-400 dark:text-gray-500 leading-relaxed italic">
                   Automatically generate up to 1,000 tickets per draw without lifting a finger. PRO members never miss a chance to win.
                 </p>
-                <div className="flex flex-wrap gap-3">
-                  <button 
-                    onClick={() => upgradeToPro('monthly')}
-                    className="flex-1 min-w-[140px] py-3 bg-white dark:bg-gray-800 text-indigo-600 dark:text-indigo-400 font-black uppercase text-[10px] tracking-widest rounded-xl border-2 border-indigo-100 dark:border-indigo-500/20 hover:bg-indigo-50 transition-all cursor-pointer shadow-sm"
-                  >
-                    $2.99 / Month
-                  </button>
-                  <button 
-                    onClick={() => upgradeToPro('lifetime')}
-                    className="flex-1 min-w-[140px] py-3 bg-indigo-600 text-white font-black uppercase text-[10px] tracking-widest rounded-xl shadow-lg shadow-indigo-200 dark:shadow-none hover:bg-indigo-700 transition-all cursor-pointer"
-                  >
-                    $19.99 Lifetime
-                  </button>
-                </div>
+                <Link 
+                  href="/premium/"
+                  className="w-full py-4 bg-indigo-600 text-white font-black uppercase text-xs tracking-widest rounded-2xl shadow-xl shadow-indigo-500/20 hover:bg-indigo-700 transition-all text-center"
+                >
+                  🚀 Upgrade to PRO
+                </Link>
               </div>
             )}
           </div>
