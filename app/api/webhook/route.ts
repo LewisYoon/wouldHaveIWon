@@ -65,74 +65,61 @@ export async function POST(req: Request) {
 
       addLog(`Event ${event.type} for Customer ${customerId}. Initial UserId: ${userId}`);
 
-      // 1. ID 및 기본 상태 추출
+      // 1. 객체 종류별 ID 및 기본 상태 추출
       if (event.type === 'checkout.session.completed') {
         subscriptionId = dataObject.subscription as string;
         status = dataObject.payment_status === 'paid' ? 'active' : 'incomplete';
       } else if (event.type === 'invoice.payment_succeeded') {
         subscriptionId = dataObject.subscription as string;
         status = 'active';
+        // Invoice에서 기간 종료일 추출 (가장 정확함)
+        const lineItem = dataObject.lines?.data?.[0];
+        if (lineItem?.period?.end) {
+          currentPeriodEnd = new Date(lineItem.period.end * 1000).toISOString();
+          addLog(`Extracted Expiry from Invoice: ${currentPeriodEnd}`);
+        }
       } else if (event.type.startsWith('customer.subscription.')) {
         subscriptionId = dataObject.id;
         status = dataObject.status;
-        // Subscription 객체이므로 날짜 정보 직접 추출 가능
-        if (dataObject.current_period_end) {
-          currentPeriodEnd = new Date(dataObject.current_period_end * 1000).toISOString();
-        }
         cancelAtPeriodEnd = !!dataObject.cancel_at_period_end;
         userId = userId || dataObject.metadata?.userId;
         planType = planType || dataObject.metadata?.planType;
+        
+        const periodEnd = dataObject.current_period_end || dataObject.trial_end;
+        if (periodEnd) {
+          currentPeriodEnd = new Date(periodEnd * 1000).toISOString();
+        }
       }
 
-      // 2. 구독 정보가 있지만 날짜 정보가 없다면(Session/Invoice 이벤트) Stripe에서 가져오기
+      // 2. 날짜 정보가 여전히 없다면(Session 이벤트 등) Stripe에서 직접 조회
       if (subscriptionId && !currentPeriodEnd) {
         addLog(`Fetching details for Subscription: ${subscriptionId}`);
         try {
           const sub = await stripe.subscriptions.retrieve(subscriptionId) as any;
           if (sub) {
-            // 디버깅을 위한 전체 키 출력
-            addLog(`Sub object keys: ${Object.keys(sub).join(', ')}`);
-            
             userId = userId || sub.metadata?.userId;
             planType = planType || sub.metadata?.planType;
-            status = sub.status;
+            status = status || sub.status;
+            cancelAtPeriodEnd = !!sub.cancel_at_period_end;
             
-            // 날짜 변환 안정화 (다양한 접근 방식 시도)
-            const periodEnd = sub.current_period_end || sub['current_period_end'];
+            const periodEnd = sub.current_period_end || sub.trial_end;
             if (periodEnd) {
-              currentPeriodEnd = new Date(Number(periodEnd) * 1000).toISOString();
+              currentPeriodEnd = new Date(periodEnd * 1000).toISOString();
             }
-            cancelAtPeriodEnd = (sub.cancel_at_period_end === true || sub['cancel_at_period_end'] === true);
-            
-            addLog(`Fetched details: Status=${status}, Expiry=${currentPeriodEnd}, CancelAtEnd=${cancelAtPeriodEnd}`);
+            addLog(`Fetched from Stripe API: Status=${status}, Expiry=${currentPeriodEnd}`);
           }
         } catch (subErr: any) {
           addLog(`Sub Fetch Error: ${subErr.message}`);
         }
       }
 
-      // 3. UserId가 여전히 없다면 DB/Auth 검색
+      // 3. UserId가 없다면 DB/Auth 검색 (이전과 동일)
       if (!userId && customerId) {
-        addLog(`UserId still missing, searching DB...`);
-        const { data: prefData } = await supabase
-          .from('user_preferences')
-          .select('user_id, plan_type')
-          .eq('stripe_customer_id', customerId)
-          .maybeSingle();
+        const { data: prefData } = await supabase.from('user_preferences').select('user_id, plan_type').eq('stripe_customer_id', customerId).maybeSingle();
         if (prefData) {
           userId = prefData.user_id;
           planType = planType || prefData.plan_type;
           addLog(`Resolved UserId from DB: ${userId}`);
-        }
-      }
-
-      if (!userId && customerEmail) {
-        addLog(`Searching Auth by email: ${customerEmail}`);
-        const { data: authData } = await supabase.auth.admin.listUsers();
-        const userMatch = authData.users.find(u => u.email === customerEmail);
-        if (userMatch) {
-          userId = userMatch.id;
-          addLog(`Resolved UserId from Email: ${userId}`);
         }
       }
 
@@ -152,7 +139,7 @@ export async function POST(req: Request) {
           updated_at: new Date().toISOString(),
         };
 
-        addLog(`Upsert Data: ${JSON.stringify(upsertData)}`);
+        addLog(`Upserting: Premium=${isPremium}, CancelAtEnd=${cancelAtPeriodEnd}, Expiry=${currentPeriodEnd}`);
 
         const { error: upsertError } = await supabase
           .from('user_preferences')
