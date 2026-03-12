@@ -167,7 +167,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     setIsLoading(true);
     try {
-      const response = await fetch('/api/checkout', {
+      const response = await fetch('/api/checkout/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user.id, userEmail: user.email, planType }),
