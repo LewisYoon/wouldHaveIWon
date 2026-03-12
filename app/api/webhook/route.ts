@@ -51,7 +51,6 @@ export async function POST(req: Request) {
     if (relevantEvents.includes(event.type)) {
       const dataObject = event.data.object as any;
       
-      // 1. Try to find userId via different fields
       let userId = dataObject.metadata?.userId || dataObject.client_reference_id;
       let customerId = dataObject.customer as string;
       let customerEmail = dataObject.customer_email || dataObject.billing_details?.email;
@@ -61,9 +60,9 @@ export async function POST(req: Request) {
       let cancelAtPeriodEnd = false;
       let planType = dataObject.metadata?.planType;
 
-      addLog(`Event ${event.type} for Customer ${customerId}. Email: ${customerEmail}, RefID: ${dataObject.client_reference_id}`);
+      addLog(`Event ${event.type} for Customer ${customerId}. Initial UserId: ${userId}`);
 
-      // 2. ID Extraction based on event type
+      // 1. ID 및 기본 상태 추출
       if (event.type === 'checkout.session.completed') {
         subscriptionId = dataObject.subscription as string;
         status = dataObject.payment_status === 'paid' ? 'active' : 'incomplete';
@@ -73,26 +72,32 @@ export async function POST(req: Request) {
       } else if (event.type.startsWith('customer.subscription.')) {
         subscriptionId = dataObject.id;
         status = dataObject.status;
+        // Subscription 객체이므로 날짜 정보 직접 추출 가능
+        currentPeriodEnd = new Date(dataObject.current_period_end * 1000).toISOString();
+        cancelAtPeriodEnd = dataObject.cancel_at_period_end;
+        userId = userId || dataObject.metadata?.userId;
+        planType = planType || dataObject.metadata?.planType;
       }
 
-      // 3. Robust UserId Resolution
-      // Step A: Check Subscription Metadata
-      if (!userId && subscriptionId) {
-        addLog(`Fetching Subscription ${subscriptionId} for metadata...`);
+      // 2. 구독 정보가 있지만 날짜 정보가 없다면(Session/Invoice 이벤트) Stripe에서 가져오기
+      if (subscriptionId && !currentPeriodEnd) {
+        addLog(`Fetching details for Subscription: ${subscriptionId}`);
         try {
           const sub = await stripe.subscriptions.retrieve(subscriptionId) as any;
-          userId = sub.metadata?.userId;
+          userId = userId || sub.metadata?.userId;
           planType = planType || sub.metadata?.planType;
-          status = status || sub.status;
+          status = sub.status;
           currentPeriodEnd = new Date(sub.current_period_end * 1000).toISOString();
           cancelAtPeriodEnd = sub.cancel_at_period_end;
-          addLog(`Resolved from Subscription: ${userId}`);
-        } catch (subErr: any) { addLog(`Sub Fetch Error: ${subErr.message}`); }
+          addLog(`Fetched from Stripe: Status=${status}, Expiry=${currentPeriodEnd}, CancelAtEnd=${cancelAtPeriodEnd}`);
+        } catch (subErr: any) {
+          addLog(`Sub Fetch Error: ${subErr.message}`);
+        }
       }
 
-      // Step B: Search DB by Customer ID
+      // 3. UserId가 여전히 없다면 DB/Auth 검색
       if (!userId && customerId) {
-        addLog(`Searching DB by customerId: ${customerId}`);
+        addLog(`UserId still missing, searching DB...`);
         const { data: prefData } = await supabase
           .from('user_preferences')
           .select('user_id, plan_type')
@@ -101,25 +106,24 @@ export async function POST(req: Request) {
         if (prefData) {
           userId = prefData.user_id;
           planType = planType || prefData.plan_type;
-          addLog(`Resolved from DB (Customer): ${userId}`);
+          addLog(`Resolved UserId from DB: ${userId}`);
         }
       }
 
-      // Step C: Search Auth by Email (Last Resort)
       if (!userId && customerEmail) {
         addLog(`Searching Auth by email: ${customerEmail}`);
         const { data: authData } = await supabase.auth.admin.listUsers();
         const userMatch = authData.users.find(u => u.email === customerEmail);
         if (userMatch) {
           userId = userMatch.id;
-          addLog(`Resolved from Auth (Email): ${userId}`);
+          addLog(`Resolved UserId from Email: ${userId}`);
         }
       }
 
-      // 4. Final Database Sync
+      // 4. 최종 DB 업데이트
       if (userId) {
         const isPremium = (status === 'active' || status === 'trialing' || status === 'past_due' || event.type === 'checkout.session.completed');
-        addLog(`Syncing DB: Premium=${isPremium}, Plan=${planType || 'monthly'}`);
+        addLog(`Upserting: Premium=${isPremium}, Plan=${planType || 'monthly'}, CancelAtEnd=${cancelAtPeriodEnd}`);
 
         const { error: upsertError } = await supabase
           .from('user_preferences')
@@ -135,10 +139,10 @@ export async function POST(req: Request) {
             updated_at: new Date().toISOString(),
           }, { onConflict: 'user_id' });
 
-        if (upsertError) throw new Error(`Supabase Upsert Error: ${upsertError.message}`);
-        addLog(`SUCCESS: Synced user ${userId}`);
+        if (upsertError) throw new Error(`Supabase Error: ${upsertError.message}`);
+        addLog(`SUCCESS: Full sync for user ${userId}`);
       } else {
-        addLog(`FATAL: No identification found for Customer ${customerId}`);
+        addLog(`FATAL: Could not identify user.`);
       }
     }
 
