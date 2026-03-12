@@ -15,6 +15,7 @@ interface AuthContextType {
   logout: () => Promise<void>;
   isLoading: boolean;
   upgradeToPro: (planType?: 'monthly' | 'lifetime') => Promise<void>;
+  manageSubscription: () => Promise<void>;
   refreshPremiumStatus: () => Promise<void>;
 }
 
@@ -187,8 +188,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const manageSubscription = async () => {
+    if (!user) return;
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/portal/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id }),
+      });
+
+      const { url, error } = await response.json();
+      if (error) throw new Error(error);
+
+      if (url) {
+        window.location.href = url;
+      }
+    } catch (err: any) {
+      console.error('Portal Error:', err);
+      alert(err.message || 'Failed to open billing portal.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, isPremium, signIn, signUp, signInWithGoogle, resetPassword, logout, isLoading, refreshPremiumStatus, upgradeToPro }}>
+    <AuthContext.Provider value={{ user, isPremium, signIn, signUp, signInWithGoogle, resetPassword, logout, isLoading, refreshPremiumStatus, upgradeToPro, manageSubscription }}>
       {children}
     </AuthContext.Provider>
   );

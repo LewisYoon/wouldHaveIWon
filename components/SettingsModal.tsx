@@ -12,7 +12,7 @@ interface UserPreferences {
 }
 
 export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
-  const { user, isPremium, upgradeToPro } = useAuth();
+  const { user, isPremium, upgradeToPro, manageSubscription } = useAuth();
   const [prefs, setPreferences] = useState<UserPreferences>({
     email_notifications: true,
     email_results: true,
@@ -186,7 +186,15 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
           )}
         </div>
 
-        <div className="p-8 bg-gray-50 dark:bg-white/5 text-center flex-shrink-0 border-t border-gray-100 dark:border-white/5">
+        <div className="p-8 bg-gray-50 dark:bg-white/5 text-center flex-shrink-0 border-t border-gray-100 dark:border-white/5 space-y-4">
+          {isPremium && (
+            <button 
+              onClick={manageSubscription}
+              className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest hover:underline cursor-pointer block w-full mb-2"
+            >
+              Manage Billing & Subscription
+            </button>
+          )}
           <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-relaxed">
             Preferences are synced across all your devices.
           </p>

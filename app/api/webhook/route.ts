@@ -35,14 +35,15 @@ export async function POST(req: Request) {
     if (userId) {
       console.log(`Payment successful for user: ${userId}. Upgrading to PRO...`);
 
-      // 1. Update user_preferences to PRO
+      // 1. Update user_preferences to PRO and store customer ID
       const { error: prefError } = await supabase
         .from('user_preferences')
         .upsert({ 
           user_id: userId, 
           is_premium: true,
-          is_auto_track_enabled: true, // Default to true after upgrade
-          auto_track_qty: 10          // Default qty
+          is_auto_track_enabled: true,
+          auto_track_qty: 10,
+          stripe_customer_id: session.customer as string
         }, { onConflict: 'user_id' });
 
       if (prefError) {
