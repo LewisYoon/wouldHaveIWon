@@ -14,8 +14,8 @@ export async function POST(req: Request) {
     }
 
     const { data, error } = await resend.emails.send({
-      from: 'WhatIFLotto Support <support@whatiflotto.com>', // Resend에 등록된 도메인이 필요합니다.
-      to: ['trexhoon1111@gmail.com'], // 사용자님의 실제 이메일
+      from: 'WhatIFLotto Support <support@whatiflotto.com>',
+      to: ['support@whatiflotto.com'], // Cloudflare가 라우팅해 줄 주소
       subject: `[Contact Inquiry] ${subject}: from ${name}`,
       replyTo: email,
       html: `
