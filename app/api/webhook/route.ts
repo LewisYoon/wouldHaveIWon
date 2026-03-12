@@ -77,7 +77,7 @@ export async function POST(req: Request) {
       if (!userId && subscriptionId) {
         addLog(`UserId missing, fetching Subscription ${subscriptionId} to check metadata...`);
         try {
-          const sub = await stripe.subscriptions.retrieve(subscriptionId);
+          const sub = await stripe.subscriptions.retrieve(subscriptionId) as any;
           userId = sub.metadata?.userId;
           planType = planType || sub.metadata?.planType;
           status = status || sub.status;
