@@ -5,16 +5,35 @@ import Navbar from '../../components/Navbar';
 
 export default function ContactPage() {
   const [status, setStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    subject: 'General Inquiry',
+    message: ''
+  });
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setStatus('sending');
     
-    // 이 부분에 실제 이메일 전송 API(예: Resend)를 연동할 수 있습니다.
-    // 지금은 1초 대기 후 성공 메시지를 보여주는 시뮬레이션으로 구현합니다.
-    setTimeout(() => {
-      setStatus('success');
-    }, 1500);
+    try {
+      const response = await fetch('/api/contact/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+
+      if (response.ok) {
+        setStatus('success');
+      } else {
+        const err = await response.json();
+        throw new Error(err.error || 'Failed to send message');
+      }
+    } catch (err: any) {
+      console.error('Submission Error:', err);
+      setStatus('error');
+      alert(err.message || 'Something went wrong. Please try again.');
+    }
   };
 
   return (
@@ -70,16 +89,34 @@ export default function ContactPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
                   <div className="space-y-3">
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Name</label>
-                    <input required type="text" placeholder="Your Name" className="w-full bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus:border-indigo-500 rounded-2xl p-4 sm:p-5 font-bold text-gray-900 dark:text-white outline-none transition-all" />
+                    <input 
+                      required 
+                      type="text" 
+                      placeholder="Your Name" 
+                      value={formData.name}
+                      onChange={(e) => setFormData({...formData, name: e.target.value})}
+                      className="w-full bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus:border-indigo-500 rounded-2xl p-4 sm:p-5 font-bold text-gray-900 dark:text-white outline-none transition-all" 
+                    />
                   </div>
                   <div className="space-y-3">
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Email</label>
-                    <input required type="email" placeholder="email@example.com" className="w-full bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus:border-indigo-500 rounded-2xl p-4 sm:p-5 font-bold text-gray-900 dark:text-white outline-none transition-all" />
+                    <input 
+                      required 
+                      type="email" 
+                      placeholder="email@example.com" 
+                      value={formData.email}
+                      onChange={(e) => setFormData({...formData, email: e.target.value})}
+                      className="w-full bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus:border-indigo-500 rounded-2xl p-4 sm:p-5 font-bold text-gray-900 dark:text-white outline-none transition-all" 
+                    />
                   </div>
                 </div>
                 <div className="space-y-3">
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Subject</label>
-                  <select className="w-full bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus:border-indigo-500 rounded-2xl p-4 sm:p-5 font-bold text-gray-900 dark:text-white outline-none transition-all cursor-pointer appearance-none">
+                  <select 
+                    value={formData.subject}
+                    onChange={(e) => setFormData({...formData, subject: e.target.value})}
+                    className="w-full bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus:border-indigo-500 rounded-2xl p-4 sm:p-5 font-bold text-gray-900 dark:text-white outline-none transition-all cursor-pointer appearance-none"
+                  >
                     <option>General Inquiry</option>
                     <option>Billing & Subscription</option>
                     <option>Technical Issue</option>
@@ -88,7 +125,14 @@ export default function ContactPage() {
                 </div>
                 <div className="space-y-3">
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Message</label>
-                  <textarea required rows={5} placeholder="How can we help you?" className="w-full bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus:border-indigo-500 rounded-2xl p-4 sm:p-5 font-bold text-gray-900 dark:text-white outline-none transition-all resize-none"></textarea>
+                  <textarea 
+                    required 
+                    rows={5} 
+                    placeholder="How can we help you?" 
+                    value={formData.message}
+                    onChange={(e) => setFormData({...formData, message: e.target.value})}
+                    className="w-full bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus:border-indigo-500 rounded-2xl p-4 sm:p-5 font-bold text-gray-900 dark:text-white outline-none transition-all resize-none"
+                  ></textarea>
                 </div>
                 
                 <button 
