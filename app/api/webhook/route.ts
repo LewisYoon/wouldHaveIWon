@@ -49,7 +49,7 @@ export async function POST(req: Request) {
 
     // 1. Get Subscription details if available
     if (session.subscription) {
-      const sub = await stripe.subscriptions.retrieve(session.subscription as string);
+      const sub = await stripe.subscriptions.retrieve(session.subscription as string) as any;
       subscriptionId = sub.id;
       status = sub.status;
       currentPeriodEnd = new Date(sub.current_period_end * 1000).toISOString();
