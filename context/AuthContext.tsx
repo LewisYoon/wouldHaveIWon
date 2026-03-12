@@ -60,13 +60,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return fetchPremiumStatus(userId, retryCount + 1);
       }
 
-      setIsPremium(!!data?.is_premium);
-      setSubscriptionInfo({
-        status: data?.subscription_status || null,
-        currentPeriodEnd: data?.current_period_end || null,
-        cancelAtPeriodEnd: !!data?.cancel_at_period_end,
-        planType: data?.plan_type || null,
-      });
+      if (data) {
+        setIsPremium(!!data.is_premium);
+        setSubscriptionInfo({
+          status: data.subscription_status || null,
+          currentPeriodEnd: data.current_period_end || null,
+          cancelAtPeriodEnd: !!data.cancel_at_period_end,
+          planType: data.plan_type || null,
+        });
+      } else {
+        // No preferences found yet - keep defaults
+        setIsPremium(false);
+        setSubscriptionInfo(null);
+      }
     } catch (err) {
       console.error("Premium check unexpected error:", err);
       setIsPremium(false);
