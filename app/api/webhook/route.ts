@@ -29,7 +29,10 @@ export async function POST(req: Request) {
       throw new Error(`Missing environment variables: ${missing.join(", ")}`);
     }
 
-    const stripe = new Stripe(stripeSecret);
+    const stripe = new Stripe(stripeSecret, {
+      apiVersion: '2025-02-24.acacia',
+    });
+
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const body = await req.text();
@@ -91,12 +94,14 @@ export async function POST(req: Request) {
             planType = planType || sub.metadata?.planType;
             status = sub.status;
             
-            if (sub.current_period_end) {
-              currentPeriodEnd = new Date(sub.current_period_end * 1000).toISOString();
+            // 날짜 변환 안정화
+            const periodEnd = sub.current_period_end;
+            if (periodEnd) {
+              currentPeriodEnd = new Date(periodEnd * 1000).toISOString();
             }
-            cancelAtPeriodEnd = !!sub.cancel_at_period_end;
+            cancelAtPeriodEnd = sub.cancel_at_period_end === true;
             
-            addLog(`Fetched from Stripe: Status=${status}, Expiry=${currentPeriodEnd}, CancelAtEnd=${cancelAtPeriodEnd}`);
+            addLog(`Fetched: Status=${status}, Expiry=${currentPeriodEnd}, CancelAtEnd=${cancelAtPeriodEnd}, RawPeriodEnd=${periodEnd}`);
           }
         } catch (subErr: any) {
           addLog(`Sub Fetch Error: ${subErr.message}`);
@@ -131,23 +136,26 @@ export async function POST(req: Request) {
       // 4. 최종 DB 업데이트
       if (userId) {
         const isPremium = (status === 'active' || status === 'trialing' || status === 'past_due' || event.type === 'checkout.session.completed');
-        addLog(`Upserting: Premium=${isPremium}, Plan=${planType || 'monthly'}, CancelAtEnd=${cancelAtPeriodEnd}`);
+        
+        const upsertData = {
+          user_id: userId,
+          is_premium: isPremium,
+          stripe_customer_id: customerId,
+          stripe_subscription_id: subscriptionId || null,
+          subscription_status: status || null,
+          current_period_end: currentPeriodEnd,
+          cancel_at_period_end: cancelAtPeriodEnd,
+          plan_type: planType || 'monthly',
+          updated_at: new Date().toISOString(),
+        };
+
+        addLog(`Upsert Data: ${JSON.stringify(upsertData)}`);
 
         const { error: upsertError } = await supabase
           .from('user_preferences')
-          .upsert({
-            user_id: userId,
-            is_premium: isPremium,
-            stripe_customer_id: customerId,
-            stripe_subscription_id: subscriptionId || null,
-            subscription_status: status || null,
-            current_period_end: currentPeriodEnd,
-            cancel_at_period_end: cancelAtPeriodEnd,
-            plan_type: planType || 'monthly',
-            updated_at: new Date().toISOString(),
-          }, { onConflict: 'user_id' });
+          .upsert(upsertData, { onConflict: 'user_id' });
 
-        if (upsertError) throw new Error(`Supabase Error: ${upsertError.message}`);
+        if (upsertError) throw new Error(`Supabase Upsert Error: ${upsertError.message}`);
         addLog(`SUCCESS: Full sync for user ${userId}`);
       } else {
         addLog(`FATAL: Could not identify user.`);
