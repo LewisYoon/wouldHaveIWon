@@ -61,6 +61,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (data) {
+        console.log(`Premium Status for ${userId}:`, data.is_premium);
         setIsPremium(!!data.is_premium);
         setSubscriptionInfo({
           status: data.subscription_status || null,
@@ -69,7 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           planType: data.plan_type || null,
         });
       } else {
-        // No preferences found yet - keep defaults
+        console.log(`No preferences found for ${userId}, defaulting to non-premium.`);
         setIsPremium(false);
         setSubscriptionInfo(null);
       }
