@@ -73,8 +73,10 @@ export async function POST(req: Request) {
         subscriptionId = dataObject.id;
         status = dataObject.status;
         // Subscription 객체이므로 날짜 정보 직접 추출 가능
-        currentPeriodEnd = new Date(dataObject.current_period_end * 1000).toISOString();
-        cancelAtPeriodEnd = dataObject.cancel_at_period_end;
+        if (dataObject.current_period_end) {
+          currentPeriodEnd = new Date(dataObject.current_period_end * 1000).toISOString();
+        }
+        cancelAtPeriodEnd = !!dataObject.cancel_at_period_end;
         userId = userId || dataObject.metadata?.userId;
         planType = planType || dataObject.metadata?.planType;
       }
@@ -84,12 +86,18 @@ export async function POST(req: Request) {
         addLog(`Fetching details for Subscription: ${subscriptionId}`);
         try {
           const sub = await stripe.subscriptions.retrieve(subscriptionId) as any;
-          userId = userId || sub.metadata?.userId;
-          planType = planType || sub.metadata?.planType;
-          status = sub.status;
-          currentPeriodEnd = new Date(sub.current_period_end * 1000).toISOString();
-          cancelAtPeriodEnd = sub.cancel_at_period_end;
-          addLog(`Fetched from Stripe: Status=${status}, Expiry=${currentPeriodEnd}, CancelAtEnd=${cancelAtPeriodEnd}`);
+          if (sub) {
+            userId = userId || sub.metadata?.userId;
+            planType = planType || sub.metadata?.planType;
+            status = sub.status;
+            
+            if (sub.current_period_end) {
+              currentPeriodEnd = new Date(sub.current_period_end * 1000).toISOString();
+            }
+            cancelAtPeriodEnd = !!sub.cancel_at_period_end;
+            
+            addLog(`Fetched from Stripe: Status=${status}, Expiry=${currentPeriodEnd}, CancelAtEnd=${cancelAtPeriodEnd}`);
+          }
         } catch (subErr: any) {
           addLog(`Sub Fetch Error: ${subErr.message}`);
         }
