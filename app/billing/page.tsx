@@ -1,7 +1,7 @@
 'use client';
 
-import { useAuth } from '../../../context/AuthContext';
-import Navbar from '../../../components/Navbar';
+import { useAuth } from '../../context/AuthContext';
+import Navbar from '../../components/Navbar';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
