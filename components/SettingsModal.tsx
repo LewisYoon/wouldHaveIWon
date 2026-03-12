@@ -127,21 +127,21 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
                     <div className="flex justify-between items-center">
                       <p className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest">Membership Status</p>
                       <span className={`text-[9px] font-black px-2 py-0.5 rounded-md uppercase ${subscriptionInfo.status === 'active' ? 'bg-emerald-500 text-white' : 'bg-amber-500 text-white'}`}>
-                        {subscriptionInfo.status || 'Lifetime'}
+                        {subscriptionInfo.planType === 'lifetime' ? 'Lifetime' : (subscriptionInfo.status || 'Active')}
                       </span>
                     </div>
                     
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <p className="text-[8px] font-bold text-gray-400 uppercase mb-1">Next Billing / Expiry</p>
+                        <p className="text-[8px] font-bold text-gray-400 uppercase mb-1">{subscriptionInfo.planType === 'lifetime' ? 'Status' : 'Next Billing / Expiry'}</p>
                         <p className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-tighter">
-                          {subscriptionInfo.currentPeriodEnd ? new Date(subscriptionInfo.currentPeriodEnd).toLocaleDateString() : 'Lifetime'}
+                          {subscriptionInfo.planType === 'lifetime' ? 'Permanent' : (subscriptionInfo.currentPeriodEnd ? new Date(subscriptionInfo.currentPeriodEnd).toLocaleDateString() : 'N/A')}
                         </p>
                       </div>
                       <div>
                         <p className="text-[8px] font-bold text-gray-400 uppercase mb-1">Auto-Renew</p>
                         <p className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-tighter">
-                          {subscriptionInfo.status === 'active' ? (subscriptionInfo.cancelAtPeriodEnd ? 'OFF' : 'ON') : 'N/A'}
+                          {subscriptionInfo.planType === 'monthly' ? (subscriptionInfo.cancelAtPeriodEnd ? 'OFF' : 'ON') : 'N/A'}
                         </p>
                       </div>
                     </div>

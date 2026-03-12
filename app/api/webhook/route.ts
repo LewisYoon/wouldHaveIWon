@@ -74,10 +74,13 @@ export async function POST(req: Request) {
     if (userId) {
       console.log(`Syncing subscription for user ${userId}. Status: ${status || 'active'}`);
 
+      const planType = session.metadata?.planType;
+
       const updateData: any = { 
         user_id: userId, 
-        is_premium: status === 'active' || status === 'trialing' || !status, // status가 없으면 단건 결제(Lifetime)로 간주
+        is_premium: status === 'active' || status === 'trialing' || !status,
         stripe_customer_id: session.customer as string,
+        plan_type: planType // 'monthly' 또는 'lifetime' 저장
       };
 
       if (subscriptionId) {
