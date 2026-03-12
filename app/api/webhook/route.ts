@@ -81,17 +81,23 @@ export async function POST(req: Request) {
       } else if (event.type.startsWith('customer.subscription.')) {
         subscriptionId = dataObject.id;
         status = dataObject.status;
-        cancelAtPeriodEnd = !!dataObject.cancel_at_period_end;
+        // 취소 여부 확인 (여러 경로 시도)
+        cancelAtPeriodEnd = dataObject.cancel_at_period_end === true || 
+                            dataObject.cancel_at === true ||
+                            dataObject.cancellation_details?.reason === 'cancellation_requested';
+
+        addLog(`Subscription Event: ${event.type}, CancelFlag: ${cancelAtPeriodEnd}`);
+
         userId = userId || dataObject.metadata?.userId;
         planType = planType || dataObject.metadata?.planType;
-        
+
         const periodEnd = dataObject.current_period_end || dataObject.trial_end;
         if (periodEnd) {
           currentPeriodEnd = new Date(periodEnd * 1000).toISOString();
         }
       }
 
-      // 2. 날짜 정보가 여전히 없다면(Session 이벤트 등) Stripe에서 직접 조회
+      // 2. 구독 정보가 있지만 날짜 정보가 없다면(Session 이벤트 등) Stripe에서 직접 조회
       if (subscriptionId && !currentPeriodEnd) {
         addLog(`Fetching details for Subscription: ${subscriptionId}`);
         try {
@@ -99,19 +105,20 @@ export async function POST(req: Request) {
           if (sub) {
             userId = userId || sub.metadata?.userId;
             planType = planType || sub.metadata?.planType;
-            status = status || sub.status;
-            cancelAtPeriodEnd = !!sub.cancel_at_period_end;
-            
+            status = sub.status;
+            cancelAtPeriodEnd = sub.cancel_at_period_end === true || !!sub.cancel_at;
+
             const periodEnd = sub.current_period_end || sub.trial_end;
             if (periodEnd) {
               currentPeriodEnd = new Date(periodEnd * 1000).toISOString();
             }
-            addLog(`Fetched from Stripe API: Status=${status}, Expiry=${currentPeriodEnd}`);
+            addLog(`Fetched from Stripe API: Status=${status}, Expiry=${currentPeriodEnd}, CancelAtEnd=${cancelAtPeriodEnd}`);
           }
         } catch (subErr: any) {
           addLog(`Sub Fetch Error: ${subErr.message}`);
         }
       }
+
 
       // 3. UserId가 없다면 DB/Auth 검색 (이전과 동일)
       if (!userId && customerId) {
