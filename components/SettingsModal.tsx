@@ -157,16 +157,28 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
                 )}
 
                 {!isPremium && (
-                  <div className="bg-amber-50 dark:bg-amber-500/10 p-6 rounded-3xl border border-amber-100 dark:border-amber-500/20 text-center space-y-4">
-                    <p className="text-xs font-bold text-amber-700 dark:text-amber-400 leading-relaxed">
-                      Upgrade to PRO to unlock the <strong>Auto-Tracker</strong>. Never miss a draw again!
-                    </p>
-                    <button 
-                      onClick={upgradeToPro}
-                      className="w-full py-3 bg-amber-500 text-white font-black uppercase text-[10px] tracking-widest rounded-xl shadow-lg shadow-amber-200 dark:shadow-none hover:bg-amber-600 transition-all cursor-pointer"
-                    >
-                      Upgrade to PRO
-                    </button>
+                  <div className="bg-amber-50 dark:bg-amber-500/10 p-6 rounded-3xl border border-amber-100 dark:border-amber-500/20 text-center space-y-6">
+                    <div className="space-y-2">
+                      <p className="text-sm font-black text-amber-700 dark:text-amber-400 uppercase tracking-tight">Upgrade to PRO</p>
+                      <p className="text-[10px] font-bold text-amber-600/70 dark:text-amber-400/60 leading-relaxed italic">
+                        Unlock Auto-Tracker, Unlimited Tickets, and more.
+                      </p>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 gap-3">
+                      <button 
+                        onClick={() => upgradeToPro('monthly')}
+                        className="w-full py-3.5 bg-white dark:bg-gray-800 text-amber-600 dark:text-amber-400 font-black uppercase text-[10px] tracking-widest rounded-xl border-2 border-amber-200 dark:border-amber-500/30 hover:bg-amber-50 transition-all cursor-pointer shadow-sm"
+                      >
+                        $2.99 / Month
+                      </button>
+                      <button 
+                        onClick={() => upgradeToPro('lifetime')}
+                        className="w-full py-3.5 bg-amber-500 text-white font-black uppercase text-[10px] tracking-widest rounded-xl shadow-lg shadow-amber-200 dark:shadow-none hover:bg-amber-600 transition-all cursor-pointer"
+                      >
+                        $19.99 Lifetime
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>

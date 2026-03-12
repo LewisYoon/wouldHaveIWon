@@ -118,10 +118,10 @@ export default function Navbar() {
             <div className="flex flex-col p-6 space-y-4">
               {!isPremium && (
                 <button 
-                  onClick={() => { upgradeToPro(); closeMobileMenu(); }}
+                  onClick={() => { upgradeToPro('monthly'); closeMobileMenu(); }}
                   className="bg-gradient-to-r from-amber-400 to-orange-500 p-4 rounded-2xl text-center shadow-lg transform active:scale-95 transition-all cursor-pointer w-full"
                 >
-                  <span className="text-sm font-black text-white uppercase tracking-widest">🚀 Upgrade to PRO</span>
+                  <span className="text-sm font-black text-white uppercase tracking-widest">🚀 Upgrade to PRO ($2.99)</span>
                 </button>
               )}
               {navLinks.map((link) => {

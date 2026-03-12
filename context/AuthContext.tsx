@@ -14,7 +14,7 @@ interface AuthContextType {
   resetPassword: (email: string) => Promise<{ error: AuthError | null }>;
   logout: () => Promise<void>;
   isLoading: boolean;
-  upgradeToPro: () => Promise<void>;
+  upgradeToPro: (planType?: 'monthly' | 'lifetime') => Promise<void>;
   refreshPremiumStatus: () => Promise<void>;
 }
 
@@ -159,7 +159,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const upgradeToPro = async () => {
+  const upgradeToPro = async (planType: 'monthly' | 'lifetime' = 'monthly') => {
     if (!user) {
       router.push('/login');
       return;
@@ -170,7 +170,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const response = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.id, userEmail: user.email }),
+        body: JSON.stringify({ userId: user.id, userEmail: user.email, planType }),
       });
 
       const { url, error } = await response.json();
