@@ -72,15 +72,15 @@ export async function POST(req: Request) {
     }
 
     if (userId) {
-      console.log(`Syncing subscription for user ${userId}. Status: ${status || 'active'}`);
+      console.log(`Syncing subscription for user ${userId}. Event: ${event.type}`);
 
-      const planType = session.metadata?.planType;
+      const planType = session.metadata?.planType || (subscriptionId ? 'monthly' : 'lifetime');
 
       const updateData: any = { 
         user_id: userId, 
         is_premium: status === 'active' || status === 'trialing' || !status,
         stripe_customer_id: session.customer as string,
-        plan_type: planType // 'monthly' 또는 'lifetime' 저장
+        plan_type: planType
       };
 
       if (subscriptionId) {
@@ -88,7 +88,8 @@ export async function POST(req: Request) {
         updateData.subscription_status = status;
         updateData.current_period_end = currentPeriodEnd;
         updateData.cancel_at_period_end = cancelAtPeriodEnd;
-        // 구독이 취소되거나 만료된 경우 처리
+        
+        // 구독 상태가 active가 아니더라도, 기간이 남았다면 프리미엄 유지
         if (status === 'canceled' || status === 'incomplete_expired') {
           updateData.is_premium = false;
         }
