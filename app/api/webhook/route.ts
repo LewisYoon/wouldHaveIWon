@@ -90,18 +90,21 @@ export async function POST(req: Request) {
         try {
           const sub = await stripe.subscriptions.retrieve(subscriptionId) as any;
           if (sub) {
+            // 디버깅을 위한 전체 키 출력
+            addLog(`Sub object keys: ${Object.keys(sub).join(', ')}`);
+            
             userId = userId || sub.metadata?.userId;
             planType = planType || sub.metadata?.planType;
             status = sub.status;
             
-            // 날짜 변환 안정화
-            const periodEnd = sub.current_period_end;
+            // 날짜 변환 안정화 (다양한 접근 방식 시도)
+            const periodEnd = sub.current_period_end || sub['current_period_end'];
             if (periodEnd) {
-              currentPeriodEnd = new Date(periodEnd * 1000).toISOString();
+              currentPeriodEnd = new Date(Number(periodEnd) * 1000).toISOString();
             }
-            cancelAtPeriodEnd = sub.cancel_at_period_end === true;
+            cancelAtPeriodEnd = (sub.cancel_at_period_end === true || sub['cancel_at_period_end'] === true);
             
-            addLog(`Fetched: Status=${status}, Expiry=${currentPeriodEnd}, CancelAtEnd=${cancelAtPeriodEnd}, RawPeriodEnd=${periodEnd}`);
+            addLog(`Fetched details: Status=${status}, Expiry=${currentPeriodEnd}, CancelAtEnd=${cancelAtPeriodEnd}`);
           }
         } catch (subErr: any) {
           addLog(`Sub Fetch Error: ${subErr.message}`);
