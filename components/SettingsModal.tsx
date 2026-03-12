@@ -204,12 +204,13 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
 
         <div className="p-8 bg-gray-50 dark:bg-white/5 text-center flex-shrink-0 border-t border-gray-100 dark:border-white/5 space-y-4">
           {isPremium && (
-            <button 
-              onClick={manageSubscription}
+            <Link 
+              href="/dashboard/billing/"
+              onClick={onClose}
               className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest hover:underline cursor-pointer block w-full mb-2"
             >
               Manage Billing & Subscription
-            </button>
+            </Link>
           )}
           <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-relaxed">
             Preferences are synced across all your devices.
