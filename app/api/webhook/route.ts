@@ -21,51 +21,61 @@ export async function POST(req: Request) {
   let event: Stripe.Event;
 
   try {
-    event = stripe.webhooks.constructEvent(body, signature, webhookSecret || '');
+    if (!webhookSecret) {
+      throw new Error("STRIPE_WEBHOOK_SECRET is not set in environment variables.");
+    }
+    event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret);
     console.log(`Webhook Event Verified: ${event.type}`);
   } catch (err: any) {
-    console.error(`Webhook signature verification failed: ${err.message}`);
-    return NextResponse.json({ error: `Webhook Error: ${err.message}` }, { status: 400 });
+    console.error(`Webhook verification failed: ${err.message}`);
+    return NextResponse.json({ error: `Verification Error: ${err.message}` }, { status: 400 });
   }
 
   // Handle the event
   if (event.type === 'checkout.session.completed' || event.type === 'invoice.payment_succeeded') {
     const session = event.data.object as any;
     
-    // session.metadata.userId 가 있는 경우 (단건 결제 또는 구독 시작)
-    // 혹은 session.subscription (구독 갱신) 처리
     let userId = session.metadata?.userId;
 
-    // 만약 인보이스 성공 이벤트인데 메타데이터가 없다면, 고객 정보를 통해 유저를 찾아야 할 수도 있음
     if (!userId && session.customer) {
       console.log(`Looking up user by customer ID: ${session.customer}`);
-      const { data: userData } = await supabase
+      const { data: userData, error: userError } = await supabase
         .from('user_preferences')
         .select('user_id')
         .eq('stripe_customer_id', session.customer)
         .maybeSingle();
+      
+      if (userError) {
+        console.error("User lookup error:", userError.message);
+      }
       userId = userData?.user_id;
     }
 
     if (userId) {
-      console.log(`Processing premium for user: ${userId}`);
+      console.log(`Upgrading user ${userId} to PRO...`);
 
-      const { error: prefError } = await supabase
-        .from('user_preferences')
-        .upsert({ 
-          user_id: userId, 
-          is_premium: true,
-          stripe_customer_id: session.customer as string
-        }, { onConflict: 'user_id' });
+      // Try-catch for the database update to see specific DB errors
+      try {
+        const { error: prefError } = await supabase
+          .from('user_preferences')
+          .upsert({ 
+            user_id: userId, 
+            is_premium: true,
+            stripe_customer_id: session.customer as string
+          }, { onConflict: 'user_id' });
 
-      if (prefError) {
-        console.error('Database Update Failed:', prefError.message);
-        return NextResponse.json({ error: 'DB Update Failed' }, { status: 500 });
+        if (prefError) {
+          throw new Error(`Supabase Upsert Error: ${prefError.message}`);
+        }
+
+        console.log(`User ${userId} successfully upgraded to PRO.`);
+      } catch (dbErr: any) {
+        console.error('Database Operation Failed:', dbErr.message);
+        return NextResponse.json({ error: `Database Error: ${dbErr.message}` }, { status: 500 });
       }
-
-      console.log(`User ${userId} successfully upgraded to PRO.`);
     } else {
-      console.warn('Webhook received but no User ID found in metadata or DB.');
+      console.warn('No User ID found for session:', session.id);
+      return NextResponse.json({ error: 'No User ID found' }, { status: 400 });
     }
   }
 
