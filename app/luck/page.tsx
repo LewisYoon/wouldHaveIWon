@@ -401,76 +401,29 @@ export default function LuckPage() {
         {/* Right Column */}
         <div className="lg:col-span-7 space-y-8 sm:space-y-10 animate-in fade-in slide-in-from-right-8 duration-1000 text-left">
           
-          {/* Auto-Tracker Feature Card - Moved to the top of History Column */}
-          <div className={`rounded-[2rem] sm:rounded-[3rem] p-6 sm:p-10 border border-gray-100 dark:border-white/5 shadow-xl relative overflow-hidden transition-all duration-500 ${!isPremium ? 'bg-gray-50/50 dark:bg-white/5 grayscale-[0.5]' : 'bg-white dark:bg-gray-900 border-amber-100 dark:border-amber-500/20 shadow-amber-500/5'}`}>
+          {/* Auto-Tracker Feature Card */}
+          <div className={`rounded-[2rem] sm:rounded-[3rem] p-6 sm:p-10 border border-gray-100 dark:border-white/5 shadow-xl relative overflow-hidden transition-all duration-500 ${!isPremium ? 'bg-gray-50/50 dark:bg-white/5 grayscale-[0.5]' : 'bg-white dark:bg-gray-900'}`}>
             <div className="flex justify-between items-start mb-6 sm:mb-8">
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <h3 className="text-lg sm:text-xl font-black text-gray-900 dark:text-white uppercase tracking-tighter italic">Auto-Tracker</h3>
                   <span className="text-[8px] font-black bg-amber-400 text-amber-950 px-1.5 py-0.5 rounded-md">PRO</span>
                 </div>
-                <p className="text-[10px] sm:text-xs font-medium text-gray-500 dark:text-gray-400">Set it and forget it. We'll track for you.</p>
+                <p className="text-[10px] sm:text-xs font-bold text-gray-400 dark:text-gray-500 leading-relaxed italic">
+                  Set per-game quantities in Settings. We'll handle the rest.
+                </p>
               </div>
               
-              {isPremium ? (
-                <button 
-                  onClick={() => handleUpdateAutoTrack({ enabled: !autoTrackPrefs.enabled })}
-                  disabled={isUpdatingPrefs}
-                  className={`w-12 h-7 sm:w-14 sm:h-8 rounded-full transition-colors relative flex-shrink-0 ${autoTrackPrefs.enabled ? 'bg-amber-500' : 'bg-gray-200 dark:bg-gray-800'}`}
-                >
-                  <div className={`absolute top-1 left-1 w-5 h-5 sm:w-6 sm:h-6 bg-white rounded-full transition-transform shadow-sm ${autoTrackPrefs.enabled ? 'translate-x-5 sm:translate-x-6' : 'translate-x-0'}`} />
-                </button>
+              {!isPremium ? (
+                <Link href="/premium/" className="flex-shrink-0 bg-amber-400 text-amber-950 px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-amber-500 hover:text-white transition-all shadow-sm">Upgrade</Link>
               ) : (
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-100 dark:bg-white/5 rounded-2xl flex items-center justify-center text-gray-400 border border-gray-200 dark:border-white/10">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                </div>
+                <button onClick={() => setIsSettingsOpen(true)} className="flex-shrink-0 bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-300 px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-gray-200 dark:hover:bg-white/10 transition-all">Configure</button>
               )}
             </div>
 
-            {isPremium ? (
-              <div className="space-y-6 animate-in slide-in-from-top-2 duration-500">
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center px-1">
-                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Tickets per Draw</label>
-                    <span className="text-sm font-black text-amber-600 dark:text-amber-400">{autoTrackPrefs.qty}</span>
-                  </div>
-                  <input 
-                    type="range" 
-                    min="1" 
-                    max="1000" 
-                    step="1"
-                    value={autoTrackPrefs.qty} 
-                    onChange={(e) => handleUpdateAutoTrack({ qty: parseInt(e.target.value) })}
-                    className="w-full accent-amber-500 h-1.5 bg-gray-100 dark:bg-white/5 rounded-full appearance-none cursor-pointer"
-                  />
-                  <div className="flex justify-between text-[8px] font-black text-gray-300 uppercase tracking-tighter">
-                    <span>1 Ticket</span>
-                    <span>500</span>
-                    <span>1,000 Tickets</span>
-                  </div>
-                </div>
-                <div className="p-4 bg-amber-50 dark:bg-amber-500/5 rounded-2xl border border-amber-100 dark:border-amber-500/10">
-                  <p className="text-[10px] text-amber-700 dark:text-amber-400 font-medium leading-relaxed italic">
-                    Our system will automatically generate <strong>{autoTrackPrefs.qty} tickets</strong> for every new Oz Lotto, Powerball, and Tatts Lotto draw.
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="h-1.5 bg-gray-100 dark:bg-white/5 rounded-full w-full overflow-hidden">
-                  <div className="h-full bg-gray-200 dark:bg-white/10 w-1/3" />
-                </div>
-                <p className="text-[10px] sm:text-xs font-bold text-gray-400 dark:text-gray-500 leading-relaxed italic">
-                  Automatically generate up to 1,000 tickets per draw without lifting a finger. PRO members never miss a chance to win.
-                </p>
-                <Link 
-                  href="/premium/"
-                  className="w-full py-4 bg-indigo-600 text-white font-black uppercase text-xs tracking-widest rounded-2xl shadow-xl shadow-indigo-500/20 hover:bg-indigo-700 transition-all text-center"
-                >
-                  🚀 Upgrade to PRO
-                </Link>
-              </div>
-            )}
+            <div className="h-20 sm:h-24 bg-gray-50 dark:bg-white/5 rounded-2xl flex items-center justify-center">
+              <p className="text-gray-400 font-bold italic text-sm">Configure quantities in Settings</p>
+            </div>
           </div>
 
           <div className="space-y-8 sm:space-y-12">
@@ -631,6 +584,7 @@ export default function LuckPage() {
       </main>
 
       <DivisionRules game={game} isOpen={isRulesModalOpen} onClose={() => setIsRulesModalOpen(false)} />
+      <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
     </div>
   );
 }
