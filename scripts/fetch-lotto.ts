@@ -57,7 +57,8 @@ function generateQuickPick(game: string): number[] {
 }
 
 async function performAutoTrack(draws: any[]) {
-  addLog('Running Auto-Tracker for premium users...');
+  if (!draws.length) return;
+  addLog(`Running Auto-Tracker for ${draws.length} specific draws...`);
   
   const { data: premiumUsers } = await supabase
     .from('user_preferences')
@@ -69,41 +70,18 @@ async function performAutoTrack(draws: any[]) {
     return;
   }
 
-  // Filter draws: Include everything from 2 days ago to 14 days in the future to be safe
-  const now = new Date();
-  const startDate = new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000);
-  const endDate = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
-
-  const relevantDraws = draws.filter(draw => {
-    const drawDate = new Date(draw.draw_date);
-    return drawDate >= startDate && drawDate <= endDate;
-  });
-
-  addLog(`Found ${relevantDraws.length} relevant draws for tracking.`);
-
   for (const user of premiumUsers) {
-    if (!user.auto_track_games) {
-      addLog(`User ${user.user_id} has no auto_track_games config.`);
-      continue;
-    }
+    if (!user.auto_track_games) continue;
 
-    addLog(`Checking user ${user.user_id}. Config: ${JSON.stringify(user.auto_track_games)}`);
-
-    for (const draw of relevantDraws) {
-      // Robust name matching: Normalize both names (remove spaces, lowercase)
+    for (const draw of draws) {
       const normalizedDrawGame = draw.game.replace(/\s/g, '').toLowerCase();
-      
-      // Find matching key in JSON
       const gameKey = Object.keys(user.auto_track_games).find(k => 
         k.replace(/\s/g, '').toLowerCase() === normalizedDrawGame
       );
 
       const quantity = gameKey ? user.auto_track_games[gameKey] : 0;
       
-      if (!quantity || quantity <= 0) {
-        addLog(`Skipping ${draw.game} for user ${user.user_id} (Quantity: ${quantity})`);
-        continue;
-      }
+      if (!quantity || quantity <= 0) continue;
 
       const { data: existingAutoTickets } = await supabase
         .from('tickets')
@@ -115,7 +93,6 @@ async function performAutoTrack(draws: any[]) {
         .limit(1);
 
       if (existingAutoTickets && existingAutoTickets.length > 0) {
-        addLog(`Already auto-tracked ${draw.game} (${draw.draw_date}) for user ${user.user_id}.`);
         continue;
       }
 
@@ -133,17 +110,11 @@ async function performAutoTrack(draws: any[]) {
       
       if (error) {
         if (error.message.includes("is_auto_tracked")) {
-          addLog("WARNING: 'is_auto_tracked' column missing in DB. Retrying without it...");
-          // Retry without the missing column
           const simpleTickets = ticketsToInsert.map(({ is_auto_tracked, ...rest }) => rest);
-          const { error: retryError } = await supabase.from('tickets').insert(simpleTickets);
-          if (retryError) {
-            console.error(`Retry failed:`, retryError.message);
-          } else {
-            addLog(`SUCCESS: Auto-tracked ${quantity} tickets (without flag).`);
-          }
+          await supabase.from('tickets').insert(simpleTickets);
+          addLog(`SUCCESS: Auto-tracked ${quantity} tickets (no flag).`);
         } else {
-          console.error(`Auto-track insert error for user ${user.user_id}:`, error.message);
+          console.error(`Auto-track insert error:`, error.message);
         }
       } else {
         addLog(`SUCCESS: Auto-tracked ${quantity} tickets.`);
@@ -405,6 +376,9 @@ async function fetchGame(game: 'OzLotto' | 'Powerball' | 'TattsLotto') {
       prizes: prizes,
     });
 
+    // 오직 방금 가져온 이 회차 결과에 대해서만 티켓 생성 (Auto-Track)
+    await performAutoTrack([{ game: displayName, draw_date: drawDate }]);
+
     await supabase.from('upcoming_draws').delete().eq('game', displayName).eq('draw_number', drawNumber);
     await notifyUsers(displayName, drawDate, latest.PrimaryNumbers, latest.SecondaryNumbers, prizes);
 
@@ -414,8 +388,7 @@ async function fetchGame(game: 'OzLotto' | 'Powerball' | 'TattsLotto') {
 }
 
 async function run() {
-  const upcoming = await fetchUpcomingDraws();
-  if (upcoming) await performAutoTrack(upcoming);
+  await fetchUpcomingDraws();
   
   await fetchGame('OzLotto');
   await fetchGame('Powerball');
