@@ -171,18 +171,48 @@ export default function LuckPage() {
 
   useEffect(() => {
     const loadTickets = async () => {
+      if (!user) return;
+      
       setIsDataLoading(true);
+      console.log(`Fetching tickets for ${user.id} - ${game}`);
+      
+      try {
+        const { data, error } = await supabase
+          .from('tickets')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('game', game)
+          .order('draw_date', { ascending: false });
+
+        if (error) throw error;
+
+        console.log(`Fetched ${data?.length || 0} tickets`);
+        if (data) {
+          setMyTickets(data.map(t => ({ 
+            id: t.id, 
+            drawDate: t.draw_date, 
+            numbers: t.numbers, 
+            game: t.game 
+          })));
+        }
+      } catch (err: any) {
+        console.error("Error loading tickets:", err.message);
+      } finally {
+        setIsDataLoading(false);
+      }
+    };
+    
+    if (!isAuthLoading) {
       if (user) {
-        const { data } = await supabase.from('tickets').select('*').eq('game', game).order('created_at', { ascending: false });
-        if (data) setMyTickets(data.map(t => ({ id: t.id, drawDate: t.draw_date, numbers: t.numbers, game: t.game })));
+        loadTickets();
       } else {
+        // Handle anonymous user history
         const stored = localStorage.getItem(`luckTickets_${game.replace(/\s/g, '')}`);
         if (stored) setMyTickets(JSON.parse(stored));
         else setMyTickets([]);
+        setIsDataLoading(false);
       }
-      setIsDataLoading(false);
-    };
-    if (!isAuthLoading) loadTickets();
+    }
   }, [user, isAuthLoading, game]);
 
   useEffect(() => {
