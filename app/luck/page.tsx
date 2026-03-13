@@ -6,6 +6,7 @@ import Navbar from '../../components/Navbar';
 import LottoLinePicker from '../../components/LottoLinePicker';
 import DivisionRules from '../../components/DivisionRules';
 import Countdown from '../../components/Countdown';
+import SettingsModal from '../../components/SettingsModal';
 import { getNextDrawDates, compareNumbers, generateQuickPick } from '../../lib/lotto-utils';
 import { supabase } from '../../lib/supabase';
 import Link from 'next/link';
@@ -30,8 +31,10 @@ const TICKET_COST = 1.45;
 const FREE_TICKET_LIMIT = 25;
 
 export default function LuckPage() {
-  const { user, isPremium, isLoading: isAuthLoading, upgradeToPro } = useAuth();
+  const { user, isPremium, isLoading: isAuthLoading } = useAuth();
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [game, setGame] = useState<'Oz Lotto' | 'Powerball' | 'Tatts Lotto'>('Oz Lotto');
+
   const upcomingDates = useMemo(() => getNextDrawDates(5, game), [game]);
   const [selectedDate, setSelectedDate] = useState(upcomingDates[0]);
   const [currentNumbers, setCurrentNumbers] = useState<number[]>([]);
@@ -43,10 +46,6 @@ export default function LuckPage() {
   const [isDataLoading, setIsDataLoading] = useState(true);
   const [isRulesModalOpen, setIsRulesModalOpen] = useState(false);
   const [selectedJackpot, setSelectedJackpot] = useState<number | null>(null);
-
-  // Auto-Tracker State
-  const [autoTrackPrefs, setAutoTrackPrefs] = useState({ enabled: false, qty: 0 });
-  const [isUpdatingPrefs, setIsUpdatingPrefs] = useState(false);
 
   // Branding Helpers
   const isOz = game === 'Oz Lotto';
@@ -106,31 +105,6 @@ export default function LuckPage() {
     };
     loadLedger();
   }, []);
-
-  useEffect(() => {
-    const fetchPrefs = async (retryCount = 0) => {
-      if (!user) return;
-      
-      const { data, error } = await supabase
-        .from('user_preferences')
-        .select('is_auto_track_enabled, auto_track_qty')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (error || !data) {
-        if (retryCount < 1) {
-          await new Promise(resolve => setTimeout(resolve, 500));
-          return fetchPrefs(retryCount + 1);
-        }
-        return;
-      }
-
-      if (data) {
-        setAutoTrackPrefs({ enabled: data.is_auto_track_enabled ?? false, qty: data.auto_track_qty ?? 0 });
-      }
-    };
-    if (!isAuthLoading) fetchPrefs();
-  }, [user, isAuthLoading]);
 
   useEffect(() => {
     const fetchJackpot = async () => {
@@ -199,20 +173,6 @@ export default function LuckPage() {
     });
     return groups;
   }, [myTickets]);
-
-  const handleUpdateAutoTrack = useCallback(async (updates: Partial<{ enabled: boolean, qty: number }>) => {
-    if (!user || !isPremium) return;
-    const next = { ...autoTrackPrefs, ...updates };
-    setAutoTrackPrefs(next);
-    setIsUpdatingPrefs(true);
-    const { error } = await supabase.from('user_preferences').upsert({
-      user_id: user.id,
-      is_auto_track_enabled: next.enabled,
-      auto_track_qty: next.qty
-    });
-    if (error) console.error("Error updating auto-track preferences:", error.message);
-    setIsUpdatingPrefs(false);
-  }, [user, isPremium, autoTrackPrefs]);
 
   const handleSaveTicket = async () => {
     const required = game === 'Oz Lotto' ? 7 : game === 'Powerball' ? 8 : 6;

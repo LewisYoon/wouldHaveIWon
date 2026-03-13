@@ -8,8 +8,7 @@ import { supabase } from '../lib/supabase';
 interface UserPreferences {
   email_notifications: boolean;
   email_results: boolean;
-  auto_track_qty: number;
-  is_auto_track_enabled: boolean;
+  auto_track_games: { [key: string]: number };
 }
 
 export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
@@ -17,8 +16,7 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
   const [prefs, setPreferences] = useState<UserPreferences>({
     email_notifications: true,
     email_results: true,
-    auto_track_qty: 0,
-    is_auto_track_enabled: false,
+    auto_track_games: {},
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -33,7 +31,7 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
     setIsLoading(true);
     const { data, error } = await supabase
       .from('user_preferences')
-      .select('email_notifications, email_results, auto_track_qty, is_auto_track_enabled')
+      .select('email_notifications, email_results, auto_track_games')
       .eq('user_id', user?.id)
       .maybeSingle();
 
@@ -41,8 +39,7 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
       setPreferences({
         email_notifications: data.email_notifications ?? true,
         email_results: data.email_results ?? true,
-        auto_track_qty: data.auto_track_qty ?? 0,
-        is_auto_track_enabled: data.is_auto_track_enabled ?? false
+        auto_track_games: data.auto_track_games || {},
       });
     } else if (error) {
       console.error('Error fetching preferences:', error.message);
@@ -149,36 +146,37 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
                   </div>
                 )}
 
-                <div className="flex items-center justify-between">
+                <div className="space-y-4">
                   <div className="text-left pr-4">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex items-center gap-2">
                       <h3 className="font-black text-gray-900 dark:text-white uppercase tracking-tight text-base">Auto-Tracker</h3>
                       <span className="text-[8px] font-black bg-amber-400 text-amber-950 px-1.5 py-0.5 rounded-md">PRO</span>
                     </div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">Automatically track every new game.</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 font-medium mt-1">Automatically track new games. Set ticket quantities per game.</p>
                   </div>
-                  <button 
-                    onClick={() => isPremium && handleUpdate('is_auto_track_enabled', !prefs.is_auto_track_enabled)}
-                    disabled={isSubmitting || !isPremium}
-                    className={`w-14 h-8 rounded-full transition-colors relative flex-shrink-0 ${prefs.is_auto_track_enabled ? 'bg-amber-500' : 'bg-gray-200 dark:bg-gray-800'}`}
-                  >
-                    <div className={`absolute top-1 left-1 w-6 h-6 bg-white rounded-full transition-transform shadow-sm ${prefs.is_auto_track_enabled ? 'translate-x-6' : 'translate-x-0'}`} />
-                  </button>
                 </div>
 
-                {isPremium && prefs.is_auto_track_enabled && (
-                  <div className="space-y-4 animate-in slide-in-from-top-2 duration-300">
-                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest text-left">Tickets per draw: {prefs.auto_track_qty}</label>
-                    <input 
-                      type="range" 
-                      min="1" 
-                      max="50" 
-                      value={prefs.auto_track_qty} 
-                      onChange={(e) => handleUpdate('auto_track_qty', parseInt(e.target.value))}
-                      className="w-full accent-amber-500 h-1.5 bg-gray-100 dark:bg-white/5 rounded-full appearance-none cursor-pointer"
-                    />
-                    <p className="text-[10px] text-gray-400 font-medium italic text-left">
-                      Our systems will generate random tickets for you as soon as new draws are announced.
+                {isPremium && (
+                  <div className="space-y-6 animate-in slide-in-from-top-2 duration-300">
+                    {['Oz Lotto', 'Powerball', 'Tatts Lotto'].map(game => (
+                      <div key={game}>
+                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest text-left mb-3">{game}: {prefs.auto_track_games?.[game] || 0} Tickets</label>
+                        <input 
+                          type="range" 
+                          min="0" 
+                          max="50" 
+                          step="5"
+                          value={prefs.auto_track_games?.[game] || 0} 
+                          onChange={(e) => {
+                            const newGames = { ...prefs.auto_track_games, [game]: parseInt(e.target.value) };
+                            handleUpdate('auto_track_games', newGames);
+                          }}
+                          className="w-full accent-amber-500 h-1.5 bg-gray-100 dark:bg-white/5 rounded-full appearance-none cursor-pointer"
+                        />
+                      </div>
+                    ))}
+                    <p className="text-[10px] text-gray-400 font-medium italic text-left pt-2">
+                      Set to 0 to disable for a specific game.
                     </p>
                   </div>
                 )}

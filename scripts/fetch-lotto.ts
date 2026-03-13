@@ -61,14 +61,15 @@ async function performAutoTrack(draws: any[]) {
   
   const { data: premiumUsers } = await supabase
     .from('user_preferences')
-    .select('user_id, auto_track_qty')
-    .eq('is_premium', true)
-    .eq('is_auto_track_enabled', true)
-    .gt('auto_track_qty', 0);
+    .select('user_id, auto_track_games')
+    .eq('is_premium', true);
 
-  if (!premiumUsers?.length) return;
+  if (!premiumUsers?.length) {
+    console.log('No premium users to track.');
+    return;
+  }
 
-  // Filter draws to only include those within a reasonable window (e.g., last 7 days to next 7 days)
+  // Filter draws to only include those within a reasonable window
   const now = new Date();
   const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
   const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
@@ -79,13 +80,17 @@ async function performAutoTrack(draws: any[]) {
   });
 
   if (relevantDraws.length === 0) {
-    console.log('No relevant draws within the 14-day window for auto-tracking.');
+    console.log('No relevant draws for auto-tracking.');
     return;
   }
 
   for (const user of premiumUsers) {
+    if (!user.auto_track_games) continue;
+
     for (const draw of relevantDraws) {
-      // Check if we already auto-tracked this specific draw for this user
+      const quantity = user.auto_track_games[draw.game];
+      if (!quantity || quantity <= 0) continue;
+
       const { data: existingAutoTickets } = await supabase
         .from('tickets')
         .select('id')
@@ -96,11 +101,11 @@ async function performAutoTrack(draws: any[]) {
         .limit(1);
 
       if (existingAutoTickets && existingAutoTickets.length > 0) {
-        console.log(`Skipping: Already auto-tracked ${draw.game} (${draw.draw_date}) for user ${user.user_id}`);
+        console.log(`Skipping: Already auto-tracked ${draw.game} for user ${user.user_id}`);
         continue;
       }
 
-      const newTickets = Array.from({ length: user.auto_track_qty }, () => ({
+      const newTickets = Array.from({ length: quantity }, () => ({
         user_id: user.user_id,
         game: draw.game,
         draw_date: draw.draw_date,
@@ -112,7 +117,7 @@ async function performAutoTrack(draws: any[]) {
       if (error) {
         console.error(`Auto-track insert error for user ${user.user_id}:`, error.message);
       } else {
-        console.log(`Auto-tracked ${user.auto_track_qty} tickets for user ${user.user_id} (${draw.game} - ${draw.draw_date})`);
+        console.log(`Auto-tracked ${quantity} tickets for user ${user.user_id} (${draw.game} - ${draw.draw_date})`);
       }
     }
   }
