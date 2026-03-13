@@ -47,6 +47,10 @@ export default function LuckPage() {
   const [isRulesModalOpen, setIsRulesModalOpen] = useState(false);
   const [selectedJackpot, setSelectedJackpot] = useState<number | null>(null);
 
+  // Auto-Tracker State (Per-game)
+  const [autoTrackGames, setAutoTrackGames] = useState<{ [key: string]: number }>({});
+  const [isUpdatingPrefs, setIsUpdatingPrefs] = useState(false);
+
   // Branding Helpers
   const isOz = game === 'Oz Lotto';
   const isTatts = game === 'Tatts Lotto';
@@ -105,6 +109,37 @@ export default function LuckPage() {
     };
     loadLedger();
   }, []);
+
+  useEffect(() => {
+    const fetchPrefs = async () => {
+      if (!user) return;
+      const { data } = await supabase
+        .from('user_preferences')
+        .select('auto_track_games')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      if (data?.auto_track_games) {
+        setAutoTrackGames(data.auto_track_games);
+      }
+    };
+    if (!isAuthLoading) fetchPrefs();
+  }, [user, isAuthLoading]);
+
+  const handleUpdateAutoTrack = async (gameName: string, qty: number) => {
+    if (!user || !isPremium) return;
+    
+    const newGames = { ...autoTrackGames, [gameName]: qty };
+    setAutoTrackGames(newGames);
+    setIsUpdatingPrefs(true);
+    
+    const { error } = await supabase.from('user_preferences').upsert({
+      user_id: user.id,
+      auto_track_games: newGames
+    });
+    
+    if (error) console.error("Error updating auto-track:", error.message);
+    setIsUpdatingPrefs(false);
+  };
 
   useEffect(() => {
     const fetchJackpot = async () => {
@@ -357,7 +392,7 @@ export default function LuckPage() {
               <div className="bg-gradient-to-r from-amber-500 to-orange-600 p-6 rounded-[2rem] text-white shadow-xl mb-8">
                 <p className="font-black uppercase tracking-widest text-xs mb-2">Draw Limit Reached! 🚀</p>
                 <p className="text-sm font-bold opacity-90 mb-4">You are tracking {FREE_TICKET_LIMIT} tickets for this draw. Upgrade to PRO for unlimited tracking and advanced analytics.</p>
-                <Link href="/dashboard" className="inline-block bg-white text-orange-600 px-6 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-orange-50 transition-all">Upgrade Now</Link>
+                <Link href="/premium" className="inline-block bg-white text-orange-600 px-6 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-orange-50 transition-all">Upgrade Now</Link>
               </div>
             )}
 
