@@ -121,7 +121,7 @@ async function performAutoTrack(draws: any[]) {
 
       addLog(`Generating ${quantity} tickets for ${draw.game} (${draw.draw_date}) for user ${user.user_id}...`);
 
-      const newTickets = Array.from({ length: quantity }, () => ({
+      const ticketsToInsert = Array.from({ length: quantity }, () => ({
         user_id: user.user_id,
         game: draw.game,
         draw_date: draw.draw_date,
@@ -129,9 +129,22 @@ async function performAutoTrack(draws: any[]) {
         is_auto_tracked: true
       }));
 
-      const { error } = await supabase.from('tickets').insert(newTickets);
+      const { error } = await supabase.from('tickets').insert(ticketsToInsert);
+      
       if (error) {
-        console.error(`Auto-track insert error for user ${user.user_id}:`, error.message);
+        if (error.message.includes("is_auto_tracked")) {
+          addLog("WARNING: 'is_auto_tracked' column missing in DB. Retrying without it...");
+          // Retry without the missing column
+          const simpleTickets = ticketsToInsert.map(({ is_auto_tracked, ...rest }) => rest);
+          const { error: retryError } = await supabase.from('tickets').insert(simpleTickets);
+          if (retryError) {
+            console.error(`Retry failed:`, retryError.message);
+          } else {
+            addLog(`SUCCESS: Auto-tracked ${quantity} tickets (without flag).`);
+          }
+        } else {
+          console.error(`Auto-track insert error for user ${user.user_id}:`, error.message);
+        }
       } else {
         addLog(`SUCCESS: Auto-tracked ${quantity} tickets.`);
       }
