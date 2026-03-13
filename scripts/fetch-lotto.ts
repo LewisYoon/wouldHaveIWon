@@ -57,7 +57,7 @@ function generateQuickPick(game: string): number[] {
 }
 
 async function performAutoTrack(draws: any[]) {
-  console.log('Running Auto-Tracker for premium users...');
+  addLog('Running Auto-Tracker for premium users...');
   
   const { data: premiumUsers } = await supabase
     .from('user_preferences')
@@ -65,31 +65,45 @@ async function performAutoTrack(draws: any[]) {
     .eq('is_premium', true);
 
   if (!premiumUsers?.length) {
-    console.log('No premium users to track.');
+    addLog('No premium users found for auto-tracking.');
     return;
   }
 
-  // Filter draws to only include those within a reasonable window
+  // Filter draws: Include everything from 2 days ago to 14 days in the future to be safe
   const now = new Date();
-  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-  const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+  const startDate = new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000);
+  const endDate = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
 
   const relevantDraws = draws.filter(draw => {
     const drawDate = new Date(draw.draw_date);
-    return drawDate >= sevenDaysAgo && drawDate <= sevenDaysFromNow;
+    return drawDate >= startDate && drawDate <= endDate;
   });
 
-  if (relevantDraws.length === 0) {
-    console.log('No relevant draws for auto-tracking.');
-    return;
-  }
+  addLog(`Found ${relevantDraws.length} relevant draws for tracking.`);
 
   for (const user of premiumUsers) {
-    if (!user.auto_track_games) continue;
+    if (!user.auto_track_games) {
+      addLog(`User ${user.user_id} has no auto_track_games config.`);
+      continue;
+    }
+
+    addLog(`Checking user ${user.user_id}. Config: ${JSON.stringify(user.auto_track_games)}`);
 
     for (const draw of relevantDraws) {
-      const quantity = user.auto_track_games[draw.game];
-      if (!quantity || quantity <= 0) continue;
+      // Robust name matching: Normalize both names (remove spaces, lowercase)
+      const normalizedDrawGame = draw.game.replace(/\s/g, '').toLowerCase();
+      
+      // Find matching key in JSON
+      const gameKey = Object.keys(user.auto_track_games).find(k => 
+        k.replace(/\s/g, '').toLowerCase() === normalizedDrawGame
+      );
+
+      const quantity = gameKey ? user.auto_track_games[gameKey] : 0;
+      
+      if (!quantity || quantity <= 0) {
+        addLog(`Skipping ${draw.game} for user ${user.user_id} (Quantity: ${quantity})`);
+        continue;
+      }
 
       const { data: existingAutoTickets } = await supabase
         .from('tickets')
@@ -101,9 +115,11 @@ async function performAutoTrack(draws: any[]) {
         .limit(1);
 
       if (existingAutoTickets && existingAutoTickets.length > 0) {
-        console.log(`Skipping: Already auto-tracked ${draw.game} for user ${user.user_id}`);
+        addLog(`Already auto-tracked ${draw.game} (${draw.draw_date}) for user ${user.user_id}.`);
         continue;
       }
+
+      addLog(`Generating ${quantity} tickets for ${draw.game} (${draw.draw_date}) for user ${user.user_id}...`);
 
       const newTickets = Array.from({ length: quantity }, () => ({
         user_id: user.user_id,
@@ -117,10 +133,15 @@ async function performAutoTrack(draws: any[]) {
       if (error) {
         console.error(`Auto-track insert error for user ${user.user_id}:`, error.message);
       } else {
-        console.log(`Auto-tracked ${quantity} tickets for user ${user.user_id} (${draw.game} - ${draw.draw_date})`);
+        addLog(`SUCCESS: Auto-tracked ${quantity} tickets.`);
       }
     }
   }
+}
+
+// Global logging helper for the script
+function addLog(msg: string) {
+  console.log(`[${new Date().toISOString()}] ${msg}`);
 }
 
 // Global cache for upcoming jackpot amounts
