@@ -309,10 +309,10 @@ async function fetchUpcomingDraws() {
       await supabase.from('upcoming_draws').upsert(draw, { onConflict: 'game,draw_number' });
     }
 
-    // Trigger auto-tracking for premium users
-    await performAutoTrack(upcomingToStore);
+    return upcomingToStore;
   } catch (error: any) {
     console.error('Upcoming Draw Sync Error:', error.message);
+    return null;
   }
 }
 
@@ -371,9 +371,6 @@ async function fetchGame(game: 'OzLotto' | 'Powerball' | 'TattsLotto') {
       prizes: prizes,
     });
 
-    // Ensure tickets are generated for this latest result if missing (Auto-Track)
-    await performAutoTrack([{ game: displayName, draw_date: drawDate }]);
-
     await supabase.from('upcoming_draws').delete().eq('game', displayName).eq('draw_number', drawNumber);
     await notifyUsers(displayName, drawDate, latest.PrimaryNumbers, latest.SecondaryNumbers, prizes);
 
@@ -383,7 +380,9 @@ async function fetchGame(game: 'OzLotto' | 'Powerball' | 'TattsLotto') {
 }
 
 async function run() {
-  await fetchUpcomingDraws();
+  const upcoming = await fetchUpcomingDraws();
+  if (upcoming) await performAutoTrack(upcoming);
+  
   await fetchGame('OzLotto');
   await fetchGame('Powerball');
   await fetchGame('TattsLotto');
