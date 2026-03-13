@@ -438,27 +438,63 @@ export default function LuckPage() {
           
           {/* Auto-Tracker Feature Card */}
           <div className={`rounded-[2rem] sm:rounded-[3rem] p-6 sm:p-10 border border-gray-100 dark:border-white/5 shadow-xl relative overflow-hidden transition-all duration-500 ${!isPremium ? 'bg-gray-50/50 dark:bg-white/5 grayscale-[0.5]' : 'bg-white dark:bg-gray-900'}`}>
-            <div className="flex justify-between items-start mb-6 sm:mb-8">
+            <div className="flex justify-between items-start mb-8 sm:mb-10">
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <h3 className="text-lg sm:text-xl font-black text-gray-900 dark:text-white uppercase tracking-tighter italic">Auto-Tracker</h3>
                   <span className="text-[8px] font-black bg-amber-400 text-amber-950 px-1.5 py-0.5 rounded-md">PRO</span>
                 </div>
-                <p className="text-[10px] sm:text-xs font-bold text-gray-400 dark:text-gray-500 leading-relaxed italic">
-                  Set per-game quantities in Settings. We'll handle the rest.
+                <p className="text-[10px] sm:text-xs font-bold text-gray-400 dark:text-gray-500 leading-relaxed italic text-left">
+                  Automatically track new draws. Set ticket quantities per game.
                 </p>
               </div>
               
-              {!isPremium ? (
+              {!isPremium && (
                 <Link href="/premium/" className="flex-shrink-0 bg-amber-400 text-amber-950 px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-amber-500 hover:text-white transition-all shadow-sm">Upgrade</Link>
-              ) : (
-                <button onClick={() => setIsSettingsOpen(true)} className="flex-shrink-0 bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-300 px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-gray-200 dark:hover:bg-white/10 transition-all">Configure</button>
               )}
             </div>
 
-            <div className="h-20 sm:h-24 bg-gray-50 dark:bg-white/5 rounded-2xl flex items-center justify-center">
-              <p className="text-gray-400 font-bold italic text-sm">Configure quantities in Settings</p>
-            </div>
+            {isPremium ? (
+              <div className="space-y-8 animate-in slide-in-from-top-2 duration-500">
+                {['Oz Lotto', 'Powerball', 'Tatts Lotto'].map((gName) => (
+                  <div key={gName} className="space-y-4">
+                    <div className="flex justify-between items-center px-1">
+                      <label className="text-[9px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">{gName}</label>
+                      <span className="text-xs font-black text-amber-600 dark:text-amber-400">{autoTrackGames[gName] || 0} Tickets</span>
+                    </div>
+                    <input 
+                      type="range" 
+                      min="0" 
+                      max="100" 
+                      step="5"
+                      value={autoTrackGames[gName] || 0} 
+                      onChange={(e) => handleUpdateAutoTrack(gName, parseInt(e.target.value))}
+                      className="w-full accent-amber-500 h-1.5 bg-gray-100 dark:bg-white/5 rounded-full appearance-none cursor-pointer"
+                    />
+                  </div>
+                ))}
+                <div className="p-4 bg-amber-50 dark:bg-amber-500/5 rounded-2xl border border-amber-100 dark:border-amber-500/10">
+                  <p className="text-[9px] text-amber-700 dark:text-amber-400 font-medium leading-relaxed italic text-left">
+                    We will automatically generate random tickets for you as soon as new results are announced. Set to 0 to disable.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="h-1.5 bg-gray-100 dark:bg-white/5 rounded-full w-full overflow-hidden">
+                  <div className="h-full bg-gray-200 dark:bg-white/10 w-1/3" />
+                </div>
+                <p className="text-[10px] sm:text-xs font-bold text-gray-400 dark:text-gray-500 leading-relaxed italic text-left">
+                  PRO members can automatically generate up to 100 tickets per draw without lifting a finger.
+                </p>
+                <Link 
+                  href="/premium/"
+                  className="w-full py-4 bg-indigo-600 text-white font-black uppercase text-xs tracking-widest rounded-2xl shadow-xl shadow-indigo-500/20 hover:bg-indigo-700 transition-all text-center"
+                >
+                  🚀 Get Pro Access
+                </Link>
+              </div>
+            )}
           </div>
 
           <div className="space-y-8 sm:space-y-12">
