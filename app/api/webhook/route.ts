@@ -21,26 +21,17 @@ export async function POST(req: Request) {
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
     if (!stripeSecret || !webhookSecret || !supabaseUrl || !supabaseServiceKey) {
-      const missing = [];
-      if (!stripeSecret) missing.push("STRIPE_SECRET_KEY");
-      if (!webhookSecret) missing.push("STRIPE_WEBHOOK_SECRET");
-      if (!supabaseUrl) missing.push("NEXT_PUBLIC_SUPABASE_URL");
-      if (!supabaseServiceKey) missing.push("SUPABASE_SERVICE_ROLE_KEY");
-      throw new Error(`Missing environment variables: ${missing.join(", ")}`);
+      throw new Error("Missing environment variables.");
     }
 
     const stripe = new Stripe(stripeSecret, {
       apiVersion: '2026-02-25.clover',
     });
-
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const body = await req.text();
     const signature = (await headers()).get('stripe-signature') as string;
 
-    if (!signature) throw new Error("No stripe-signature header found.");
-
-    addLog("Attempting event verification...");
     const event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret);
     addLog(`Verified Event: ${event.type}`);
 
@@ -63,120 +54,101 @@ export async function POST(req: Request) {
       let cancelAtPeriodEnd = false;
       let planType = dataObject.metadata?.planType;
 
-      addLog(`Event ${event.type} for Customer ${customerId}. Initial UserId: ${userId}`);
-
-      // 1. 객체 종류별 ID 및 기본 상태 추출
+      // 1. Extract IDs and initial status
       if (event.type === 'checkout.session.completed') {
         subscriptionId = dataObject.subscription as string;
         status = dataObject.payment_status === 'paid' ? 'active' : 'incomplete';
       } else if (event.type === 'invoice.payment_succeeded') {
         subscriptionId = dataObject.subscription as string;
         status = 'active';
-        // Invoice에서 기간 종료일 추출 (가장 정확함)
-        const lineItem = dataObject.lines?.data?.[0];
-        if (lineItem?.period?.end) {
-          currentPeriodEnd = new Date(lineItem.period.end * 1000).toISOString();
-          addLog(`Extracted Expiry from Invoice: ${currentPeriodEnd}`);
-        }
+        const pEnd = dataObject.lines?.data?.[0]?.period?.end;
+        if (pEnd) currentPeriodEnd = new Date(pEnd * 1000).toISOString();
       } else if (event.type.startsWith('customer.subscription.')) {
         subscriptionId = dataObject.id;
         status = dataObject.status;
-        // 취소 여부 확인 (여러 경로 시도)
-        cancelAtPeriodEnd = dataObject.cancel_at_period_end === true || 
-                            dataObject.cancel_at === true ||
-                            dataObject.cancellation_details?.reason === 'cancellation_requested';
-
-        addLog(`Subscription Event: ${event.type}, CancelFlag: ${cancelAtPeriodEnd}`);
-
+        cancelAtPeriodEnd = dataObject.cancel_at_period_end === true;
+        const pEnd = dataObject.current_period_end || dataObject.cancel_at;
+        if (pEnd) currentPeriodEnd = new Date(pEnd * 1000).toISOString();
         userId = userId || dataObject.metadata?.userId;
         planType = planType || dataObject.metadata?.planType;
-
-        const periodEnd = dataObject.current_period_end || dataObject.trial_end;
-        if (periodEnd) {
-          currentPeriodEnd = new Date(periodEnd * 1000).toISOString();
-        }
       }
 
-      // 2. 구독 정보가 있지만 날짜 정보가 없다면(Session 이벤트 등) Stripe에서 직접 조회
-      if (subscriptionId && !currentPeriodEnd) {
-        addLog(`Fetching details for Subscription: ${subscriptionId}`);
+      // 2. Fetch full details if data is still missing
+      if (subscriptionId && (!currentPeriodEnd || !userId)) {
+        addLog(`Fetching full details for Subscription: ${subscriptionId}`);
         try {
           const sub = await stripe.subscriptions.retrieve(subscriptionId) as any;
-          if (sub) {
-            userId = userId || sub.metadata?.userId;
-            planType = planType || sub.metadata?.planType;
-            status = sub.status;
-            cancelAtPeriodEnd = sub.cancel_at_period_end === true || !!sub.cancel_at;
-
-            const periodEnd = sub.current_period_end || sub.trial_end;
-            if (periodEnd) {
-              currentPeriodEnd = new Date(periodEnd * 1000).toISOString();
-            }
-            addLog(`Fetched from Stripe API: Status=${status}, Expiry=${currentPeriodEnd}, CancelAtEnd=${cancelAtPeriodEnd}`);
-          }
+          userId = userId || sub.metadata?.userId;
+          planType = planType || sub.metadata?.planType;
+          status = status || sub.status;
+          cancelAtPeriodEnd = sub.cancel_at_period_end === true || !!sub.cancel_at;
+          const pEnd = sub.current_period_end || sub.cancel_at || sub.trial_end;
+          if (pEnd) currentPeriodEnd = new Date(pEnd * 1000).toISOString();
+          addLog(`Fetched from API: Status=${status}, Expiry=${currentPeriodEnd}`);
         } catch (subErr: any) {
           addLog(`Sub Fetch Error: ${subErr.message}`);
         }
       }
 
-
-      // 3. UserId가 없다면 DB/Auth 검색 (이전과 동일)
+      // 3. User Resolution Fallbacks
       if (!userId && customerId) {
         const { data: prefData } = await supabase.from('user_preferences').select('user_id, plan_type').eq('stripe_customer_id', customerId).maybeSingle();
         if (prefData) {
           userId = prefData.user_id;
           planType = planType || prefData.plan_type;
-          addLog(`Resolved UserId from DB: ${userId}`);
         }
       }
+      if (!userId && customerEmail) {
+        const { data: authData } = await supabase.auth.admin.listUsers();
+        const userMatch = authData.users.find(u => u.email === customerEmail);
+        if (userMatch) userId = userMatch.id;
+      }
 
-      // 4. 최종 DB 업데이트
+      // 4. Final DB Sync
       if (userId) {
-        addLog(`Preparing to sync for user ${userId}.`);
+        // Check existing record to avoid overwriting with nulls
+        const { data: existing } = await supabase.from('user_preferences').select('*').eq('user_id', userId).maybeSingle();
 
-        // Get existing data first to avoid overwriting with null
-        const { data: existingData } = await supabase
-          .from('user_preferences')
-          .select('*')
-          .eq('user_id', userId)
-          .maybeSingle();
-
-        // Premium 유지 조건: 구독이 활성(active/trialing/past_due)이거나, 취소 예약 상태라도 아직 기간이 남은 경우
-        const isPremium = (status === 'active' || status === 'trialing' || status === 'past_due' || (status === 'canceled' && new Date(currentPeriodEnd || 0) > new Date()));
+        const finalPeriodEnd = currentPeriodEnd || existing?.current_period_end || null;
+        const finalStatus = status || existing?.subscription_status || 'active';
+        
+        // Premium if active OR if it's canceled but the period hasn't ended yet
+        const isPremium = (
+          finalStatus === 'active' || 
+          finalStatus === 'trialing' || 
+          finalStatus === 'past_due' || 
+          (finalPeriodEnd && new Date(finalPeriodEnd) > new Date())
+        );
 
         const upsertData = {
           user_id: userId,
           is_premium: isPremium,
-          stripe_customer_id: customerId,
-          stripe_subscription_id: subscriptionId || existingData?.stripe_subscription_id || null,
-          subscription_status: status || existingData?.subscription_status || null,
-          current_period_end: currentPeriodEnd || existingData?.current_period_end || null,
+          stripe_customer_id: customerId || existing?.stripe_customer_id,
+          stripe_subscription_id: subscriptionId || existing?.stripe_subscription_id || null,
+          subscription_status: finalStatus,
+          current_period_end: finalPeriodEnd,
           cancel_at_period_end: cancelAtPeriodEnd,
-          plan_type: planType || existingData?.plan_type || 'monthly',
+          plan_type: planType || existing?.plan_type || 'monthly',
           updated_at: new Date().toISOString(),
         };
 
-        addLog(`Upserting: ${JSON.stringify(upsertData)}`);
+        addLog(`Upserting Data for ${userId}: ${JSON.stringify(upsertData)}`);
 
         const { error: upsertError } = await supabase
           .from('user_preferences')
           .upsert(upsertData, { onConflict: 'user_id' });
 
-        if (upsertError) throw new Error(`Supabase Upsert Error: ${upsertError.message}`);
+        if (upsertError) throw new Error(`Supabase Error: ${upsertError.message}`);
         addLog(`SUCCESS: Full sync for user ${userId}`);
       } else {
-        addLog(`FATAL: Could not identify user.`);
+        addLog(`FATAL: Could not identify user for Customer ${customerId}`);
       }
     }
 
     return NextResponse.json({ received: true, logs });
 
   } catch (err: any) {
-    console.error("WEBHOOK CRITICAL ERROR:", err.message);
-    return NextResponse.json({ 
-      error: err.message, 
-      stack: err.stack,
-      logs 
-    }, { status: 500 });
+    console.error("WEBHOOK ERROR:", err.message);
+    return NextResponse.json({ error: err.message, logs }, { status: 500 });
   }
 }
