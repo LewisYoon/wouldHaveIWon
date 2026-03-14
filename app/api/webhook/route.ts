@@ -66,7 +66,17 @@ export async function POST(req: Request) {
       } else if (event.type.startsWith('customer.subscription.')) {
         subscriptionId = dataObject.id;
         status = dataObject.status;
-        cancelAtPeriodEnd = dataObject.cancel_at_period_end === true;
+        
+        // [수정] 취소 여부를 판단하는 가장 확실한 3가지 경로 체크
+        cancelAtPeriodEnd = (
+          dataObject.cancel_at_period_end === true || 
+          !!dataObject.cancel_at || 
+          dataObject.cancellation_details?.reason === 'cancellation_requested' ||
+          dataObject.cancellation_details?.feedback === 'customer_service' // 일부 환경 대응
+        );
+        
+        addLog(`Subscription Object Detected. ID: ${subscriptionId}, Status: ${status}, CancelFlag Found: ${cancelAtPeriodEnd}`);
+
         const pEnd = dataObject.current_period_end || dataObject.cancel_at;
         if (pEnd) currentPeriodEnd = new Date(pEnd * 1000).toISOString();
         userId = userId || dataObject.metadata?.userId;
@@ -117,10 +127,13 @@ export async function POST(req: Request) {
         const finalPeriodEnd = currentPeriodEnd || existing?.current_period_end;
         
         // 취소 플래그는 이번 이벤트에서 명시적으로 확인된 값을 최우선 적용
-        // (이벤트가 구독 관련일 경우 cancelAtPeriodEnd는 항상 최신 소스임)
-        const finalCancelAtEnd = (event.type.startsWith('customer.subscription.')) 
-          ? cancelAtPeriodEnd 
-          : (cancelAtPeriodEnd || !!existing?.cancel_at_period_end);
+        let finalCancelAtEnd = existing?.cancel_at_period_end ?? false;
+        if (event.type.startsWith('customer.subscription.') || event.type === 'checkout.session.completed') {
+          finalCancelAtEnd = cancelAtPeriodEnd;
+          addLog(`Overriding CancelFlag with fresh signal: ${finalCancelAtEnd}`);
+        } else if (cancelAtPeriodEnd === true) {
+          finalCancelAtEnd = true;
+        }
 
         const isPremium = (
           finalStatus === 'active' || 
