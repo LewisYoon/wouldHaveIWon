@@ -104,25 +104,24 @@ export async function POST(req: Request) {
         if (userMatch) userId = userMatch.id;
       }
 
-      // 4. Final DB Sync
+      // 4. 최종 DB 업데이트 (데이터 무결성 보장)
       if (userId) {
-        addLog(`Preparing to sync for user ${userId}.`);
+        addLog(`Preparing final sync for user ${userId}. Status: ${status}, CancelAtEnd: ${cancelAtPeriodEnd}`);
 
-        // Get existing data first to avoid overwriting with nulls/defaults
-        const { data: existing } = await supabase
-          .from('user_preferences')
-          .select('*')
-          .eq('user_id', userId)
-          .maybeSingle();
+        // 기존 데이터를 가져오되, 필수 식별 정보(customer_id 등)가 누락된 경우만 활용
+        const { data: existing } = await supabase.from('user_preferences').select('*').eq('user_id', userId).maybeSingle();
 
-        const finalPeriodEnd = currentPeriodEnd || existing?.current_period_end || null;
-        const finalStatus = status || existing?.subscription_status || 'active';
+        // [핵심 로직] Stripe에서 온 값을 최우선으로 하되, 없을 때만 기존 값 유지
+        const finalSubscriptionId = subscriptionId || existing?.stripe_subscription_id;
+        const finalStatus = status || existing?.subscription_status;
+        const finalPeriodEnd = currentPeriodEnd || existing?.current_period_end;
         
-        // 중요: 구독 관련 이벤트가 아니면 기존의 취소 예약 상태를 보존함
-        const isSubscriptionEvent = event.type.startsWith('customer.subscription.') || !!(subscriptionId && !currentPeriodEnd);
-        const finalCancelAtEnd = isSubscriptionEvent ? cancelAtPeriodEnd : (existing?.cancel_at_period_end ?? cancelAtPeriodEnd);
+        // 취소 플래그는 이번 이벤트에서 명시적으로 확인된 값을 최우선 적용
+        // (이벤트가 구독 관련일 경우 cancelAtPeriodEnd는 항상 최신 소스임)
+        const finalCancelAtEnd = (event.type.startsWith('customer.subscription.')) 
+          ? cancelAtPeriodEnd 
+          : (cancelAtPeriodEnd || !!existing?.cancel_at_period_end);
 
-        // Premium if active OR if it's canceled but the period hasn't ended yet
         const isPremium = (
           finalStatus === 'active' || 
           finalStatus === 'trialing' || 
@@ -134,22 +133,22 @@ export async function POST(req: Request) {
           user_id: userId,
           is_premium: isPremium,
           stripe_customer_id: customerId || existing?.stripe_customer_id,
-          stripe_subscription_id: subscriptionId || existing?.stripe_subscription_id || null,
-          subscription_status: finalStatus,
-          current_period_end: finalPeriodEnd,
-          cancel_at_period_end: finalCancelAtEnd, // 수정된 병합 로직 적용
+          stripe_subscription_id: finalSubscriptionId || null,
+          subscription_status: finalStatus || null,
+          current_period_end: finalPeriodEnd || null,
+          cancel_at_period_end: finalCancelAtEnd,
           plan_type: planType || existing?.plan_type || 'monthly',
           updated_at: new Date().toISOString(),
         };
 
-        addLog(`Upserting Data for ${userId}: ${JSON.stringify(upsertData)}`);
+        addLog(`FINAL UPSERT DATA: ${JSON.stringify(upsertData)}`);
 
         const { error: upsertError } = await supabase
           .from('user_preferences')
           .upsert(upsertData, { onConflict: 'user_id' });
 
         if (upsertError) throw new Error(`Supabase Error: ${upsertError.message}`);
-        addLog(`SUCCESS: Full sync for user ${userId}`);
+        addLog(`SUCCESS: Full sync completed for user ${userId}`);
       } else {
         addLog(`FATAL: Could not identify user for Customer ${customerId}`);
       }
