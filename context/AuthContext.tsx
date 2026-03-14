@@ -13,6 +13,7 @@ interface AuthContextType {
     currentPeriodEnd: string | null;
     cancelAtPeriodEnd: boolean;
     planType: string | null;
+    autoTrackGames: { [key: string]: number } | null;
   } | null;
   signIn: (credentials: SignInWithPasswordCredentials) => Promise<{ error: AuthError | null }>;
   signUp: (credentials: SignUpWithPasswordCredentials) => Promise<{ error: AuthError | null }>;
@@ -39,7 +40,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const { data, error } = await supabase
         .from('user_preferences')
-        .select('is_premium, subscription_status, current_period_end, cancel_at_period_end, plan_type')
+        .select('is_premium, subscription_status, current_period_end, cancel_at_period_end, plan_type, auto_track_games')
         .eq('user_id', userId)
         .maybeSingle();
       
@@ -69,7 +70,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           status: data.subscription_status || null,
           currentPeriodEnd: data.current_period_end || null,
           cancelAtPeriodEnd: !!data.cancel_at_period_end,
-          planType: data.plan_type || (isPremiumUser ? 'monthly' : null), // Fallback to monthly if premium but type is missing
+          planType: data.plan_type || (isPremiumUser ? 'monthly' : null),
+          autoTrackGames: data.auto_track_games || null,
         });
       }
  else {

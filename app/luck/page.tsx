@@ -31,7 +31,7 @@ const TICKET_COST = 1.45;
 const FREE_TICKET_LIMIT = 25;
 
 export default function LuckPage() {
-  const { user, isPremium, isLoading: isAuthLoading } = useAuth();
+  const { user, isPremium, isLoading: isAuthLoading, subscriptionInfo, refreshPremiumStatus } = useAuth();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [game, setGame] = useState<'Oz Lotto' | 'Powerball' | 'Tatts Lotto'>('Oz Lotto');
 
@@ -113,6 +113,11 @@ export default function LuckPage() {
   useEffect(() => {
     const fetchPrefs = async () => {
       if (!user) return;
+      
+      if (subscriptionInfo?.autoTrackGames) {
+        setAutoTrackGames(subscriptionInfo.autoTrackGames);
+      }
+
       const { data } = await supabase
         .from('user_preferences')
         .select('auto_track_games')
@@ -123,7 +128,7 @@ export default function LuckPage() {
       }
     };
     if (!isAuthLoading) fetchPrefs();
-  }, [user, isAuthLoading]);
+  }, [user, isAuthLoading, subscriptionInfo]);
 
   const handleUpdateAutoTrack = async (gameName: string, qty: number) => {
     if (!user || !isPremium) return;
@@ -135,9 +140,13 @@ export default function LuckPage() {
     const { error } = await supabase.from('user_preferences').upsert({
       user_id: user.id,
       auto_track_games: newGames
-    });
+    }, { onConflict: 'user_id' });
     
-    if (error) console.error("Error updating auto-track:", error.message);
+    if (error) {
+      console.error("Error updating auto-track:", error.message);
+    } else {
+      refreshPremiumStatus();
+    }
     setIsUpdatingPrefs(false);
   };
 
