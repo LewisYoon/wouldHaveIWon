@@ -9,7 +9,7 @@ import { compareNumbers } from '../../lib/lotto-utils';
 
 const TICKET_COST = 1.45;
 
-export default function DashboardPage() {
+export default function StatsPage() {
   const { user, isLoading: isAuthLoading } = useAuth();
   const [tickets, setTickets] = useState<any[]>([]);
   const [results, setResults] = useState<any[]>([]);
@@ -49,7 +49,7 @@ export default function DashboardPage() {
         setResults(resultsData || []);
         setUpcoming(upcomingData || []);
       } catch (err) {
-        console.error("Dashboard fetch error:", err);
+        console.error("Stats fetch error:", err);
       } finally {
         setIsDataLoading(false);
       }

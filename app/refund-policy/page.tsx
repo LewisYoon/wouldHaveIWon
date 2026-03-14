@@ -28,7 +28,7 @@ export default function RefundPolicy() {
           <section className="mb-12">
             <h3 className="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tight mb-4">2. Subscription Cancellation</h3>
             <p className="text-gray-600 dark:text-gray-400 leading-relaxed mb-4">
-              You may cancel your Monthly PRO subscription at any time through your <a href="/billing" className="text-indigo-500 font-bold underline">Billing Dashboard</a>.
+              You may cancel your Monthly PRO subscription at any time through your <a href="/billing" className="text-indigo-500 font-bold underline">Billing & Plan</a>.
             </p>
             <ul className="list-disc pl-6 text-gray-600 dark:text-gray-400 space-y-2">
               <li>Upon cancellation, you will continue to have access to PRO features until the end of your current billing period.</li>

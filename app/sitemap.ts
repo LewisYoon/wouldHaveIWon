@@ -15,7 +15,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/privacy/',
     '/terms/',
     '/login/',
-    '/dashboard/',
+    '/stats/',
     '/analytics/',
     '/blog/',
     '/blog/mathematics-of-powerball/',

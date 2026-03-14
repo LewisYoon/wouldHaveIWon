@@ -37,7 +37,7 @@ export default function BillingPage() {
             <h2 className="text-indigo-600 dark:text-indigo-400 font-black uppercase tracking-[0.4em] text-[10px] mb-4">Account Management</h2>
             <h1 className="text-5xl sm:text-6xl font-black text-gray-900 dark:text-white uppercase tracking-tighter italic">Billing <span className="text-gray-400">&</span> Plan</h1>
           </div>
-          <Link href="/dashboard" className="text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-indigo-500 transition-colors border-b-2 border-transparent hover:border-indigo-500 pb-1">Back to Stats</Link>
+          <Link href="/stats/" className="text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-indigo-500 transition-colors border-b-2 border-transparent hover:border-indigo-500 pb-1">Back to Stats</Link>
         </div>
 
         {!isPremium ? (

@@ -19,7 +19,7 @@ export default function Navbar() {
     { name: 'Simulator', href: '/simulator/' },
     { name: 'Analytics', href: '/analytics/' },
     { name: 'Hall of Fame', href: '/leaderboard/' },
-    { name: 'Stats', href: '/dashboard/', authOnly: true },
+    { name: 'Stats', href: '/stats/', authOnly: true },
     { name: 'Guides', href: '/blog/' },
   ];
 
