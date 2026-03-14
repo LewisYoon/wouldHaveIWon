@@ -106,12 +106,22 @@ export async function POST(req: Request) {
 
       // 4. Final DB Sync
       if (userId) {
-        // Check existing record to avoid overwriting with nulls
-        const { data: existing } = await supabase.from('user_preferences').select('*').eq('user_id', userId).maybeSingle();
+        addLog(`Preparing to sync for user ${userId}.`);
+
+        // Get existing data first to avoid overwriting with nulls/defaults
+        const { data: existing } = await supabase
+          .from('user_preferences')
+          .select('*')
+          .eq('user_id', userId)
+          .maybeSingle();
 
         const finalPeriodEnd = currentPeriodEnd || existing?.current_period_end || null;
         const finalStatus = status || existing?.subscription_status || 'active';
         
+        // 중요: 구독 관련 이벤트가 아니면 기존의 취소 예약 상태를 보존함
+        const isSubscriptionEvent = event.type.startsWith('customer.subscription.') || !!(subscriptionId && !currentPeriodEnd);
+        const finalCancelAtEnd = isSubscriptionEvent ? cancelAtPeriodEnd : (existing?.cancel_at_period_end ?? cancelAtPeriodEnd);
+
         // Premium if active OR if it's canceled but the period hasn't ended yet
         const isPremium = (
           finalStatus === 'active' || 
@@ -127,7 +137,7 @@ export async function POST(req: Request) {
           stripe_subscription_id: subscriptionId || existing?.stripe_subscription_id || null,
           subscription_status: finalStatus,
           current_period_end: finalPeriodEnd,
-          cancel_at_period_end: cancelAtPeriodEnd,
+          cancel_at_period_end: finalCancelAtEnd, // 수정된 병합 로직 적용
           plan_type: planType || existing?.plan_type || 'monthly',
           updated_at: new Date().toISOString(),
         };
