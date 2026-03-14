@@ -164,11 +164,12 @@ function getEmailTemplate(game: string, drawDate: string, status: { won: boolean
         <div class="header">
           <div style="font-weight: 900; font-size: 22px; color: #14171a; letter-spacing: -0.04em; text-transform: uppercase;">WhatIF<span style="color: ${brandColor};">Lotto</span></div>
         </div>
-        <div class="content">
+        <div className="content">
           <h1>${title}</h1>
           <p>${heroText}</p>
-          <a href="${siteUrl}/luck" class="btn">Check My Numbers</a>
+          <a href="${siteUrl}/luck/?game=${encodeURIComponent(game)}" class="btn">Check My Numbers</a>
         </div>
+
         <div class="footer">
           Sent by WhatIFLotto Australia<br>
           Helping you track your luck, every week.<br><br>
@@ -261,8 +262,8 @@ async function notifyUsers(game: string, drawDate: string, winningNumbers: numbe
           subject: subject,
           html: getEmailTemplate(game, drawDate, status),
           text: status.won 
-            ? `You've got a match! One of your tracked sets for the ${game} draw on ${drawDate} won a prize. Check it here: ${siteUrl}/luck`
-            : `The ${game} results for ${drawDate} are now available. See how you did here: ${siteUrl}/luck`,
+            ? `You've got a match! One of your tracked sets for the ${game} draw on ${drawDate} won a prize. Check it here: ${siteUrl}/luck/?game=${encodeURIComponent(game)}`
+            : `The ${game} results for ${drawDate} are now available. See how you did here: ${siteUrl}/luck/?game=${encodeURIComponent(game)}`,
           headers: { 'List-Unsubscribe': `<${siteUrl}/unsubscribe>` }
         });
       }

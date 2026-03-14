@@ -166,7 +166,7 @@ export default function Home() {
                         </p>
                         <p className="text-[9px] sm:text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase">Estimated Div 1</p>
                       </div>
-                      <Link href="/luck" className={`mt-6 sm:mt-8 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] py-3 rounded-xl text-center transition-all ${brand.bg} ${brand.color} hover:brightness-95`}>
+                      <Link href={`/luck/?game=${encodeURIComponent(draw.game)}`} className={`mt-6 sm:mt-8 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] py-3 rounded-xl text-center transition-all ${brand.bg} ${brand.color} hover:brightness-95`}>
                         Track This Draw
                       </Link>
                     </div>
