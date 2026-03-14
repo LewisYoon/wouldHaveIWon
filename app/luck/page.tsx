@@ -29,11 +29,28 @@ interface DrawResult {
 
 const TICKET_COST = 1.45;
 const FREE_TICKET_LIMIT = 25;
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 
+interface Ticket {
+...
 export default function LuckPage() {
   const { user, isPremium, isLoading: isAuthLoading, subscriptionInfo, refreshPremiumStatus } = useAuth();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [game, setGame] = useState<'Oz Lotto' | 'Powerball' | 'Tatts Lotto'>('Oz Lotto');
+
+  // URL에서 게임 정보를 읽어오거나 기본값 'Oz Lotto' 사용
+  const initialGame = (searchParams.get('game') as any) || 'Oz Lotto';
+  const [game, setGame] = useState<'Oz Lotto' | 'Powerball' | 'Tatts Lotto'>(initialGame);
+
+  // 게임이 바뀔 때마다 URL 업데이트
+  const handleGameChange = (newGame: 'Oz Lotto' | 'Powerball' | 'Tatts Lotto') => {
+    setGame(newGame);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('game', newGame);
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+  };
 
   const upcomingDates = useMemo(() => getNextDrawDates(5, game), [game]);
   const [selectedDate, setSelectedDate] = useState(upcomingDates[0]);
@@ -390,7 +407,7 @@ export default function LuckPage() {
             {['Oz Lotto', 'Powerball', 'Tatts Lotto'].map((g) => (
               <button 
                 key={g} 
-                onClick={() => setGame(g as any)} 
+                onClick={() => handleGameChange(g as any)} 
                 className={`flex-1 sm:flex-none px-4 sm:px-10 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl text-[10px] sm:text-sm font-black uppercase tracking-widest transition-all duration-300 transform active:scale-95 ${
                   game === g 
                     ? (g === 'Oz Lotto' ? 'bg-emerald-600 text-white shadow-xl shadow-emerald-500/20' : g === 'Tatts Lotto' ? 'bg-red-600 text-white shadow-xl shadow-red-500/20' : 'bg-indigo-600 text-white shadow-xl shadow-indigo-500/20') 
