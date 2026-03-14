@@ -12,7 +12,7 @@ interface UserPreferences {
 }
 
 export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
-  const { user, isPremium, upgradeToPro, manageSubscription, subscriptionInfo } = useAuth();
+  const { user, isPremium, upgradeToPro, manageSubscription, subscriptionInfo, refreshPremiumStatus } = useAuth();
   const [prefs, setPreferences] = useState<UserPreferences>({
     email_notifications: true,
     email_results: true,
@@ -54,11 +54,13 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
     setIsSubmitting(true);
     const { error } = await supabase
       .from('user_preferences')
-      .upsert({ user_id: user?.id, ...updated });
+      .upsert({ user_id: user?.id, ...updated }, { onConflict: 'user_id' });
 
     if (error) {
       console.error('Error updating preferences:', error.message);
       alert('Failed to save preferences.');
+    } else {
+      refreshPremiumStatus();
     }
     setIsSubmitting(false);
   };
