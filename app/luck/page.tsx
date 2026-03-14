@@ -10,6 +10,7 @@ import SettingsModal from '../../components/SettingsModal';
 import { getNextDrawDates, compareNumbers, generateQuickPick } from '../../lib/lotto-utils';
 import { supabase } from '../../lib/supabase';
 import Link from 'next/link';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 
 interface Ticket {
   id: string;
@@ -29,10 +30,7 @@ interface DrawResult {
 
 const TICKET_COST = 1.45;
 const FREE_TICKET_LIMIT = 25;
-import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 
-interface Ticket {
-...
 export default function LuckPage() {
   const { user, isPremium, isLoading: isAuthLoading, subscriptionInfo, refreshPremiumStatus } = useAuth();
   const router = useRouter();
