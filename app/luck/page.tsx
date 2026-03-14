@@ -495,10 +495,12 @@ export default function LuckPage() {
 
             {isPremium ? (
               <div className="space-y-8 animate-in slide-in-from-top-2 duration-500">
-                {['Oz Lotto', 'Powerball', 'Tatts Lotto'].map((gName) => (
+                {['Oz Lotto', 'Powerball', 'Tatts Lotto']
+                  .filter(gName => gName === game) // 현재 선택된 게임만 필터링
+                  .map((gName) => (
                   <div key={gName} className="space-y-4">
                     <div className="flex justify-between items-center px-1">
-                      <label className="text-[9px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">{gName}</label>
+                      <label className="text-[9px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">{gName} Quantity</label>
                       <span className="text-xs font-black text-amber-600 dark:text-amber-400">{autoTrackGames[gName] || 0} Tickets</span>
                     </div>
                     <input 
