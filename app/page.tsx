@@ -5,8 +5,10 @@ import Link from 'next/link';
 import Navbar from '../components/Navbar';
 import { supabase } from '../lib/supabase';
 import Logo from '../components/Logo';
+import { useAuth } from '../context/AuthContext';
 
 export default function Home() {
+  const { user } = useAuth();
   const [liveStats, setLiveStats] = useState({
     totalTickets: 0,
     activeTrackers: 0,
@@ -314,12 +316,21 @@ export default function Home() {
               >
                 Track Now
               </Link>
-              <Link 
-                href="/login" 
-                className="px-10 sm:px-14 py-4 sm:py-6 bg-indigo-950/30 text-white font-black rounded-2xl hover:bg-indigo-950/60 border-2 border-white/20 transition-all uppercase tracking-widest text-base sm:text-xl backdrop-blur-md active:scale-95 hover:-translate-y-1 w-full sm:w-auto"
-              >
-                Sign In
-              </Link>
+              {!user ? (
+                <Link 
+                  href="/login" 
+                  className="px-10 sm:px-14 py-4 sm:py-6 bg-indigo-950/30 text-white font-black rounded-2xl hover:bg-indigo-950/60 border-2 border-white/20 transition-all uppercase tracking-widest text-base sm:text-xl backdrop-blur-md active:scale-95 hover:-translate-y-1 w-full sm:w-auto text-center"
+                >
+                  Sign In
+                </Link>
+              ) : (
+                <Link 
+                  href="/stats/" 
+                  className="px-10 sm:px-14 py-4 sm:py-6 bg-indigo-950/30 text-white font-black rounded-2xl hover:bg-indigo-950/60 border-2 border-white/20 transition-all uppercase tracking-widest text-base sm:text-xl backdrop-blur-md active:scale-95 hover:-translate-y-1 w-full sm:w-auto text-center"
+                >
+                  View My Stats
+                </Link>
+              )}
             </div>
           </div>
         </section>
