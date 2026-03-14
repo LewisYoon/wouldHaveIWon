@@ -138,10 +138,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         router.push('/luck');
       }
 
-      // 결제 성공 후 돌아온 경우 즉시 상태 갱신 시도
-      if (currentUser && typeof window !== 'undefined' && window.location.search.includes('session_id=')) {
-        console.log("Payment return detected, refreshing status...");
-        fetchPremiumStatus(currentUser.id);
+      // 결제 성공 후 돌아온 경우 즉시 상태 갱신 시도 (약간의 지연시간 부여하여 웹훅 처리 대기)
+      if (currentUser && typeof window !== 'undefined' && (window.location.search.includes('session_id=') || window.location.search.includes('source=stripe'))) {
+        console.log("Stripe return detected, refreshing status with delay...");
+        setTimeout(() => {
+          fetchPremiumStatus(currentUser.id);
+        }, 3000); // 3초 대기 (웹훅과 DB 동기화 충분히 보장)
       }
     });
 
