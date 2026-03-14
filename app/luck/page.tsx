@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import Navbar from '../../components/Navbar';
 import LottoLinePicker from '../../components/LottoLinePicker';
@@ -31,7 +31,7 @@ interface DrawResult {
 const TICKET_COST = 1.45;
 const FREE_TICKET_LIMIT = 25;
 
-export default function LuckPage() {
+function LuckContent() {
   const { user, isPremium, isLoading: isAuthLoading, subscriptionInfo, refreshPremiumStatus } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -110,7 +110,7 @@ export default function LuckPage() {
 
     const totalInvested = myTickets.length * TICKET_COST;
     return { totalMissedPrize, totalTicketsChecked, totalWins, bestDivision, totalInvested };
-  }, [myTickets, drawResultsList, upcomingLedger]);
+  }, [myTickets, drawResultsList, upcomingLedger, game]);
 
   useEffect(() => {
     setSelectedDate(upcomingDates[0]);
@@ -198,7 +198,6 @@ export default function LuckPage() {
       if (!user) return;
       
       setIsDataLoading(true);
-      console.log(`Fetching tickets for ${user.id} - ${game}`);
       
       try {
         const { data, error } = await supabase
@@ -210,7 +209,6 @@ export default function LuckPage() {
 
         if (error) throw error;
 
-        console.log(`Fetched ${data?.length || 0} tickets`);
         if (data) {
           setMyTickets(data.map(t => ({ 
             id: t.id, 
@@ -230,7 +228,6 @@ export default function LuckPage() {
       if (user) {
         loadTickets();
       } else {
-        // Handle anonymous user history
         const stored = localStorage.getItem(`luckTickets_${game.replace(/\s/g, '')}`);
         if (stored) setMyTickets(JSON.parse(stored));
         else setMyTickets([]);
@@ -267,7 +264,6 @@ export default function LuckPage() {
     const required = game === 'Oz Lotto' ? 7 : game === 'Powerball' ? 8 : 6;
     if (currentNumbers.filter(n => n > 0).length !== required) { alert(`Select ${required} numbers`); return; }
     
-    // Premium Limit Check: Count tickets for THIS SPECIFIC DRAW
     const ticketsForThisDraw = myTickets.filter(t => t.drawDate === selectedDate).length;
     if (!isPremium && ticketsForThisDraw >= FREE_TICKET_LIMIT) {
       alert(`Free limit reached (${FREE_TICKET_LIMIT} tickets per draw). Please upgrade to PRO for unlimited tracking!`);
@@ -287,7 +283,6 @@ export default function LuckPage() {
   const handleMultiQuickPick = async () => {
     const ticketsForThisDraw = myTickets.filter(t => t.drawDate === selectedDate).length;
     
-    // Premium Limit Check: Per draw
     if (!isPremium && ticketsForThisDraw + quickPickQty > FREE_TICKET_LIMIT) {
       const allowed = FREE_TICKET_LIMIT - ticketsForThisDraw;
       if (allowed <= 0) {
@@ -323,9 +318,8 @@ export default function LuckPage() {
     if (!window.confirm(`Delete all ${currentGame} tickets for ${date}?`)) return;
     
     if (user) {
-      // DB에서 삭제 시도
       const { error, count } = await supabase.from('tickets')
-        .delete({ count: 'exact' }) // 삭제된 개수 확인
+        .delete({ count: 'exact' })
         .eq('user_id', user.id)
         .eq('game', currentGame)
         .eq('draw_date', date);
@@ -335,11 +329,8 @@ export default function LuckPage() {
         alert(`Failed to delete from server: ${error.message}`);
         return;
       }
-      
-      console.log(`Successfully deleted ${count} tickets from server.`);
     }
     
-    // UI 상태 업데이트
     setMyTickets(prev => {
       const updated = prev.filter(t => !(t.drawDate === date && t.game === currentGame));
       if (!user) {
@@ -421,9 +412,7 @@ export default function LuckPage() {
       </header>
 
       <main className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-16 px-4 sm:px-6 relative z-10">
-        {/* Left Column */}
         <div className="lg:col-span-5 space-y-8 sm:space-y-10 animate-in fade-in slide-in-from-bottom-8 duration-1000 text-left">
-          {/* Luck Dashboard */}
           <div className={`rounded-[2rem] sm:rounded-[3rem] p-6 sm:p-10 border transition-all duration-700 shadow-2xl hover:scale-[1.02] group relative overflow-hidden ${brandStyles.bgLight} ${brandStyles.border}`}>
             <div className={`absolute top-0 right-0 w-32 h-32 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-700 ${game === 'Oz Lotto' ? 'bg-emerald-500/5' : game === 'Tatts Lotto' ? 'bg-red-500/5' : 'bg-indigo-500/5'}`} />
             <p className={`text-[9px] sm:text-[11px] font-black uppercase tracking-[0.3em] mb-6 sm:mb-8 ${brandStyles.text}`}>Luck Dashboard</p>
@@ -439,9 +428,7 @@ export default function LuckPage() {
             </div>
           </div>
 
-          {/* Manual Entry Ticket Picker */}
           <div className="bg-white dark:bg-gray-900 p-6 sm:p-10 rounded-[2rem] sm:rounded-[3rem] border border-gray-100 dark:border-white/5 shadow-xl transition-all duration-500">
-            {/* Draw Limit Reached Card - No animation */}
             {!isPremium && myTickets.filter(t => t.drawDate === selectedDate).length >= FREE_TICKET_LIMIT && (
               <div className="bg-gradient-to-r from-amber-500 to-orange-600 p-6 rounded-[2rem] text-white shadow-xl mb-8">
                 <p className="font-black uppercase tracking-widest text-xs mb-2">Draw Limit Reached! 🚀</p>
@@ -487,10 +474,8 @@ export default function LuckPage() {
           </div>
         </div>
 
-        {/* Right Column */}
         <div className="lg:col-span-7 space-y-8 sm:space-y-10 animate-in fade-in slide-in-from-right-8 duration-1000 text-left">
           
-          {/* Auto-Tracker Feature Card */}
           <div className={`rounded-[2rem] sm:rounded-[3rem] p-6 sm:p-10 border border-gray-100 dark:border-white/5 shadow-xl relative overflow-hidden transition-all duration-500 ${!isPremium ? 'bg-gray-50/50 dark:bg-white/5 grayscale-[0.5]' : 'bg-white dark:bg-gray-900'}`}>
             <div className="flex justify-between items-start mb-8 sm:mb-10">
               <div>
@@ -504,14 +489,14 @@ export default function LuckPage() {
               </div>
               
               {!isPremium && (
-                <Link href="/premium/" className="flex-shrink-0 bg-amber-400 text-amber-950 px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-amber-500 hover:text-white transition-all shadow-sm">Upgrade</Link>
+                <Link href="/premium/" className="flex-shrink-0 bg-amber-400 text-amber-950 px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-amber-500 transition-all shadow-sm">Upgrade</Link>
               )}
             </div>
 
             {isPremium ? (
               <div className="space-y-8 animate-in slide-in-from-top-2 duration-500">
                 {['Oz Lotto', 'Powerball', 'Tatts Lotto']
-                  .filter(gName => gName === game) // 현재 선택된 게임만 필터링
+                  .filter(gName => gName === game)
                   .map((gName) => (
                   <div key={gName} className="space-y-4">
                     <div className="flex justify-between items-center px-1">
@@ -562,7 +547,6 @@ export default function LuckPage() {
               <span className="text-[10px] sm:text-[12px] font-black text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 px-4 sm:px-6 py-2 sm:py-3 rounded-2xl uppercase tracking-widest shadow-sm">{myTickets.length} Tickets</span>
             </div>
 
-            {/* Scrollable Container with explicit max-height and custom scrollbar */}
             <div className="max-h-[700px] sm:max-h-[900px] overflow-y-auto pr-2 sm:pr-4 custom-scrollbar space-y-6 sm:space-y-8 pb-10">
               {isDataLoading ? (
                 <div className="py-20 sm:py-40 flex flex-col items-center gap-6 animate-pulse"><div className={`w-12 h-12 sm:w-16 sm:h-16 border-4 ${brandStyles.text.replace('text-', 'border-')} border-t-transparent rounded-full animate-spin`} /><p className="text-gray-400 font-black uppercase tracking-[0.3em] text-[10px] sm:text-xs italic">Loading history...</p></div>
@@ -596,7 +580,6 @@ export default function LuckPage() {
                   }
                   const isWinner = res && (totalPrize > 0 || div1Win);
                   
-                  // Financial calculations for the group
                   const groupSpent = tickets.length * TICKET_COST;
                   const groupWon = totalPrize;
                   const groupProfit = groupWon - groupSpent;
@@ -631,7 +614,6 @@ export default function LuckPage() {
                       </div>
                       {isExpanded && (
                         <div className={`p-6 sm:p-10 border-t dark:border-white/5 animate-in slide-in-from-top-4 duration-500 ${isWinner ? `${brandStyles.bgLight} dark:bg-${brandColor}-500/5` : 'bg-gray-50/50 dark:bg-white/5'}`}>
-                          {/* Detailed Financial Summary (Visible only when expanded) */}
                           {res && (
                             <div className="mb-8 sm:mb-12 grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
                               <div className="bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-[1.5rem] sm:rounded-[2rem] border border-gray-100 dark:border-white/5 shadow-sm text-center">
@@ -655,9 +637,9 @@ export default function LuckPage() {
                             <div className="mb-8 sm:mb-12 bg-white dark:bg-gray-800 p-6 sm:p-10 rounded-[2rem] sm:rounded-[3rem] border border-gray-100 dark:border-white/5 flex flex-col items-center shadow-inner relative overflow-hidden group">
                               <p className="text-[8px] sm:text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase mb-6 sm:mb-8 tracking-[0.4em] relative z-10">Winning Numbers</p>
                               <div className="flex flex-wrap gap-3 sm:gap-4 justify-center relative z-10">
-                                {res.numbers.map((n, i) => (<span key={n} className={`w-10 h-10 sm:w-14 sm:h-14 rounded-full ${brandStyles.bg} text-white flex items-center justify-center font-black border-b-[4px] sm:border-b-[6px] border-black/20 shadow-xl text-base sm:text-xl transform hover:-translate-y-1 transition-transform`} style={{ transitionDelay: `${i * 50}ms` }}>{n}</span>))}
+                                {res.numbers.map((n: number, i: number) => (<span key={n} className={`w-10 h-10 sm:w-14 sm:h-14 rounded-full ${brandStyles.bg} text-white flex items-center justify-center font-black border-b-[4px] sm:border-b-[6px] border-black/20 shadow-xl text-base sm:text-xl transform hover:-translate-y-1 transition-transform`} style={{ transitionDelay: `${i * 50}ms` }}>{n}</span>))}
                                 <div className="w-px h-10 sm:h-14 bg-gray-200 dark:bg-white/10 mx-1 sm:mx-2" />
-                                {res.bonus.map((n, i) => (<span key={n} className="w-10 h-10 sm:w-14 sm:h-14 rounded-full bg-amber-400 text-amber-950 flex items-center justify-center font-black border-b-[4px] sm:border-b-[6px] border-amber-600 shadow-xl text-base sm:text-xl transform hover:-translate-y-1 transition-transform" style={{ transitionDelay: `${(res.numbers.length + i) * 50}ms` }}>{n}</span>))}
+                                {res.bonus.map((n: number, i: number) => (<span key={n} className="w-10 h-10 sm:w-14 sm:h-14 rounded-full bg-amber-400 text-amber-950 flex items-center justify-center font-black border-b-[4px] sm:border-b-[6px] border-amber-600 shadow-xl text-base sm:text-xl transform hover:-translate-y-1 transition-transform" style={{ transitionDelay: `${(res.numbers.length + i) * 50}ms` }}>{n}</span>))}
                               </div>
                             </div>
                           )}
@@ -713,5 +695,13 @@ export default function LuckPage() {
       <DivisionRules game={game} isOpen={isRulesModalOpen} onClose={() => setIsRulesModalOpen(false)} />
       <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
     </div>
+  );
+}
+
+export default function LuckPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950 uppercase font-black tracking-widest animate-pulse">Initializing...</div>}>
+      <LuckContent />
+    </Suspense>
   );
 }
