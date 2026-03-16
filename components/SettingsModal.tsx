@@ -159,26 +159,53 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
                 </div>
 
                 {isPremium && (
-                  <div className="space-y-6 animate-in slide-in-from-top-2 duration-300">
-                    {['Oz Lotto', 'Powerball', 'Tatts Lotto'].map(game => (
-                      <div key={game}>
-                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest text-left mb-3">{game}: {prefs.auto_track_games?.[game] || 0} Tickets</label>
-                        <input 
-                          type="range" 
-                          min="0" 
-                          max="50" 
-                          step="5"
-                          value={prefs.auto_track_games?.[game] || 0} 
-                          onChange={(e) => {
-                            const newGames = { ...prefs.auto_track_games, [game]: parseInt(e.target.value) };
-                            handleUpdate('auto_track_games', newGames);
-                          }}
-                          className="w-full accent-amber-500 h-1.5 bg-gray-100 dark:bg-white/5 rounded-full appearance-none cursor-pointer"
-                        />
-                      </div>
-                    ))}
-                    <p className="text-[10px] text-gray-400 font-medium italic text-left pt-2">
-                      Set to 0 to disable for a specific game.
+                  <div className="space-y-8 animate-in slide-in-from-top-2 duration-300">
+                    {['Oz Lotto', 'Powerball', 'Tatts Lotto'].map(game => {
+                      const isEnabled = (prefs.auto_track_games?.[game] || 0) > 0;
+                      const currentQty = prefs.auto_track_games?.[game] || 0;
+
+                      return (
+                        <div key={game} className="space-y-4 p-4 rounded-2xl bg-gray-50 dark:bg-white/5 border border-transparent hover:border-amber-500/20 transition-all">
+                          <div className="flex items-center justify-between">
+                            <label className="text-[10px] font-black text-gray-900 dark:text-white uppercase tracking-widest">{game}</label>
+                            <button 
+                              onClick={() => {
+                                const newQty = isEnabled ? 0 : 10; // 켜질 때 기본값 10
+                                const newGames = { ...prefs.auto_track_games, [game]: newQty };
+                                handleUpdate('auto_track_games', newGames);
+                              }}
+                              disabled={isSubmitting}
+                              className={`w-12 h-7 rounded-full transition-colors relative flex-shrink-0 ${isEnabled ? 'bg-amber-500' : 'bg-gray-200 dark:bg-gray-800'}`}
+                            >
+                              <div className={`absolute top-1 left-1 w-5 h-5 bg-white rounded-full transition-transform shadow-sm ${isEnabled ? 'translate-x-5' : 'translate-x-0'}`} />
+                            </button>
+                          </div>
+                          
+                          {isEnabled && (
+                            <div className="pt-2 animate-in zoom-in-95 duration-200">
+                              <div className="flex justify-between items-center mb-3">
+                                <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-tighter">Quantity per draw</span>
+                                <span className="text-xs font-black text-gray-900 dark:text-white">{currentQty} Tickets</span>
+                              </div>
+                              <input 
+                                type="range" 
+                                min="5" 
+                                max="50" 
+                                step="5"
+                                value={currentQty} 
+                                onChange={(e) => {
+                                  const newGames = { ...prefs.auto_track_games, [game]: parseInt(e.target.value) };
+                                  handleUpdate('auto_track_games', newGames);
+                                }}
+                                className="w-full accent-amber-500 h-1 bg-gray-200 dark:bg-white/10 rounded-full appearance-none cursor-pointer"
+                              />
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                    <p className="text-[10px] text-gray-400 font-medium italic text-left px-2">
+                      Auto-Tracker generates quick picks for you before every official draw.
                     </p>
                   </div>
                 )}
