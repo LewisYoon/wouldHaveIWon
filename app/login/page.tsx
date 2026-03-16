@@ -11,6 +11,7 @@ type AuthMode = 'signin' | 'signup' | 'reset';
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [mode, setMode] = useState<AuthMode>('signin');
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -19,16 +20,53 @@ export default function LoginPage() {
   const { signIn, signUp, signInWithGoogle, resetPassword } = useAuth();
   const router = useRouter();
 
+  // Password Strength Logic
+  const getPasswordStrength = (pass: string) => {
+    if (!pass) return 0;
+    let score = 0;
+    if (pass.length >= 8) score++;
+    if (/[A-Z]/.test(pass)) score++;
+    if (/[0-9]/.test(pass)) score++;
+    if (/[^A-Za-z0-9]/.test(pass)) score++;
+    return score;
+  };
+
+  const strength = getPasswordStrength(password);
+  const strengthColor = strength <= 1 ? 'bg-red-500' : strength === 2 ? 'bg-orange-500' : strength === 3 ? 'bg-blue-500' : 'bg-emerald-500';
+  const strengthText = strength <= 1 ? 'Weak' : strength === 2 ? 'Fair' : strength === 3 ? 'Good' : 'Strong';
+
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setMessage(null);
+
+    // Client-side Validation for Sign Up
+    if (mode === 'signup') {
+      if (password !== confirmPassword) {
+        setError('Passwords do not match.');
+        return;
+      }
+      if (password.length < 8) {
+        setError('Password must be at least 8 characters long.');
+        return;
+      }
+      if (!/[A-Z]/.test(password)) {
+        setError('Password must contain at least one uppercase letter.');
+        return;
+      }
+    }
+
     setIsSubmitting(true);
 
     try {
       if (mode === 'signup') {
         const { error } = await signUp({ email, password });
-        if (error) throw error;
+        if (error) {
+          if (error.message.toLowerCase().includes('already registered')) {
+            throw new Error('This email is already registered. Please sign in instead.');
+          }
+          throw error;
+        }
         setMessage('Verification link sent! Check your email to confirm registration.');
       } else if (mode === 'signin') {
         const { error } = await signIn({ email, password });
@@ -153,6 +191,31 @@ export default function LoginPage() {
                       required type="password" placeholder="••••••••" value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       minLength={6}
+                      className="w-full p-5 bg-white dark:bg-gray-900 border-2 border-transparent focus:border-indigo-500 rounded-2xl text-base text-gray-900 dark:text-white outline-none transition-all font-bold shadow-sm"
+                    />
+
+                    {/* Password Strength Meter */}
+                    {mode === 'signup' && password.length > 0 && (
+                      <div className="px-1 pt-2 animate-in fade-in slide-in-from-top-1">
+                        <div className="flex justify-between items-center mb-2">
+                          <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Strength: <span className={strengthColor.replace('bg-', 'text-')}>{strengthText}</span></p>
+                        </div>
+                        <div className="h-1 w-full bg-gray-100 dark:bg-white/5 rounded-full overflow-hidden flex gap-1">
+                          {[1, 2, 3, 4].map(i => (
+                            <div key={i} className={`h-full flex-1 transition-all duration-500 ${i <= strength ? strengthColor : 'bg-transparent'}`} />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {mode === 'signup' && (
+                  <div className="space-y-2 animate-in slide-in-from-top-2 duration-500">
+                    <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest ml-1">Confirm Password</label>
+                    <input
+                      required type="password" placeholder="••••••••" value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
                       className="w-full p-5 bg-white dark:bg-gray-900 border-2 border-transparent focus:border-indigo-500 rounded-2xl text-base text-gray-900 dark:text-white outline-none transition-all font-bold shadow-sm"
                     />
                   </div>
