@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useRouter } from 'next/navigation';
 import Navbar from '../../components/Navbar';
 import Link from 'next/link';
+import { supabase } from '../../lib/supabase';
 
-type AuthMode = 'signin' | 'signup' | 'reset';
+type AuthMode = 'signin' | 'signup' | 'reset' | 'update';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -16,9 +17,17 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   const { signIn, signUp, signInWithGoogle, resetPassword } = useAuth();
   const router = useRouter();
+
+  // 비밀번호 재설정 링크 감지
+  useEffect(() => {
+    if (typeof window !== 'undefined' && (window.location.hash.includes('type=recovery') || window.location.search.includes('type=recovery'))) {
+      setMode('update');
+      setMessage("Please enter your new password below.");
+    }
+  }, []);
 
   // 실시간 인증 상태 동기화 (PC-모바일 연동)
   useEffect(() => {
@@ -36,7 +45,7 @@ export default function LoginPage() {
         supabase.removeChannel(channel);
       };
     }
-  }, [mode, message, email, signIn]);
+  }, [mode, message, email]);
 
   // Password Strength Logic
   const getPasswordStrength = (pass: string) => {
@@ -58,18 +67,14 @@ export default function LoginPage() {
     setError(null);
     setMessage(null);
 
-    // Client-side Validation for Sign Up
-    if (mode === 'signup') {
+    // Client-side Validation for Sign Up & Password Update
+    if (mode === 'signup' || mode === 'update') {
       if (password !== confirmPassword) {
         setError('Passwords do not match.');
         return;
       }
       if (password.length < 8) {
         setError('Password must be at least 8 characters long.');
-        return;
-      }
-      if (!/[A-Z]/.test(password)) {
-        setError('Password must contain at least one uppercase letter.');
         return;
       }
     }
@@ -94,6 +99,11 @@ export default function LoginPage() {
         const { error } = await resetPassword(email);
         if (error) throw error;
         setMessage('Password reset link sent! Please check your email.');
+      } else if (mode === 'update') {
+        const { error } = await supabase.auth.updateUser({ password });
+        if (error) throw error;
+        setMessage('Password updated successfully! You can now sign in.');
+        setTimeout(() => setMode('signin'), 2000);
       }
     } catch (err: any) {
       setError(err.message || 'An unexpected error occurred.');
@@ -160,15 +170,15 @@ export default function LoginPage() {
             
             <div className="text-left mb-12">
               <h3 className="text-4xl font-black text-gray-900 dark:text-white uppercase tracking-tighter italic mb-4">
-                {mode === 'signin' ? 'Sign In' : mode === 'signup' ? 'Join Now' : 'Reset'}
+                {mode === 'signin' ? 'Sign In' : mode === 'signup' ? 'Join Now' : mode === 'reset' ? 'Reset' : 'Update'}
               </h3>
               <p className="text-gray-500 dark:text-gray-400 font-medium">
-                {mode === 'signin' ? 'Welcome back. Access your tracked luck.' : mode === 'signup' ? 'Start your risk-free journey today.' : 'Recover your account access.'}
+                {mode === 'signin' ? 'Welcome back. Access your tracked luck.' : mode === 'signup' ? 'Start your risk-free journey today.' : mode === 'reset' ? 'Recover your account access.' : 'Secure your account with a new password.'}
               </p>
             </div>
 
             <div className="space-y-8">
-              {mode !== 'reset' && (
+              {mode !== 'reset' && mode !== 'update' && (
                 <>
                   <button
                     onClick={handleGoogleSignIn}
@@ -188,19 +198,21 @@ export default function LoginPage() {
               )}
 
               <form onSubmit={handleAuth} className="space-y-6">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest ml-1">Email</label>
-                  <input
-                    required type="email" placeholder="name@example.com" value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full p-5 bg-white dark:bg-gray-900 border-2 border-transparent focus:border-indigo-500 rounded-2xl text-base text-gray-900 dark:text-white outline-none transition-all font-bold shadow-sm"
-                  />
-                </div>
+                {mode !== 'update' && (
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest ml-1">Email</label>
+                    <input
+                      required type="email" placeholder="name@example.com" value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full p-5 bg-white dark:bg-gray-900 border-2 border-transparent focus:border-indigo-500 rounded-2xl text-base text-gray-900 dark:text-white outline-none transition-all font-bold shadow-sm"
+                    />
+                  </div>
+                )}
 
                 {mode !== 'reset' && (
                   <div className="space-y-2">
                     <div className="flex justify-between items-center px-1">
-                      <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">Password</label>
+                      <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">{mode === 'update' ? 'New Password' : 'Password'}</label>
                       {mode === 'signin' && (
                         <button type="button" onClick={() => setMode('reset')} className="text-[10px] font-black text-indigo-500 uppercase tracking-widest hover:underline">Forgot?</button>
                       )}
@@ -213,7 +225,7 @@ export default function LoginPage() {
                     />
 
                     {/* Password Strength Meter */}
-                    {mode === 'signup' && password.length > 0 && (
+                    {(mode === 'signup' || mode === 'update') && password.length > 0 && (
                       <div className="px-1 pt-2 animate-in fade-in slide-in-from-top-1">
                         <div className="flex justify-between items-center mb-2">
                           <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Strength: <span className={strengthColor.replace('bg-', 'text-')}>{strengthText}</span></p>
@@ -228,9 +240,9 @@ export default function LoginPage() {
                   </div>
                 )}
 
-                {mode === 'signup' && (
+                {(mode === 'signup' || mode === 'update') && (
                   <div className="space-y-2 animate-in slide-in-from-top-2 duration-500">
-                    <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest ml-1">Confirm Password</label>
+                    <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest ml-1">{mode === 'update' ? 'Confirm New Password' : 'Confirm Password'}</label>
                     <input
                       required type="password" placeholder="••••••••" value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
@@ -256,7 +268,7 @@ export default function LoginPage() {
                   disabled={isSubmitting}
                   className="w-full py-5 bg-indigo-600 text-white font-black rounded-2xl hover:bg-indigo-700 transition-all duration-300 transform active:scale-95 disabled:opacity-50 shadow-xl shadow-indigo-500/20 uppercase tracking-widest text-sm"
                 >
-                  {isSubmitting ? 'Syncing...' : (mode === 'signin' ? 'Access Account' : mode === 'signup' ? 'Create Profile' : 'Send Recovery Link')}
+                  {isSubmitting ? 'Syncing...' : (mode === 'signin' ? 'Access Account' : mode === 'signup' ? 'Create Profile' : mode === 'reset' ? 'Send Recovery Link' : 'Set New Password')}
                 </button>
               </form>
 
@@ -267,7 +279,7 @@ export default function LoginPage() {
                   </p>
                 ) : (
                   <p className="text-sm font-bold text-gray-400">
-                    Already registered? <button onClick={() => setMode('signin')} className="text-indigo-500 hover:underline">Sign In Instead</button>
+                    {mode === 'update' ? 'Never mind?' : 'Already registered?'} <button onClick={() => setMode('signin')} className="text-indigo-500 hover:underline">Sign In Instead</button>
                   </p>
                 )}
               </div>
