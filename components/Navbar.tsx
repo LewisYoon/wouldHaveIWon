@@ -91,7 +91,7 @@ export default function Navbar() {
               </div>
             ) : (
               <Link 
-                href={`/login?returnTo=${pathname === '/' ? '/' : encodeURIComponent(pathname)}`} 
+                href={pathname === '/' ? '/login' : `/login?returnTo=${encodeURIComponent(pathname)}`} 
                 className="text-[10px] sm:text-xs bg-indigo-600 text-white font-black px-4 sm:px-6 py-2.5 sm:py-3 rounded-2xl shadow-lg shadow-indigo-200 dark:shadow-none hover:bg-indigo-700 hover:-translate-y-0.5 transition-all uppercase tracking-widest"
               >
                 Sign In
