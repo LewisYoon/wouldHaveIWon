@@ -138,7 +138,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // 다른 탭에서 인증 완료 시나 이미 세션이 있는 경우 로그인 페이지에서 자동 리다이렉트
       const isLoginPage = window.location.pathname.startsWith('/login');
-      if ((event === 'SIGNED_IN' || (event === 'INITIAL_SESSION' && session)) && isLoginPage) {
+      const isRecovery = window.location.hash.includes('type=recovery') || window.location.search.includes('type=recovery');
+      
+      if ((event === 'SIGNED_IN' || (event === 'INITIAL_SESSION' && session)) && isLoginPage && !isRecovery) {
         console.log("Auth session detected, redirecting to luck...");
         router.push('/luck');
       }
