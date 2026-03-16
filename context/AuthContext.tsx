@@ -157,13 +157,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // 다른 탭에서 인증 완료 시나 이미 세션이 있는 경우 로그인 페이지에서 자동 리다이렉트
       const isLoginPage = window.location.pathname.startsWith('/login');
       
-      if ((event === 'SIGNED_IN' || (event === 'INITIAL_SESSION' && session)) && isLoginPage) {
-        // [수정] returnTo 파라미터가 있으면 해당 페이지로, 없으면 기본값 /luck으로 이동
-        const params = new URLSearchParams(window.location.search);
-        const returnTo = params.get('returnTo') || '/luck';
+      if ((event === 'SIGNED_IN' || (event === 'INITIAL_SESSION' && session)) && isLoginPage && !isRecoveryMode.current) {
+        // [중요] 직접적인 로그인은 LoginForm에서 처리하므로, 여기서는 이미 세션이 있는 경우에만 처리
+        // 또는 다른 탭에서 로그인되어 넘어오는 경우만 처리
+        const currentParams = new URLSearchParams(window.location.search);
+        const returnTo = currentParams.get('returnTo');
         
-        console.log(`Normal login detected, redirecting to ${returnTo}...`);
-        router.push(returnTo);
+        if (returnTo) {
+          console.log(`AuthContext: routing to ${returnTo}`);
+          router.push(returnTo);
+        } else if (event === 'INITIAL_SESSION') {
+          router.push('/luck');
+        }
       }
 
       // 결제 성공 후 돌아온 경우 즉시 상태 갱신 시도 (약간의 지연시간 부여하여 웹훅 처리 대기)

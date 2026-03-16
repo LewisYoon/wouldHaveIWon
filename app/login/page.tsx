@@ -93,6 +93,9 @@ function LoginForm() {
       } else if (mode === 'signin') {
         const { error } = await signIn({ email, password });
         if (error) throw error;
+        
+        // [강조] 로그인이 성공하면 명시적으로 returnTo로 이동
+        console.log(`LoginForm: Redirecting to ${returnTo}`);
         router.push(returnTo);
       } else if (mode === 'reset') {
         const { error } = await resetPassword(email);
