@@ -136,17 +136,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(false);
       }
 
-      // 다른 탭에서 인증 완료 시나 이미 세션이 있는 경우 로그인 페이지에서 자동 리다이렉트
-      const isLoginPage = window.location.pathname.startsWith('/login');
-      // Supabase가 해시를 비우기 전에 미리 체크하거나, PASSWORD_RECOVERY 이벤트를 활용
+      // 비밀번호 복구 흐름인지 매우 엄격하게 체크
+      const href = window.location.href;
       const isRecoveryFlow = 
         event === 'PASSWORD_RECOVERY' || 
-        window.location.hash.includes('type=recovery') || 
-        window.location.search.includes('type=recovery') ||
-        window.location.hash.includes('access_token'); // 복구 링크 클릭 시 해시에 포함됨
+        href.includes('type=recovery') || 
+        href.includes('error_code=404') || // 가끔 발생하는 에러 케이스 대응
+        /[#?&]type=recovery/.test(href) || 
+        /[#?&]access_token=/.test(href);
+
+      // 다른 탭에서 인증 완료 시나 이미 세션이 있는 경우 로그인 페이지에서 자동 리다이렉트
+      const isLoginPage = window.location.pathname.startsWith('/login');
       
-      if ((event === 'SIGNED_IN' || (event === 'INITIAL_SESSION' && session)) && isLoginPage && !isRecoveryFlow) {
-        console.log("Auth session detected, redirecting to luck...");
+      if ((event === 'SIGNED_IN' || (event === 'INITIAL_SESSION' && session)) && isLoginPage) {
+        if (isRecoveryFlow) {
+          console.log("Recovery flow detected - blocking auto-redirect to luck.");
+          return; // 복구 모드일 때는 여기서 로직 중단 (절대 리다이렉트 안 함)
+        }
+        console.log("Normal login detected, redirecting to luck...");
         router.push('/luck');
       }
 
