@@ -134,11 +134,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // URL 청소 로직: 인증 후 남은 #access_token 등을 깔끔하게 제거
     const cleanUrl = () => {
       if (typeof window !== 'undefined' && (window.location.hash || window.location.href.endsWith('#'))) {
-        // Supabase가 토큰을 읽을 시간을 준 뒤 제거
+        // Supabase가 토큰을 읽을 아주 짧은 시간(0.1초)만 준 뒤 즉시 제거
         setTimeout(() => {
           const newUrl = window.location.pathname + window.location.search;
           window.history.replaceState(null, '', newUrl);
-        }, 500);
+        }, 100);
       }
     };
 
