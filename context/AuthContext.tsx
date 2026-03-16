@@ -136,7 +136,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(false);
       }
 
-      if (event === 'SIGNED_IN' && window.location.pathname === '/login') {
+      // 다른 탭에서 인증 완료 시나 이미 세션이 있는 경우 로그인 페이지에서 자동 리다이렉트
+      const isLoginPage = window.location.pathname.startsWith('/login');
+      if ((event === 'SIGNED_IN' || (event === 'INITIAL_SESSION' && session)) && isLoginPage) {
+        console.log("Auth session detected, redirecting to luck...");
         router.push('/luck');
       }
 
@@ -161,7 +164,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signUp = async (credentials: SignUpWithPasswordCredentials) => {
-    return await supabase.auth.signUp(credentials);
+    const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/luck/` : '';
+    return await supabase.auth.signUp({
+      ...credentials,
+      options: {
+        emailRedirectTo: redirectTo,
+        ...credentials.options,
+      }
+    });
   };
 
   const signInWithGoogle = async () => {
