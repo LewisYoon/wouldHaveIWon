@@ -318,7 +318,7 @@ export default function Home() {
               </Link>
               {!user ? (
                 <Link 
-                  href="/login" 
+                  href="/login?returnTo=/" 
                   className="px-10 sm:px-14 py-4 sm:py-6 bg-indigo-950/30 text-white font-black rounded-2xl hover:bg-indigo-950/60 border-2 border-white/20 transition-all uppercase tracking-widest text-base sm:text-xl backdrop-blur-md active:scale-95 hover:-translate-y-1 w-full sm:w-auto text-center"
                 >
                   Sign In

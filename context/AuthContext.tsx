@@ -167,7 +167,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           console.log(`AuthContext: routing to ${returnTo}`);
           router.push(returnTo);
         } else if (event === 'INITIAL_SESSION') {
-          router.push('/luck');
+          router.push('/');
         }
       }
 

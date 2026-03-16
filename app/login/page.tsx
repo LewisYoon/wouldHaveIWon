@@ -21,7 +21,7 @@ function LoginForm() {
   const { signIn, signUp, signInWithGoogle, resetPassword } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const returnTo = searchParams.get('returnTo') || '/luck';
+  const returnTo = searchParams.get('returnTo') || '/';
 
   // 비밀번호 재설정 링크 감지
   useEffect(() => {
