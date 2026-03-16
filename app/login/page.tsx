@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Navbar from '../../components/Navbar';
 import Link from 'next/link';
 import { supabase } from '../../lib/supabase';
@@ -20,6 +20,8 @@ export default function LoginPage() {
 
   const { signIn, signUp, signInWithGoogle, resetPassword } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const returnTo = searchParams.get('returnTo') || '/luck';
 
   // 비밀번호 재설정 링크 감지
   useEffect(() => {
@@ -94,7 +96,7 @@ export default function LoginPage() {
       } else if (mode === 'signin') {
         const { error } = await signIn({ email, password });
         if (error) throw error;
-        router.push('/luck');
+        router.push(returnTo);
       } else if (mode === 'reset') {
         const { error } = await resetPassword(email);
         if (error) throw error;

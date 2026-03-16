@@ -158,8 +158,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const isLoginPage = window.location.pathname.startsWith('/login');
       
       if ((event === 'SIGNED_IN' || (event === 'INITIAL_SESSION' && session)) && isLoginPage) {
-        console.log("Normal login detected, redirecting to luck...");
-        router.push('/luck');
+        // [수정] returnTo 파라미터가 있으면 해당 페이지로, 없으면 기본값 /luck으로 이동
+        const params = new URLSearchParams(window.location.search);
+        const returnTo = params.get('returnTo') || '/luck';
+        
+        console.log(`Normal login detected, redirecting to ${returnTo}...`);
+        router.push(returnTo);
       }
 
       // 결제 성공 후 돌아온 경우 즉시 상태 갱신 시도 (약간의 지연시간 부여하여 웹훅 처리 대기)
