@@ -34,6 +34,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [subscriptionInfo, setSubscriptionInfo] = useState<AuthContextType['subscriptionInfo']>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+  
+  // [중요] 페이지 로드 시점의 복구 모드 여부를 절대적으로 기억
+  const isRecoveryMode = useRef(false);
 
   const fetchPremiumStatus = useCallback(async (userId: string, retryCount = 0) => {
     if (!userId) return;
@@ -92,6 +95,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let mounted = true;
 
+    // 0. 즉시 복구 모드 캡처 (Supabase가 URL 해시를 날리기 전에 실행)
+    if (typeof window !== 'undefined') {
+      const href = window.location.href;
+      if (href.includes('type=recovery') || href.includes('access_token=') || href.includes('type=signup')) {
+        isRecoveryMode.current = true;
+        console.log("🔒 Recovery/Signup Flow Detected - Disabling Auto-Redirects");
+      }
+    }
+
     // 1. 로딩 세이프티 타이머 (최대 2초 후에는 무조건 로딩 해제)
     const failsafeTimer = setTimeout(() => {
       if (mounted) setIsLoading(false);
@@ -136,23 +148,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(false);
       }
 
-      // 비밀번호 복구 흐름인지 매우 엄격하게 체크
-      const href = window.location.href;
-      const isRecoveryFlow = 
-        event === 'PASSWORD_RECOVERY' || 
-        href.includes('type=recovery') || 
-        href.includes('error_code=404') || // 가끔 발생하는 에러 케이스 대응
-        /[#?&]type=recovery/.test(href) || 
-        /[#?&]access_token=/.test(href);
+      // [핵심] 복구 절차 중에는 절대로 리다이렉트 안 함
+      if (isRecoveryMode.current) {
+        console.log("Blocking redirect due to Recovery/Signup Flow.");
+        return;
+      }
 
       // 다른 탭에서 인증 완료 시나 이미 세션이 있는 경우 로그인 페이지에서 자동 리다이렉트
       const isLoginPage = window.location.pathname.startsWith('/login');
       
       if ((event === 'SIGNED_IN' || (event === 'INITIAL_SESSION' && session)) && isLoginPage) {
-        if (isRecoveryFlow) {
-          console.log("Recovery flow detected - blocking auto-redirect to luck.");
-          return; // 복구 모드일 때는 여기서 로직 중단 (절대 리다이렉트 안 함)
-        }
         console.log("Normal login detected, redirecting to luck...");
         router.push('/luck');
       }
