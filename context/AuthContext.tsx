@@ -192,7 +192,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signUp = async (credentials: SignUpWithPasswordCredentials) => {
-    const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/luck/` : '';
+    // [수정] 가입 후 리다이렉트도 현재 페이지의 returnTo를 고려하거나 기본적으로 홈으로 설정
+    const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+    const returnTo = params?.get('returnTo') || '/';
+    const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}${returnTo}` : '';
+    
     return await supabase.auth.signUp({
       ...credentials,
       options: {
@@ -203,18 +207,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signInWithGoogle = async () => {
-    // Determine the redirect URL dynamically based on current location
-    const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/luck/` : '';
+    // [수정] 구글 로그인 후에도 현재 페이지의 returnTo를 유지
+    const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+    const returnTo = params?.get('returnTo') || '/';
+    const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}${returnTo}` : '';
     
     return await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo: redirectTo,
+        queryParams: {
+          prompt: 'select_account', // [추가] 항상 계정 선택 창이 뜨도록 설정
+          access_type: 'offline',
+        }
       },
     });
   };
 
   const resetPassword = async (email: string) => {
+    // [수정] 비밀번호 재설정 후 돌아올 때도 로그인 페이지로 안전하게 리다이렉트
     const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/login/` : '';
     
     return await supabase.auth.resetPasswordForEmail(email, {
