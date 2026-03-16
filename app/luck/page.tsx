@@ -66,6 +66,27 @@ function LuckContent() {
   const [autoTrackGames, setAutoTrackGames] = useState<{ [key: string]: number }>({});
   const [isUpdatingPrefs, setIsUpdatingPrefs] = useState(false);
 
+  // 모바일-PC 인증 완료 실시간 동기화 (Broadcast)
+  useEffect(() => {
+    if (user && typeof window !== 'undefined' && (window.location.hash.includes('access_token') || window.location.search.includes('type=signup'))) {
+      const channel = supabase.channel(`auth-sync:${user.email?.toLowerCase()}`);
+      channel.subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log("Broadcasting verification signal to other devices...");
+          channel.send({
+            type: 'broadcast',
+            event: 'verified',
+            payload: { email: user.email }
+          });
+          // 성공적으로 보낸 후 약간의 지연 뒤 채널 삭제
+          setTimeout(() => {
+            supabase.removeChannel(channel);
+          }, 3000);
+        }
+      });
+    }
+  }, [user]);
+
   // Branding Helpers
   const isOz = game === 'Oz Lotto';
   const isTatts = game === 'Tatts Lotto';

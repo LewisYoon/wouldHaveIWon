@@ -20,6 +20,24 @@ export default function LoginPage() {
   const { signIn, signUp, signInWithGoogle, resetPassword } = useAuth();
   const router = useRouter();
 
+  // 실시간 인증 상태 동기화 (PC-모바일 연동)
+  useEffect(() => {
+    if (mode === 'signup' && message && email) {
+      const channel = supabase.channel(`auth-sync:${email.toLowerCase()}`)
+        .on('broadcast', { event: 'verified' }, () => {
+          console.log("Cross-device verification detected!");
+          setMode('signin');
+          setMessage("Email verified! You can now sign in with your password.");
+          // 효과를 위해 약간의 진동이나 강조 효과를 줄 수 있음
+        })
+        .subscribe();
+      
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [mode, message, email, signIn]);
+
   // Password Strength Logic
   const getPasswordStrength = (pass: string) => {
     if (!pass) return 0;
