@@ -154,7 +154,9 @@ function LuckContent() {
   const handleSaveTicket = async () => {
     if (!user) { router.push('/login'); return; }
     const required = game === 'Powerball' ? 8 : game === 'Oz Lotto' ? 7 : 6;
-    if (currentNumbers.filter(n => n > 0).length < required) { alert(`Please select all ${required} numbers.`); return; }
+    if (currentNumbers.filter(n => n > 0).length < required) {
+      alert(`Please select all ${required} numbers.`); return;
+    }
     if (!isPremium && myTickets.filter(t => t.drawDate === selectedDate).length >= FREE_TICKET_LIMIT) {
       alert("Free tier limit reached for this draw."); return;
     }
@@ -164,7 +166,7 @@ function LuckContent() {
       setCurrentNumbers([]);
     }
   };
-  
+
   const handleQuickPick = () => setCurrentNumbers(generateQuickPick(game));
   const handleMultiQuickPick = async () => {
     if (!user) { router.push('/login'); return; }
@@ -251,28 +253,27 @@ function LuckContent() {
       <main className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-16 px-4 sm:px-6 relative z-10">
         <div className="lg:col-span-5 space-y-8 sm:space-y-10 animate-in fade-in slide-in-from-bottom-8 duration-1000 text-left">
           
-          {/* Enhanced Stats Card */}
           <div className={`rounded-[2.5rem] p-8 sm:p-10 border transition-all duration-700 shadow-2xl relative overflow-hidden bg-white dark:bg-gray-900 border-gray-100 dark:border-white/5`}>
             <div className={`absolute top-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full blur-[80px] opacity-20 ${isOz ? 'bg-emerald-500' : isTatts ? 'bg-red-500' : 'bg-indigo-500'}`} />
             <div className="relative z-10">
               <div className="flex justify-between items-center mb-10">
-                <p className={`text-[10px] font-black uppercase tracking-[0.4em] ${brandStyles.text}`}>Performance Metrics</p>
+                <p className={`text-[10px] font-black uppercase tracking-[0.4em] ${brandStyles.text}`}>Luck Stats</p>
                 <div className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${brandStyles.bgLight} ${brandStyles.text}`}>Live Sync</div>
               </div>
               
               <div className="grid grid-cols-1 gap-10">
                 <div>
-                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2">Total Prize Missed</p>
+                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2">Total Missed</p>
                   <p className={`text-5xl sm:text-6xl font-black tracking-tighter ${brandStyles.text}`}>{formatCurrency(stats.totalMissedPrize)}</p>
                 </div>
                 
                 <div className="grid grid-cols-2 gap-6 pt-10 border-t border-gray-100 dark:border-white/5">
                   <div className="space-y-1">
-                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Saved Cost</p>
+                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Money "Saved"</p>
                     <p className="text-2xl font-black text-gray-900 dark:text-white">{formatCurrency(stats.totalInvested)}</p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Best Hit</p>
+                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Best Win</p>
                     <p className={`text-2xl font-black ${brandStyles.text}`}>{stats.bestDivision === 'No Prize' ? '-' : stats.bestDivision.replace('Division ', 'Div ')}</p>
                   </div>
                 </div>
@@ -280,17 +281,21 @@ function LuckContent() {
             </div>
           </div>
 
-          {/* Lotto Picker Card */}
           <div className="bg-white dark:bg-gray-900 p-8 sm:p-10 rounded-[2.5rem] border border-gray-100 dark:border-white/5 shadow-xl transition-all duration-500">
-            <div className="flex justify-between items-center mb-8">
-              <div className="space-y-1">
-                <h3 className="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tighter italic">Create Tickets</h3>
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Manual or Quick Pick selection</p>
+            {!isPremium && myTickets.filter(t => t.drawDate === selectedDate).length >= FREE_TICKET_LIMIT && (
+              <div className="bg-gradient-to-r from-amber-500 to-orange-600 p-6 rounded-[2rem] text-white shadow-xl mb-8">
+                <p className="font-black uppercase tracking-widest text-xs mb-2">Draw Limit Reached! 🚀</p>
+                <p className="text-sm font-bold opacity-90 mb-4">You are tracking {FREE_TICKET_LIMIT} tickets for this draw. Upgrade to PRO for unlimited tracking.</p>
+                <Link href="/premium" className="inline-block bg-white text-orange-600 px-6 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-orange-50 transition-all">Upgrade Now</Link>
               </div>
+            )}
+
+            <div className="flex justify-between items-end mb-4 sm:mb-6 ml-2">
+              <label className="block text-[9px] sm:text-[11px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em]">1. Pick Draw Date</label>
               {selectedJackpot !== null && (
-                <div className="text-right">
-                  <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Estimated Jackpot</p>
-                  <p className={`text-xl font-black ${brandStyles.text} tracking-tighter leading-none`}>{formatJackpot(selectedJackpot)}</p>
+                <div className="text-right animate-in fade-in slide-in-from-right-4">
+                  <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-0.5 sm:mb-1">Div 1 Prize</p>
+                  <p className={`text-base sm:text-lg font-black ${brandStyles.text} tracking-tighter leading-none`}>{formatJackpot(selectedJackpot)}</p>
                 </div>
               )}
             </div>
@@ -298,21 +303,22 @@ function LuckContent() {
             <div className="space-y-8">
               <div className="relative group">
                 <select value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className={`w-full appearance-none bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent rounded-2xl p-5 font-black text-base text-gray-800 dark:text-white outline-none transition-all cursor-pointer ${brandStyles.focus}`}>
-                  {upcomingDates.map(date => <option key={date} value={date}>{date} ({game === 'Oz Lotto' ? 'Tue' : game === 'Powerball' ? 'Thu' : 'Sat'})</option>)}
+                  {upcomingDates.map(date => <option key={date} value={date}>{date}</option>)}
                 </select>
                 <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></div>
               </div>
 
+              <label className="block text-[9px] sm:text-[11px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em] mb-4 sm:mb-6 ml-2">2. Choose Your Numbers</label>
               <LottoLinePicker lineId="luck-picker" displayIndex={1} selectedNumbers={currentNumbers} onNumbersChange={(_, numbers) => setCurrentNumbers(numbers)} onDeleteLine={() => setCurrentNumbers([])} game={game} />
               
               <div className="pt-4 space-y-4">
-                <button onClick={handleSaveTicket} className={`w-full py-5 text-white font-black rounded-[1.5rem] transition-all uppercase tracking-[0.2em] text-sm active:scale-95 shadow-xl hover:brightness-110 ${brandStyles.bg} ${brandStyles.shadow}`}>Lock In Ticket</button>
+                <button onClick={handleSaveTicket} className={`w-full py-5 text-white font-black rounded-[1.5rem] transition-all uppercase tracking-[0.2em] text-sm active:scale-95 shadow-xl hover:brightness-110 ${brandStyles.bg} ${brandStyles.shadow}`}>Save This Ticket</button>
                 
                 <div className="flex gap-3">
                   <select value={quickPickQty} onChange={(e) => setQuickPickQuantity(Number(e.target.value))} className="bg-gray-50 dark:bg-gray-800 rounded-2xl px-6 py-5 font-black text-sm outline-none text-gray-700 dark:text-gray-300 border-none cursor-pointer">
                     {[10, 25, 50, 100].map(q => <option key={q} value={q}>x{q}</option>)}
                   </select>
-                  <button onClick={handleMultiQuickPick} className="flex-1 py-5 bg-emerald-500 text-white font-black rounded-2xl transition-all uppercase tracking-[0.2em] text-xs shadow-xl shadow-emerald-500/20 hover:brightness-110 active:scale-95">Burst Generation</button>
+                  <button onClick={handleMultiQuickPick} className="flex-1 py-5 bg-emerald-500 text-white font-black rounded-2xl transition-all uppercase tracking-[0.2em] text-xs shadow-xl shadow-emerald-500/20 hover:brightness-110 active:scale-95">Quick Pick Burst</button>
                 </div>
               </div>
             </div>
@@ -321,7 +327,6 @@ function LuckContent() {
 
         <div className="lg:col-span-7 space-y-10 animate-in fade-in slide-in-from-right-8 duration-1000 text-left">
           
-          {/* Enhanced Auto-Tracker Card */}
           <div className={`rounded-[2.5rem] p-8 sm:p-10 border shadow-2xl relative overflow-hidden transition-all duration-700 ${!isPremium ? 'bg-gray-50/50 dark:bg-white/5 grayscale-[0.5] border-gray-100 dark:border-white/5' : ((autoTrackGames[game] || 0) > 0 ? 'bg-white dark:bg-gray-900 border-amber-400 dark:border-amber-500/50 shadow-amber-500/10' : 'bg-white dark:bg-gray-900 border-gray-100 dark:border-white/5')}`}>
             <div className="flex justify-between items-start mb-10">
               <div className="space-y-1">
@@ -329,11 +334,11 @@ function LuckContent() {
                   <h3 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter italic leading-none">Auto-Tracker</h3>
                   <span className="text-[10px] font-black bg-amber-400 text-amber-950 px-2.5 py-1 rounded-lg shadow-sm">PRO</span>
                 </div>
-                <p className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Never miss a future draw</p>
+                <p className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Hands-free monitoring</p>
               </div>
               
               {!isPremium ? (
-                <Link href="/premium/" className="bg-amber-400 text-amber-950 px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-amber-500 transition-all shadow-lg shadow-amber-500/20">Go Pro</Link>
+                <Link href="/premium/" className="bg-amber-400 text-amber-950 px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-amber-500 transition-all shadow-lg shadow-amber-500/20">Upgrade</Link>
               ) : (
                 <button 
                   onClick={() => handleUpdateAutoTrack(game, (autoTrackGames[game] || 0) > 0 ? 0 : 10)}
@@ -350,8 +355,8 @@ function LuckContent() {
                 {(autoTrackGames[game] || 0) > 0 && (
                   <div className="space-y-6">
                     <div className="flex justify-between items-center px-1">
-                      <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em]">{game} Tickets</label>
-                      <span className="text-lg font-black text-amber-600 dark:text-amber-400 tracking-tighter">{autoTrackGames[game] || 0} Sets</span>
+                      <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em]">{game} Capacity</label>
+                      <span className="text-lg font-black text-amber-600 dark:text-amber-400 tracking-tighter">{autoTrackGames[game] || 0} Tickets</span>
                     </div>
                     <input 
                       type="range" min="5" max="100" step="5"
@@ -364,23 +369,23 @@ function LuckContent() {
                 <div className={`p-6 rounded-[1.5rem] border transition-all duration-500 ${((autoTrackGames[game] || 0) > 0) ? 'bg-amber-50 dark:bg-amber-500/5 border-amber-100 dark:border-amber-500/10' : 'bg-gray-50 dark:bg-white/5 border-transparent'}`}>
                   <p className={`text-[11px] font-black leading-relaxed uppercase tracking-widest text-center ${((autoTrackGames[game] || 0) > 0) ? 'text-amber-700 dark:text-amber-400' : 'text-gray-400'}`}>
                     {((autoTrackGames[game] || 0) > 0) 
-                      ? `System will generate ${autoTrackGames[game]} sets for every upcoming ${game} draw.`
-                      : `Auto-Tracker is paused for this game.`}
+                      ? `System will generate ${autoTrackGames[game]} sets for every upcoming draw.`
+                      : `Auto-Tracker is currently inactive for this game.`}
                   </p>
                 </div>
               </div>
             )}
           </div>
 
-          {/* Enhanced History Section */}
           <div className="space-y-10">
             <div className="flex items-end justify-between px-4 sm:px-6">
               <div className="space-y-1">
-                <h2 className="text-4xl font-black text-gray-900 dark:text-white uppercase tracking-tighter italic">Archive</h2>
-                <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.3em]">Historical Analysis</p>
+                <h2 className="text-4xl font-black text-gray-900 dark:text-white uppercase tracking-tighter italic">My History</h2>
+                <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.3em]">Archived Ticket Results</p>
               </div>
+
               <div className="text-right">
-                <span className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 px-5 py-2.5 rounded-2xl uppercase tracking-widest shadow-sm">{myTickets.length} Total</span>
+                <span className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 px-5 py-2.5 rounded-2xl uppercase tracking-widest shadow-sm">{myTickets.length} Tickets</span>
               </div>
             </div>
 
@@ -389,8 +394,8 @@ function LuckContent() {
                 <div className="py-40 flex flex-col items-center gap-6 animate-pulse"><div className={`w-16 h-16 border-[6px] ${brandStyles.text.replace('text-', 'border-')} border-t-transparent rounded-full animate-spin`} /><p className="text-gray-400 font-black uppercase tracking-[0.4em] text-xs italic">Syncing History...</p></div>
               ) : Object.keys(ticketsByDate).length === 0 ? (
                 <div className="bg-white dark:bg-gray-900 p-24 sm:p-32 rounded-[3rem] border-2 border-dashed border-gray-100 dark:border-white/5 text-center group hover:border-indigo-500/30 transition-all duration-700">
-                  <p className="text-lg text-gray-400 dark:text-gray-500 font-black italic mb-8 uppercase tracking-widest">No history found</p>
-                  <button onClick={handleMultiQuickPick} className={`text-xs font-black ${brandStyles.text} uppercase tracking-[0.4em] border-b-2 border-current pb-2 hover:opacity-70 transition-all`}>Begin Tracking Now</button>
+                  <p className="text-lg text-gray-400 dark:text-gray-500 font-black italic mb-8 uppercase tracking-widest">Empty Archive</p>
+                  <button onClick={handleMultiQuickPick} className={`text-xs font-black ${brandStyles.text} uppercase tracking-[0.4em] border-b-2 border-current pb-2 hover:opacity-70 transition-all`}>Begin Monitoring Luck</button>
                 </div>
               ) : (
                 Object.entries(ticketsByDate).sort((a, b) => b[0].localeCompare(a[0])).map(([date, tickets], idx) => {
@@ -419,28 +424,27 @@ function LuckContent() {
                           <div className="flex items-center gap-10">
                             <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-3xl flex-shrink-0 flex items-center justify-center font-black text-2xl transition-all duration-700 group-hover:rotate-12 ${isWinner ? brandStyles.bg + ' text-white shadow-2xl scale-110' : 'bg-gray-50 dark:bg-white/5 text-gray-400 dark:text-gray-500'}`}>{tickets.length}</div>
                             <div>
-                              <p className={`text-[10px] font-black ${brandStyles.text} uppercase mb-2 tracking-[0.2em]`}>Draw {date}</p>
-                              <p className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white tracking-tighter italic">{res ? (isWinner ? 'JACKPOT!' : 'PROCESSED') : 'AWAITING'}</p>
+                              <p className={`text-[10px] font-black ${brandStyles.text} uppercase mb-2 tracking-[0.2em]`}>Draw: {date}</p>
+                              <p className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white tracking-tighter italic">{res ? (isWinner ? 'WIN!' : 'NO WIN') : 'PENDING'}</p>
                             </div>
                           </div>
                           {res ? (
                             <div className="text-right">
-                              <p className={`text-2xl sm:text-4xl font-black tracking-tighter ${isWinner ? 'text-emerald-500 animate-pulse' : 'text-gray-300 dark:text-gray-700'}`}>{formatJackpot(totalPrize)}</p>
-                              {isWinner && <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mt-2">Missed Opportunity</p>}
+                              <p className={`text-2xl sm:text-4xl font-black tracking-tighter ${isWinner ? 'text-emerald-500' : 'text-gray-300 dark:text-gray-700'}`}>{formatJackpot(totalPrize)}</p>
                             </div>
                           ) : (
                             <div className="text-right hidden sm:block scale-125"><Countdown targetDate={date} /></div>
                           )}
                         </button>
                         <div className="pr-10">
-                          <button onClick={() => handleDeleteDateGroup(date)} className="text-gray-300 dark:text-gray-700 hover:text-red-500 transition-all duration-300 p-4 rounded-2xl hover:bg-red-50 dark:hover:bg-red-500/10 transform hover:rotate-90"><TrashIcon /></button>
+                          <button onClick={() => handleDeleteDateGroup(date)} className="text-gray-300 dark:text-gray-700 hover:text-red-500 transition-all duration-300 p-4 rounded-2xl hover:bg-red-50 dark:hover:bg-red-500/10 transform hover:scale-110"><TrashIcon /></button>
                         </div>
                       </div>
                       {isExpanded && (
                         <div className={`p-8 sm:p-12 border-t dark:border-white/5 animate-in slide-in-from-top-8 duration-700 ${isWinner ? `${brandStyles.bgLight} dark:bg-${brandColor}-500/5` : 'bg-gray-50/30 dark:bg-white/5'}`}>
                           {res && (
                             <div className="mb-12 bg-white dark:bg-gray-800 p-10 sm:p-14 rounded-[3rem] border border-gray-100 dark:border-white/5 flex flex-col items-center shadow-2xl relative">
-                              <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase mb-10 tracking-[0.5em]">Official Result</p>
+                              <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase mb-10 tracking-[0.5em]">Draw Numbers</p>
                               <div className="flex flex-wrap gap-4 sm:gap-6 justify-center">
                                 {res.numbers.map((n: number, i: number) => (<span key={n} className={`w-12 h-12 sm:w-16 sm:h-16 rounded-full ${brandStyles.bg} text-white flex items-center justify-center font-black border-b-[6px] border-black/20 shadow-2xl text-xl sm:text-2xl transform hover:-translate-y-2 transition-transform`} style={{ transitionDelay: `${i * 100}ms` }}>{n}</span>))}
                                 <div className="w-px h-12 sm:h-16 bg-gray-200 dark:bg-white/10 mx-4" />
@@ -454,11 +458,11 @@ function LuckContent() {
                               let prize = (c && res) ? (res.prizes[c.prizeTier] || 0) : 0;
                               const ticketWon = prize > 0 || c?.prizeTier === 'Division 1';
                               return (
-                                <div key={t.id} className={`p-8 sm:p-10 rounded-[2rem] sm:rounded-[3rem] border transition-all duration-700 group/ticket ${ticketWon ? `bg-white dark:bg-gray-800 border-${brandColor}-400 dark:border-${brandColor}-500 shadow-2xl scale-[1.05] z-10` : 'bg-white/60 dark:bg-white/5 border-gray-100 dark:border-white/5 opacity-60 hover:opacity-100 shadow-sm'}`}>
+                                <div key={t.id} className={`p-8 sm:p-10 rounded-[2rem] sm:rounded-[3rem] border transition-all duration-700 group/ticket ${ticketWon ? `bg-white dark:bg-gray-800 border-${brandColor}-400 dark:border-${brandColor}-500 shadow-2xl scale-[1.02] z-10` : 'bg-white/60 dark:bg-white/5 border-gray-100 dark:border-white/5 opacity-60 hover:opacity-100 shadow-sm'}`}>
                                   <div className="flex justify-between items-center mb-8">
-                                    <span className="text-[10px] font-black text-gray-300 dark:text-gray-600 uppercase tracking-widest italic">Sequence #{tidx + 1}</span>
+                                    <span className="text-[10px] font-black text-gray-300 dark:text-gray-600 uppercase tracking-widest italic">Set #{tidx + 1}</span>
                                     <div className="flex items-center gap-4">
-                                      {c && <span className={`text-[10px] font-black px-5 py-2 rounded-xl uppercase tracking-[0.2em] shadow-sm ${ticketWon ? brandStyles.bg + ' text-white shadow-indigo-500/20' : 'bg-gray-100 dark:bg-white/10 text-gray-400 dark:text-gray-500'}`}>{c.prizeTier}</span>}
+                                      {c && <span className={`text-[10px] font-black px-5 py-2 rounded-xl uppercase tracking-[0.2em] shadow-sm ${ticketWon ? brandStyles.bg + ' text-white' : 'bg-gray-100 dark:bg-white/10 text-gray-400 dark:text-gray-500'}`}>{c.prizeTier}</span>}
                                       <button onClick={() => handleDeleteSingleTicket(t.id)} className="text-gray-300 dark:text-gray-700 hover:text-red-500 transition-colors p-2"><TrashIcon /></button>
                                     </div>
                                   </div>
@@ -469,7 +473,7 @@ function LuckContent() {
                                       return <span key={n} className={`w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-full text-xs sm:text-sm font-black border-b-[4px] transition-all duration-700 ${isMainMatch ? brandStyles.bg + ' text-white border-black/20 shadow-xl scale-110' : isBonusMatch ? 'bg-amber-400 text-amber-950 border-amber-600 shadow-xl scale-110' : 'bg-gray-50 dark:bg-white/10 text-gray-400 dark:text-gray-600 border-gray-200 dark:border-white/10 opacity-50'}`}>{n}</span>; 
                                     })}
                                   </div>
-                                  {ticketWon && <p className={`mt-10 text-xl font-black ${brandStyles.text} italic tracking-tighter`}>+{formatCurrency(prize)} LOST PROFIT</p>}
+                                  {ticketWon && <p className={`mt-10 text-lg font-black ${brandStyles.text} italic tracking-tighter`}>+{formatCurrency(prize)} MISSING</p>}
                                 </div>
                               );
                             })}
@@ -493,7 +497,7 @@ function LuckContent() {
 
 export default function LuckPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950 uppercase font-black tracking-[0.5em] animate-pulse text-xs text-gray-400">Syncing Environment...</div>}>
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950 uppercase font-black tracking-[0.5em] animate-pulse text-xs text-gray-400">Initializing...</div>}>
       <LuckContent />
     </Suspense>
   );
