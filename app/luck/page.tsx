@@ -508,7 +508,7 @@ function LuckContent() {
                                 <div key={ticket.id} className="flex items-center justify-between p-4 bg-white dark:bg-gray-900 rounded-2xl border border-gray-50 dark:border-white/5 group shadow-sm">
                                   <div className="flex flex-wrap gap-1.5 sm:gap-2">
                                     {ticket.numbers.map((n, i) => {
-                                      const isMatch = comparison?.matchedNumbers.includes(n);
+                                      const isMatch = result?.numbers.includes(n);
                                       const isBonusMatch = comparison?.matchedBonusNumbers.includes(n);
                                       return <span key={i} className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-[10px] sm:text-xs font-black transition-all ${isMatch ? `${brandStyles.bg} text-white shadow-lg` : isBonusMatch ? 'bg-amber-400 text-amber-950 shadow-lg' : 'bg-gray-100 dark:bg-white/5 text-gray-500'}`}>{n}</span>;
                                     })}
