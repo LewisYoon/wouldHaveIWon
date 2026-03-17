@@ -3,7 +3,9 @@
 import { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import Navbar from '../../components/Navbar';
+import LottoLinePicker from '../../components/LottoLinePicker';
 import DivisionRules from '../../components/DivisionRules';
+import Countdown from '../../components/Countdown';
 import SettingsModal from '../../components/SettingsModal';
 import { getNextDrawDates, compareNumbers, generateQuickPick } from '../../lib/lotto-utils';
 import { supabase } from '../../lib/supabase';
@@ -29,72 +31,6 @@ interface DrawResult {
 const TICKET_COST = 1.45;
 const FREE_TICKET_LIMIT = 25;
 
-// Build-error-free Number Grid component
-function NumberGrid({ 
-  game, 
-  selectedNumbers, 
-  onNumberClick, 
-  brandColor 
-}: { 
-  game: string; 
-  selectedNumbers: number[]; 
-  onNumberClick: (n: number) => void;
-  brandColor: string;
-}) {
-  const OZ_MAX = 47;
-  const PB_MAX = 35;
-  const PB_BALL_MAX = 20;
-  const TATTS_MAX = 45;
-
-  const isPB = game === 'Powerball';
-  const mainMax = game === 'Oz Lotto' ? OZ_MAX : isPB ? PB_MAX : TATTS_MAX;
-  
-  const mainNumbers = Array.from({ length: mainMax }, (_, i) => i + 1);
-  const pbNumbers = Array.from({ length: PB_BALL_MAX }, (_, i) => i + 1);
-
-  const brandStyles = {
-    emerald: 'bg-emerald-500 text-white shadow-emerald-500/20',
-    red: 'bg-red-500 text-white shadow-red-500/20',
-    indigo: 'bg-indigo-600 text-white shadow-indigo-500/20',
-  }[brandColor as 'emerald' | 'red' | 'indigo'] || 'bg-indigo-600 text-white';
-
-  return (
-    <div className="space-y-8">
-      <div>
-        <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4 px-1">Main Numbers</p>
-        <div className="grid grid-cols-7 sm:grid-cols-10 gap-2">
-          {mainNumbers.map(n => {
-            const mainSelection = isPB ? selectedNumbers.slice(0, 7) : selectedNumbers;
-            const isSelected = mainSelection.includes(n);
-            return (
-              <button key={n} type="button" onClick={() => onNumberClick(n)}
-                className={`aspect-square rounded-xl text-xs font-black transition-all transform active:scale-90 shadow-sm border-b-2 ${ isSelected ? `${brandStyles} border-black/20 scale-105 shadow-md` : 'bg-gray-50 dark:bg-white/5 text-gray-400 dark:text-gray-500 border-gray-100 dark:border-white/5 hover:bg-gray-100 dark:hover:bg-white/10'}`}>
-                {n}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-      {isPB && (
-        <div className="animate-in fade-in slide-in-from-top-4 duration-500">
-          <p className="text-[10px] font-black text-amber-500 uppercase tracking-[0.2em] mb-4 px-1">Powerball</p>
-          <div className="grid grid-cols-7 sm:grid-cols-10 gap-2">
-            {pbNumbers.map(n => {
-              const isSelected = selectedNumbers.length > 7 && selectedNumbers[7] === n;
-              return (
-                <button key={n} type="button" onClick={() => onNumberClick(n)}
-                  className={`aspect-square rounded-xl text-xs font-black transition-all transform active:scale-90 shadow-sm border-b-2 ${ isSelected ? 'bg-amber-400 text-amber-950 border-amber-600 scale-105 shadow-md' : 'bg-amber-50/50 dark:bg-amber-500/5 text-amber-600/40 dark:text-amber-400/40 border-amber-100/50 dark:border-white/5 hover:bg-amber-100/50'}`}>
-                  {n}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
 function LuckContent() {
   const { user, isPremium, isLoading: isAuthLoading, subscriptionInfo, refreshPremiumStatus } = useAuth();
   const router = useRouter();
@@ -102,9 +38,11 @@ function LuckContent() {
   const pathname = usePathname();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
+  // URL에서 게임 정보를 읽어오거나 기본값 'Oz Lotto' 사용
   const initialGame = (searchParams.get('game') as any) || 'Oz Lotto';
   const [game, setGame] = useState<'Oz Lotto' | 'Powerball' | 'Tatts Lotto'>(initialGame);
 
+  // 게임이 바뀔 때마다 URL 업데이트
   const handleGameChange = (newGame: 'Oz Lotto' | 'Powerball' | 'Tatts Lotto') => {
     setGame(newGame);
     const params = new URLSearchParams(searchParams.toString());
@@ -124,29 +62,11 @@ function LuckContent() {
   const [isRulesModalOpen, setIsRulesModalOpen] = useState(false);
   const [selectedJackpot, setSelectedJackpot] = useState<number | null>(null);
 
+  // Auto-Tracker State (Per-game)
   const [autoTrackGames, setAutoTrackGames] = useState<{ [key: string]: number }>({});
   const [isUpdatingPrefs, setIsUpdatingPrefs] = useState(false);
 
-  useEffect(() => {
-    const fetchPrefs = async () => {
-      if (!user) return;
-      if (subscriptionInfo?.autoTrackGames) setAutoTrackGames(subscriptionInfo.autoTrackGames);
-      const { data } = await supabase.from('user_preferences').select('auto_track_games').eq('user_id', user.id).maybeSingle();
-      if (data?.auto_track_games) setAutoTrackGames(data.auto_track_games);
-    };
-    if (!isAuthLoading) fetchPrefs();
-  }, [user, isAuthLoading, subscriptionInfo]);
-
-  const handleUpdateAutoTrack = async (gameName: string, qty: number) => {
-    if (!user || !isPremium) return;
-    const newGames = { ...autoTrackGames, [gameName]: qty };
-    setAutoTrackGames(newGames);
-    setIsUpdatingPrefs(true);
-    const { error } = await supabase.from('user_preferences').upsert({ user_id: user.id, auto_track_games: newGames }, { onConflict: 'user_id' });
-    if (!error) refreshPremiumStatus();
-    setIsUpdatingPrefs(false);
-  };
-  
+  // Branding Helpers
   const isOz = game === 'Oz Lotto';
   const isTatts = game === 'Tatts Lotto';
   const brandColor = isOz ? 'emerald' : isTatts ? 'red' : 'indigo';
@@ -171,11 +91,13 @@ function LuckContent() {
       if (res) {
         totalTicketsChecked++;
         const c = compareNumbers(t.numbers, res.numbers, res.bonus, t.game as any);
+        
         let prize = res.prizes[c.prizeTier] || 0;
         if (c.prizeTier === 'Division 1' && prize === 0) {
           const ledgerMatch = upcomingLedger.find(l => l.game?.toLowerCase().includes(t.game.toLowerCase().split(' ')[0]) && l.draw_date === t.drawDate);
           if (ledgerMatch) prize = ledgerMatch.jackpot;
         }
+
         totalMissedPrize += prize;
         if (c.prizeTier !== 'No Prize') {
           totalWins++;
@@ -186,7 +108,8 @@ function LuckContent() {
       }
     });
 
-    return { totalMissedPrize, totalTicketsChecked, totalWins, bestDivision };
+    const totalInvested = myTickets.length * TICKET_COST;
+    return { totalMissedPrize, totalTicketsChecked, totalWins, bestDivision, totalInvested };
   }, [myTickets, drawResultsList, upcomingLedger, game]);
 
   useEffect(() => {
@@ -195,56 +118,77 @@ function LuckContent() {
   }, [game, upcomingDates]);
 
   useEffect(() => {
-    const loadData = async () => {
+    const loadLedger = async () => {
+      const { data } = await supabase.from('upcoming_draws').select('*');
+      if (data) setUpcomingLedger(data);
+    };
+    loadLedger();
+  }, []);
+
+  useEffect(() => {
+    const fetchPrefs = async () => {
+      if (!user) return;
+      if (subscriptionInfo?.autoTrackGames) setAutoTrackGames(subscriptionInfo.autoTrackGames);
+      const { data } = await supabase.from('user_preferences').select('auto_track_games').eq('user_id', user.id).maybeSingle();
+      if (data?.auto_track_games) setAutoTrackGames(data.auto_track_games);
+    };
+    if (!isAuthLoading) fetchPrefs();
+  }, [user, isAuthLoading, subscriptionInfo]);
+
+  const handleUpdateAutoTrack = async (gameName: string, qty: number) => {
+    if (!user || !isPremium) return;
+    const newGames = { ...autoTrackGames, [gameName]: qty };
+    setAutoTrackGames(newGames);
+    setIsUpdatingPrefs(true);
+    const { error } = await supabase.from('user_preferences').upsert({ user_id: user.id, auto_track_games: newGames }, { onConflict: 'user_id' });
+    if (!error) refreshPremiumStatus();
+    setIsUpdatingPrefs(false);
+  };
+
+  useEffect(() => {
+    const fetchJackpot = async () => {
+      setSelectedJackpot(null);
+      const gameSearchTerm = game.toLowerCase().split(' ')[0];
+      const ledgerMatch = upcomingLedger.find(l => l.game?.toLowerCase().includes(gameSearchTerm) && l.draw_date === selectedDate);
+      if (ledgerMatch) {
+        setSelectedJackpot(ledgerMatch.jackpot);
+        return;
+      }
+      const { data: upcoming } = await supabase.from('upcoming_draws').select('jackpot').ilike('game', `%${gameSearchTerm}%`).eq('draw_date', selectedDate).limit(1);
+      if (upcoming && upcoming.length > 0) setSelectedJackpot(upcoming[0].jackpot);
+    };
+    fetchJackpot();
+  }, [game, selectedDate, upcomingLedger]);
+
+  useEffect(() => {
+    const fetchTickets = async () => {
+      if (!user) { setMyTickets([]); setIsDataLoading(false); return; }
       setIsDataLoading(true);
-      const { data: ledgerData } = await supabase.from('upcoming_draws').select('*');
-      if (ledgerData) setUpcomingLedger(ledgerData);
-
-      const { data: resultsData } = await supabase.from('draw_results').select('*').order('draw_date', { ascending: false });
-      if (resultsData) setDrawResultsList(resultsData.map(r => ({ game: r.game, drawDate: r.draw_date, drawNumber: r.draw_number, numbers: r.numbers, bonus: r.bonus, prizes: r.prizes })));
-
-      if(user) {
-        const { data: ticketsData } = await supabase.from('tickets').select('*').eq('user_id', user.id).order('draw_date', { ascending: false });
-        if (ticketsData) setMyTickets(ticketsData.map(t => ({ id: t.id, drawDate: t.draw_date, numbers: t.numbers, game: t.game })));
-      } else {
-        setMyTickets([]);
+      const { data } = await supabase.from('tickets').select('*').eq('user_id', user.id).order('draw_date', { ascending: false });
+      if (data) {
+        setMyTickets(data.map(t => ({ id: t.id, drawDate: t.draw_date, numbers: t.numbers, game: t.game })));
       }
       setIsDataLoading(false);
     };
-    if (!isAuthLoading) loadData();
+    if (!isAuthLoading) fetchTickets();
   }, [user, isAuthLoading]);
 
-  const handleNumberClick = (n: number) => {
-    const isPB = game === 'Powerball';
-    const mainNumbers = isPB ? currentNumbers.slice(0, 7) : currentNumbers;
-    const powerball = isPB && currentNumbers.length > 7 ? currentNumbers[7] : undefined;
-
-    if (isPB) {
-      if (n <= 35) { // Main number clicked
-        const updatedMain = mainNumbers.includes(n) ? mainNumbers.filter(num => num !== n) : [...mainNumbers, n];
-        if (updatedMain.length > 7) return;
-        const next = new Array(8).fill(0);
-        updatedMain.sort((a,b)=>a-b).forEach((num, idx) => next[idx] = num);
-        next[7] = powerball || 0;
-        setCurrentNumbers(next);
-      } else { // Powerball clicked
-        const next = new Array(8).fill(0);
-        mainNumbers.forEach((num, idx) => next[idx] = num);
-        next[7] = powerball === n ? 0 : n;
-        setCurrentNumbers(next);
+  useEffect(() => {
+    const fetchResults = async () => {
+      const { data } = await supabase.from('draw_results').select('*').order('draw_date', { ascending: false });
+      if (data) {
+        setDrawResultsList(data.map(r => ({ game: r.game, drawDate: r.draw_date, drawNumber: r.draw_number, numbers: r.numbers, bonus: r.bonus, prizes: r.prizes })));
       }
-    } else {
-      const max = game === 'Oz Lotto' ? 7 : 6;
-      const updatedNumbers = currentNumbers.includes(n) ? currentNumbers.filter(num => num !== n) : [...currentNumbers, n];
-      if (updatedNumbers.length > max) return;
-      setCurrentNumbers(updatedNumbers.sort((a,b)=>a-b));
-    }
-  };
+    };
+    fetchResults();
+  }, []);
 
   const handleSaveTicket = async () => {
     if (!user) { router.push('/login'); return; }
     const required = game === 'Powerball' ? 8 : game === 'Oz Lotto' ? 7 : 6;
-    if (currentNumbers.filter(n => n > 0).length < required) { alert(`Please select all ${required} numbers.`); return; }
+    if (currentNumbers.filter(n => n > 0).length < required) {
+      alert(`Please select all ${required} numbers.`); return;
+    }
     if (!isPremium && myTickets.filter(t => t.drawDate === selectedDate).length >= FREE_TICKET_LIMIT) {
       alert("Free tier limit reached for this draw."); return;
     }
@@ -254,12 +198,12 @@ function LuckContent() {
       setCurrentNumbers([]);
     }
   };
-  
+
   const handleQuickPick = () => setCurrentNumbers(generateQuickPick(game));
   const handleMultiQuickPick = async () => {
     if (!user) { router.push('/login'); return; }
     if (!isPremium && myTickets.filter(t => t.drawDate === selectedDate).length >= FREE_TICKET_LIMIT) {
-      alert("Free tier limit reached for this draw."); return;
+      alert("Free tier limit reached."); return;
     }
     const tickets = Array.from({ length: quickPickQty }, () => ({ user_id: user.id, draw_date: selectedDate, numbers: generateQuickPick(game), game: game }));
     const { data, error } = await supabase.from('tickets').insert(tickets).select();
@@ -268,170 +212,264 @@ function LuckContent() {
       setMyTickets([...mapped, ...myTickets]);
     }
   };
-  const handleDeleteTicket = async (id: string) => {
-    const { error } = await supabase.from('tickets').delete().eq('id', id);
-    if (!error) setMyTickets(myTickets.filter(t => t.id !== id));
+
+  const handleDeleteDateGroup = async (date: string) => {
+    if (!window.confirm(`Delete all ${game} tickets for ${date}?`)) return;
+    if (user) {
+      const { error } = await supabase.from('tickets').delete().eq('user_id', user.id).eq('game', game).eq('draw_date', date);
+      if (error) { alert(`Error: ${error.message}`); return; }
+    }
+    setMyTickets(prev => prev.filter(t => !(t.drawDate === date && t.game === game)));
   };
-  const toggleExpandDate = (date: string) => {
-    const next = new Set(expandedDates);
-    if (next.has(date)) next.delete(date);
-    else next.add(date);
-    setExpandedDates(next);
+
+  const handleDeleteSingleTicket = async (id: string) => {
+    if (user) {
+      const { error } = await supabase.from('tickets').delete().eq('id', id).eq('user_id', user.id);
+      if (error) { alert(`Error: ${error.message}`); return; }
+    }
+    setMyTickets(prev => prev.filter(t => t.id !== id));
   };
-  
+
+  const formatCurrency = (val: number) => new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(val);
+  const formatJackpot = (val: number) => {
+    if (val >= 1000000) return `$${(val / 1000000).toFixed(0)} Million`;
+    if (val === 0) return "Jackpot Pending";
+    return formatCurrency(val);
+  };
+
+  const TrashIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+  );
+
+  const ticketsByDate = useMemo(() => {
+    return myTickets.reduce((acc, t) => {
+      if (t.game === game) {
+        if (!acc[t.drawDate]) acc[t.drawDate] = [];
+        acc[t.drawDate].push(t);
+      }
+      return acc;
+    }, {} as Record<string, Ticket[]>);
+  }, [myTickets, game]);
+
+  if (isAuthLoading) return <div className={`min-h-screen flex items-center justify-center bg-white dark:bg-gray-950 font-black ${brandStyles.text} animate-pulse uppercase tracking-widest`}>Loading...</div>;
+
   return (
-    <div className="flex flex-col min-h-screen bg-white dark:bg-gray-950 selection:bg-indigo-500 selection:text-white transition-colors duration-500">
+    <div className="flex min-h-screen flex-col bg-gray-50 dark:bg-gray-950 pb-24 transition-colors duration-500 text-gray-900 dark:text-gray-100 overflow-x-hidden">
       <Navbar />
-      <main className="flex-grow max-w-7xl mx-auto w-full px-4 sm:px-6 py-10 sm:py-16">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8 mb-12 sm:mb-20">
-          <div className="text-left">
-            <h2 className="text-gray-400 dark:text-gray-500 font-black uppercase tracking-[0.4em] text-[10px] mb-4">Official Results Sync</h2>
-            <h1 className="text-5xl sm:text-7xl font-black text-gray-900 dark:text-white uppercase tracking-tighter italic leading-[0.8]">
-              Track Your <br />
-              <span className={`text-transparent bg-clip-text bg-gradient-to-r ${isOz ? 'from-emerald-400 to-teal-500' : isTatts ? 'from-red-400 to-orange-500' : 'from-indigo-400 to-purple-500'}`}>Fortune</span>.
-            </h1>
-          </div>
-          <div className="flex bg-gray-100 dark:bg-white/5 p-1.5 rounded-[2rem] border border-gray-200 dark:border-white/10 w-full md:w-auto overflow-x-auto no-scrollbar">
-            {(['Oz Lotto', 'Powerball', 'Tatts Lotto'] as const).map((g) => (
-              <button key={g} onClick={() => handleGameChange(g)} className={`flex-1 md:flex-none px-6 sm:px-10 py-3 sm:py-4 rounded-[1.5rem] text-xs sm:text-sm font-black uppercase tracking-widest transition-all duration-500 whitespace-nowrap ${game === g ? `bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-xl shadow-black/5` : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'}`}>{g}</button>
+
+      <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-white/5 py-10 sm:py-16 px-4 sm:px-6 mb-8 sm:mb-16 shadow-sm transition-all duration-500 relative overflow-hidden text-left">
+        <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.07] bg-[radial-gradient(#4f46e5_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none" />
+        <div className="max-w-7xl mx-auto relative z-10 animate-in fade-in slide-in-from-left-8 duration-700">
+          <h1 className="text-4xl sm:text-5xl md:text-7xl font-black text-gray-900 dark:text-white tracking-tighter uppercase mb-6 sm:mb-8">
+            Track My <span className={`text-transparent bg-clip-text bg-gradient-to-r ${isOz ? 'from-emerald-600 to-teal-600' : isTatts ? 'from-red-600 to-orange-600' : 'from-indigo-600 to-purple-600'} italic`}>Luck</span>
+          </h1>
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            {['Oz Lotto', 'Powerball', 'Tatts Lotto'].map((g) => (
+              <button 
+                key={g} 
+                onClick={() => handleGameChange(g as any)} 
+                className={`flex-1 sm:flex-none px-4 sm:px-10 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl text-[10px] sm:text-sm font-black uppercase tracking-widest transition-all duration-300 transform active:scale-95 ${
+                  game === g 
+                    ? (g === 'Oz Lotto' ? 'bg-emerald-600 text-white shadow-xl shadow-emerald-500/20' : g === 'Tatts Lotto' ? 'bg-red-600 text-white shadow-xl shadow-red-500/20' : 'bg-indigo-600 text-white shadow-xl shadow-indigo-500/20') 
+                    : 'bg-white dark:bg-white/5 text-gray-400 dark:text-gray-500 hover:bg-gray-50 dark:hover:bg-white/10 border border-gray-100 dark:border-white/5'
+                }`}
+              >
+                {g}
+              </button>
             ))}
+            <button onClick={() => setIsRulesModalOpen(true)} className="ml-auto bg-gray-100 dark:bg-white/5 text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center font-black text-base sm:text-lg shadow-sm border border-gray-200 dark:border-white/10">?</button>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-16 px-4 sm:px-6 relative z-10">
+        <div className="lg:col-span-5 space-y-8 sm:space-y-10 animate-in fade-in slide-in-from-bottom-8 duration-1000 text-left">
+          {/* Luck Stats Card - RESTORED */}
+          <div className={`rounded-[2rem] sm:rounded-[3rem] p-6 sm:p-10 border transition-all duration-700 shadow-2xl hover:scale-[1.02] group relative overflow-hidden ${brandStyles.bgLight} ${brandStyles.border}`}>
+            <div className={`absolute top-0 right-0 w-32 h-32 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-700 ${isOz ? 'bg-emerald-500/5' : isTatts ? 'bg-red-500/5' : 'bg-indigo-500/5'}`} />
+            <p className={`text-[9px] sm:text-[11px] font-black uppercase tracking-[0.3em] mb-6 sm:mb-8 ${brandStyles.text}`}>Luck Stats</p>
+            <div className="space-y-8 sm:space-y-10 relative z-10">
+              <div className="grid grid-cols-2 gap-4 sm:gap-8">
+                <div><p className="text-[8px] sm:text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase mb-1 sm:mb-2">Total Missed</p><p className={`text-2xl sm:text-4xl font-black tracking-tighter ${brandStyles.text}`}>{formatCurrency(stats.totalMissedPrize)}</p></div>
+                <div><p className="text-[8px] sm:text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase mb-1 sm:mb-2">Money "Saved"</p><p className="text-2xl sm:text-4xl font-black tracking-tighter text-gray-700 dark:text-gray-200">{formatCurrency(stats.totalInvested)}</p></div>
+              </div>
+              <div className="grid grid-cols-2 gap-4 sm:gap-8 pt-6 sm:pt-8 border-t border-gray-200 dark:border-white/5">
+                <div><p className="text-[8px] sm:text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1">Tickets Checked</p><p className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white">{stats.totalTicketsChecked}</p></div>
+                <div><p className="text-[8px] sm:text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1">Best Win</p><p className={`text-xl sm:text-2xl font-black ${brandStyles.text}`}>{stats.bestDivision}</p></div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-gray-900 p-6 sm:p-10 rounded-[2rem] sm:rounded-[3rem] border border-gray-100 dark:border-white/5 shadow-xl transition-all duration-500">
+            {!isPremium && myTickets.filter(t => t.drawDate === selectedDate).length >= FREE_TICKET_LIMIT && (
+              <div className="bg-gradient-to-r from-amber-500 to-orange-600 p-6 rounded-[2rem] text-white shadow-xl mb-8">
+                <p className="font-black uppercase tracking-widest text-xs mb-2">Draw Limit Reached! 🚀</p>
+                <p className="text-sm font-bold opacity-90 mb-4">You are tracking {FREE_TICKET_LIMIT} tickets for this draw. Upgrade to PRO for unlimited tracking.</p>
+                <Link href="/premium" className="inline-block bg-white text-orange-600 px-6 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-orange-50 transition-all">Upgrade Now</Link>
+              </div>
+            )}
+
+            <div className="flex justify-between items-end mb-4 sm:mb-6 ml-2">
+              <label className="block text-[9px] sm:text-[11px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em]">1. Pick Draw Date</label>
+              {selectedJackpot !== null && (<div className="text-right animate-in fade-in slide-in-from-right-4"><p className="text-[8px] sm:text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5 sm:mb-1">Div 1 Prize</p><p className={`text-base sm:text-lg font-black ${brandStyles.text} tracking-tighter leading-none`}>{formatJackpot(selectedJackpot)}</p></div>)}
+            </div>
+            <div className="relative group mb-8 sm:mb-10">
+              <select value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className={`w-full appearance-none bg-gray-50 dark:bg-gray-800/50 border-2 border-gray-100 dark:border-white/5 rounded-xl sm:rounded-2xl p-4 sm:p-5 font-black text-sm sm:text-base text-gray-800 dark:text-white outline-none transition-all cursor-pointer ${brandStyles.focus}`}>
+                {upcomingDates.map(date => <option key={date} value={date}>{date}</option>)}
+              </select>
+            </div>
+            <label className="block text-[9px] sm:text-[11px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em] mb-4 sm:mb-6 ml-2">2. Choose Your Numbers</label>
+            {/* Lotto Picker - RESTORED */}
+            <LottoLinePicker lineId="luck-picker" displayIndex={1} selectedNumbers={currentNumbers} onNumbersChange={(_, numbers) => setCurrentNumbers(numbers)} onDeleteLine={() => setCurrentNumbers([])} game={game} />
+            
+            <div className="grid grid-cols-1 gap-4 sm:gap-5 mt-8 sm:mt-12">
+              <button onClick={handleSaveTicket} className={`py-4 sm:py-6 text-white font-black rounded-2xl sm:rounded-3xl transition-all uppercase tracking-[0.2em] text-xs sm:text-sm active:scale-95 shadow-xl hover:brightness-110 ${brandStyles.bg} ${brandStyles.shadow}`}>Save This Ticket</button>
+              <div className="flex gap-3 sm:gap-4">
+                <select value={quickPickQty} onChange={(e) => setQuickPickQuantity(Number(e.target.value))} className="bg-gray-100 dark:bg-gray-800 rounded-2xl sm:rounded-3xl p-4 sm:p-5 font-black text-[10px] sm:text-xs outline-none text-gray-700 dark:text-gray-300 w-20 sm:w-24 border-none cursor-pointer">{[10, 25, 50, 100].map(q => <option key={q} value={q}>x{q}</option>)}</select>
+                <button onClick={handleMultiQuickPick} className="flex-1 py-4 sm:py-6 bg-emerald-500 text-white font-black rounded-2xl sm:rounded-3xl transition-all uppercase tracking-[0.2em] text-[10px] sm:text-sm shadow-xl shadow-emerald-500/20 hover:brightness-110 active:scale-95">Quick Pick Burst</button>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-12">
-          <div className="lg:col-span-5 space-y-8 sm:space-y-10 animate-in fade-in slide-in-from-left-8 duration-1000">
-            <div className={`rounded-[2rem] sm:rounded-[3rem] p-6 sm:p-10 border border-gray-100 dark:border-white/5 shadow-xl relative overflow-hidden transition-all duration-500 bg-white dark:bg-gray-900`}>
-              <div className="flex justify-between items-center mb-8 sm:mb-10">
-                <div className="text-left">
-                  <h3 className="text-lg sm:text-xl font-black text-gray-900 dark:text-white uppercase tracking-tighter italic">Select Draw Date</h3>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Which draw are you tracking?</p>
+        <div className="lg:col-span-7 space-y-8 sm:space-y-10 animate-in fade-in slide-in-from-right-8 duration-1000 text-left">
+          {/* Auto-Tracker - WITH TOGGLE & AMBER BORDER */}
+          <div className={`rounded-[2rem] sm:rounded-[3rem] p-6 sm:p-10 border shadow-xl relative overflow-hidden transition-all duration-500 ${!isPremium ? 'bg-gray-50/50 dark:bg-white/5 grayscale-[0.5] border-gray-100 dark:border-white/5' : ((autoTrackGames[game] || 0) > 0 ? 'bg-white dark:bg-gray-900 border-amber-400 dark:border-amber-500/50 shadow-amber-500/10' : 'bg-white dark:bg-gray-900 border-gray-100 dark:border-white/5')}`}>
+            <div className="flex justify-between items-start mb-8 sm:mb-10">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <h3 className="text-lg sm:text-xl font-black text-gray-900 dark:text-white uppercase tracking-tighter italic">Auto-Tracker</h3>
+                  <span className="text-[8px] font-black bg-amber-400 text-amber-950 px-1.5 py-0.5 rounded-md">PRO</span>
                 </div>
-                {selectedJackpot && (
-                  <div className="text-right">
-                    <span className={`text-[10px] font-black uppercase tracking-widest ${brandStyles.text}`}>Jackpot</span>
-                    <p className="text-xl font-black text-gray-900 dark:text-white tracking-tighter">${(selectedJackpot / 1000000).toFixed(0)}M</p>
+                <p className="text-[10px] sm:text-xs font-bold text-gray-400 dark:text-gray-500 leading-relaxed italic text-left">Automatically track new draws for this game.</p>
+              </div>
+              {!isPremium ? (
+                <Link href="/premium/" className="flex-shrink-0 bg-amber-400 text-amber-950 px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-amber-500 transition-all shadow-sm">Upgrade</Link>
+              ) : (
+                <button onClick={() => handleUpdateAutoTrack(game, (autoTrackGames[game] || 0) > 0 ? 0 : 10)} disabled={isUpdatingPrefs} className={`w-12 h-7 rounded-full transition-colors relative flex-shrink-0 ${((autoTrackGames[game] || 0) > 0) ? 'bg-amber-500' : 'bg-gray-200 dark:bg-gray-800'}`}><div className={`absolute top-1 left-1 w-5 h-5 bg-white rounded-full transition-transform shadow-sm ${((autoTrackGames[game] || 0) > 0) ? 'translate-x-5' : 'translate-x-0'}`} /></button>
+              )}
+            </div>
+            {isPremium && (
+              <div className="space-y-8 animate-in slide-in-from-top-2 duration-500">
+                {((autoTrackGames[game] || 0) > 0) && (
+                  <div className="space-y-4 animate-in zoom-in-95 duration-200">
+                    <div className="flex justify-between items-center px-1">
+                      <label className="text-[9px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">{game} Quantity</label>
+                      <span className="text-xs font-black text-amber-600 dark:text-amber-400">{autoTrackGames[game] || 0} Tickets</span>
+                    </div>
+                    <input type="range" min="5" max="100" step="5" value={autoTrackGames[game] || 0} onChange={(e) => handleUpdateAutoTrack(game, parseInt(e.target.value))} className="w-full accent-amber-500 h-1.5 bg-gray-100 dark:bg-white/5 rounded-full appearance-none cursor-pointer" />
                   </div>
                 )}
-              </div>
-              <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-4 no-scrollbar">
-                {upcomingDates.map((date) => (
-                  <button key={date} onClick={() => setSelectedDate(date)} className={`flex-shrink-0 px-5 sm:px-6 py-3 sm:py-4 rounded-2xl sm:rounded-3xl border-2 transition-all font-black text-[10px] sm:text-xs uppercase tracking-widest ${selectedDate === date ? `${brandStyles.border} ${brandStyles.text} ${brandStyles.bgLight} scale-105` : 'border-transparent bg-gray-50 dark:bg-white/5 text-gray-400'}`}>{date}</button>
-                ))}
-              </div>
-              <div className="mt-10 sm:mt-12 space-y-8">
-                <div className="flex justify-between items-center px-1">
-                  <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-widest">Choose Numbers</h3>
-                  <button onClick={handleQuickPick} className={`${brandStyles.text} text-[10px] font-black uppercase tracking-widest hover:underline`}>Quick Pick</button>
-                </div>
-                <NumberGrid game={game} selectedNumbers={currentNumbers} onNumberClick={handleNumberClick} brandColor={brandColor} />
-              </div>
-              <div className="grid grid-cols-1 gap-4 sm:gap-5 mt-8 sm:mt-12">
-                <button onClick={handleSaveTicket} className={`py-4 sm:py-6 text-white font-black rounded-2xl sm:rounded-3xl transition-all uppercase tracking-[0.2em] text-xs sm:text-sm active:scale-95 shadow-xl hover:brightness-110 ${brandStyles.bg} ${brandStyles.shadow}`}>Save This Ticket</button>
-                <div className="flex gap-3 sm:gap-4">
-                  <select value={quickPickQty} onChange={(e) => setQuickPickQuantity(Number(e.target.value))} className="bg-gray-100 dark:bg-gray-800 rounded-2xl sm:rounded-3xl p-4 sm:p-5 font-black text-[10px] sm:text-xs outline-none text-gray-700 dark:text-gray-300 w-20 sm:w-24 border-none cursor-pointer">{[10, 25, 50, 100].map(q => <option key={q} value={q}>x{q}</option>)}</select>
-                  <button onClick={handleMultiQuickPick} className="flex-1 py-4 sm:py-6 bg-emerald-500 text-white font-black rounded-2xl sm:rounded-3xl transition-all uppercase tracking-[0.2em] text-[10px] sm:text-sm shadow-xl shadow-emerald-500/20 hover:brightness-110 active:scale-95">Quick Pick Burst</button>
+                <div className={`p-4 rounded-2xl border transition-colors ${((autoTrackGames[game] || 0) > 0) ? 'bg-amber-50 dark:bg-amber-500/5 border-amber-100 dark:border-amber-500/10' : 'bg-gray-50 dark:bg-white/5 border-transparent'}`}>
+                  <p className={`text-[9px] font-medium leading-relaxed italic text-left ${((autoTrackGames[game] || 0) > 0) ? 'text-amber-700 dark:text-amber-400' : 'text-gray-400'}`}>{((autoTrackGames[game] || 0) > 0) ? `We will automatically generate ${autoTrackGames[game]} random tickets for you.` : `Auto-Tracker is disabled for ${game}.`}</p>
                 </div>
               </div>
-            </div>
+            )}
           </div>
 
-          <div className="lg:col-span-7 space-y-8 sm:space-y-10 animate-in fade-in slide-in-from-right-8 duration-1000 text-left">
-            <div className={`rounded-[2rem] sm:rounded-[3rem] p-6 sm:p-10 border shadow-xl relative overflow-hidden transition-all duration-500 ${!isPremium ? 'bg-gray-50/50 dark:bg-white/5 grayscale-[0.5] border-gray-100 dark:border-white/5' : ((autoTrackGames[game] || 0) > 0 ? 'bg-white dark:bg-gray-900 border-amber-400 dark:border-amber-500/50 shadow-amber-500/10' : 'bg-white dark:bg-gray-900 border-gray-100 dark:border-white/5')}`}>
-              <div className="flex justify-between items-start mb-8 sm:mb-10">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <h3 className="text-lg sm:text-xl font-black text-gray-900 dark:text-white uppercase tracking-tighter italic">Auto-Tracker</h3>
-                    <span className="text-[8px] font-black bg-amber-400 text-amber-950 px-1.5 py-0.5 rounded-md">PRO</span>
-                  </div>
-                  <p className="text-[10px] sm:text-xs font-bold text-gray-400 dark:text-gray-500 leading-relaxed italic text-left">Automatically track new draws for this game.</p>
-                </div>
-                {!isPremium ? (
-                  <Link href="/premium/" className="flex-shrink-0 bg-amber-400 text-amber-950 px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-amber-500 transition-all shadow-sm">Upgrade</Link>
-                ) : (
-                  <button onClick={() => handleUpdateAutoTrack(game, (autoTrackGames[game] || 0) > 0 ? 0 : 10)} disabled={isUpdatingPrefs} className={`w-12 h-7 rounded-full transition-colors relative flex-shrink-0 ${((autoTrackGames[game] || 0) > 0) ? 'bg-amber-500' : 'bg-gray-200 dark:bg-gray-800'}`}><div className={`absolute top-1 left-1 w-5 h-5 bg-white rounded-full transition-transform shadow-sm ${((autoTrackGames[game] || 0) > 0) ? 'translate-x-5' : 'translate-x-0'}`} /></button>
-                )}
+          {/* My History Section - RESTORED */}
+          <div className="space-y-8 sm:space-y-12 text-left">
+            <div className="flex items-center justify-between px-4 sm:px-8">
+              <div className="flex flex-col text-left">
+                <h2 className="text-3xl sm:text-4xl font-black text-gray-900 dark:text-white uppercase tracking-tighter italic">My History</h2>
+                <p className="text-[9px] sm:text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mt-1">Archived Ticket Results</p>
               </div>
-              {isPremium && (
-                <div className="space-y-8 animate-in slide-in-from-top-2 duration-500">
-                  {((autoTrackGames[game] || 0) > 0) && (
-                    <div className="space-y-4 animate-in zoom-in-95 duration-200">
-                      <div className="flex justify-between items-center px-1">
-                        <label className="text-[9px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">{game} Quantity</label>
-                        <span className="text-xs font-black text-amber-600 dark:text-amber-400">{autoTrackGames[game] || 0} Tickets</span>
-                      </div>
-                      <input type="range" min="5" max="100" step="5" value={autoTrackGames[game] || 0} onChange={(e) => handleUpdateAutoTrack(game, parseInt(e.target.value))} className="w-full accent-amber-500 h-1.5 bg-gray-100 dark:bg-white/5 rounded-full appearance-none cursor-pointer" />
-                    </div>
-                  )}
-                  <div className={`p-4 rounded-2xl border transition-colors ${((autoTrackGames[game] || 0) > 0) ? 'bg-amber-50 dark:bg-amber-500/5 border-amber-100 dark:border-amber-500/10' : 'bg-gray-50 dark:bg-white/5 border-transparent'}`}>
-                    <p className={`text-[9px] font-medium leading-relaxed italic text-left ${((autoTrackGames[game] || 0) > 0) ? 'text-amber-700 dark:text-amber-400' : 'text-gray-400'}`}>{((autoTrackGames[game] || 0) > 0) ? `We will automatically generate ${autoTrackGames[game]} random tickets for you.` : `Auto-Tracker is disabled for ${game}.`}</p>
-                  </div>
-                </div>
-              )}
-              {!isPremium && (
-                <div className="space-y-4"><p className="text-[10px] sm:text-xs font-bold text-gray-400 dark:text-gray-500 leading-relaxed italic text-left">Upgrade to PRO to enable Auto-Tracker.</p></div>
-              )}
+              <span className="text-[10px] sm:text-[12px] font-black text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 px-4 sm:px-6 py-2 sm:py-3 rounded-2xl uppercase tracking-widest shadow-sm">{myTickets.length} Tickets</span>
             </div>
 
-            <div className="bg-white dark:bg-gray-900 rounded-[2.5rem] sm:rounded-[3rem] p-6 sm:p-10 border border-gray-100 dark:border-white/5 shadow-xl">
-              <div className="flex justify-between items-center mb-8 sm:mb-10">
-                <div className="text-left"><h3 className="text-lg sm:text-xl font-black text-gray-900 dark:text-white uppercase tracking-tighter italic">Your Archive</h3><p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Tracked Ticket History</p></div>
-                <button onClick={() => setIsRulesModalOpen(true)} className="p-2 text-gray-400 hover:text-indigo-500 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg></button>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-10 sm:mb-12">
-                {[
-                  { label: 'Checked', val: stats.totalTicketsChecked, color: 'text-gray-900 dark:text-white' },
-                  { label: 'Total Wins', val: stats.totalWins, color: 'text-emerald-500' },
-                  { label: 'Best Hit', val: stats.bestDivision === 'No Prize' ? '-' : stats.bestDivision.replace('Division ', 'Div '), color: brandStyles.text },
-                  { label: 'Missed $', val: `$${stats.totalMissedPrize.toLocaleString()}`, color: 'text-amber-500' },
-                ].map((s, i) => (
-                  <div key={i} className="bg-gray-50 dark:bg-white/5 p-4 rounded-2xl text-center border border-transparent hover:border-gray-100 dark:hover:border-white/10 transition-all"><p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">{s.label}</p><p className={`text-sm sm:text-base font-black uppercase tracking-tighter ${s.color}`}>{s.val}</p></div>
-                ))}
-              </div>
+            <div className="max-h-[700px] sm:max-h-[900px] overflow-y-auto pr-2 sm:pr-4 custom-scrollbar space-y-6 sm:space-y-8 pb-10">
               {isDataLoading ? (
-                <div className="py-20 text-center animate-pulse"><p className="text-gray-400 font-bold uppercase tracking-[0.3em] text-[10px]">Syncing Archive...</p></div>
-              ) : myTickets.length === 0 ? (
-                <div className="py-20 sm:py-32 text-center"><div className="w-16 h-16 bg-gray-50 dark:bg-white/5 rounded-3xl flex items-center justify-center mx-auto mb-6"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-gray-300"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg></div><p className="text-gray-400 font-bold uppercase tracking-widest text-[10px]">No tickets tracked yet</p></div>
+                <div className="py-20 sm:py-40 flex flex-col items-center gap-6 animate-pulse"><div className={`w-12 h-12 sm:w-16 sm:h-16 border-4 ${brandStyles.text.replace('text-', 'border-')} border-t-transparent rounded-full animate-spin`} /><p className="text-gray-400 font-black uppercase tracking-[0.3em] text-[10px] sm:text-xs italic">Loading history...</p></div>
+              ) : Object.keys(ticketsByDate).length === 0 ? (
+                <div className="bg-white dark:bg-gray-900 p-20 sm:p-32 rounded-[2.5rem] sm:rounded-[4rem] border-2 border-dashed border-gray-100 dark:border-white/5 text-center transition-all duration-700 group hover:border-indigo-500/30"><p className="text-sm sm:text-base text-gray-400 dark:text-gray-500 font-bold italic mb-6 sm:mb-8">No tickets saved in your history.</p><button onClick={handleMultiQuickPick} className={`text-[10px] sm:text-[11px] font-black ${brandStyles.text} uppercase tracking-[0.3em] border-b-2 border-current hover:opacity-80 transition-all pb-1`}>Create my first tickets</button></div>
               ) : (
-                <div className="space-y-4">
-                  {Array.from(new Set(myTickets.map(t => t.drawDate))).map(date => {
-                    const ticketsForDate = myTickets.filter(t => t.drawDate === date);
-                    const isExpanded = expandedDates.has(date);
-                    const result = drawResultsList.find(r => r.drawDate === date && r.game === game);
-                    return (
-                      <div key={date} className="border border-gray-50 dark:border-white/5 rounded-[1.5rem] sm:rounded-[2rem] overflow-hidden bg-gray-50/30 dark:bg-white/5 transition-all">
-                        <button onClick={() => toggleExpandDate(date)} className="w-full flex items-center justify-between p-5 sm:p-6 hover:bg-gray-100/50 dark:hover:bg-white/5 transition-colors">
-                          <div className="flex items-center gap-4"><div className={`w-2 h-2 rounded-full ${result ? 'bg-emerald-500 animate-pulse' : 'bg-gray-300'}`} /><div className="text-left"><p className="text-xs sm:text-sm font-black text-gray-900 dark:text-white uppercase tracking-tighter">{date}</p><p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">{ticketsForDate.length} {ticketsForDate.length === 1 ? 'Sequence' : 'Sequences'}</p></div></div>
-                          <div className="flex items-center gap-4">{result && (<span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest hidden sm:block">Results Ready</span>)}<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={`text-gray-400 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}><polyline points="6 9 12 15 18 9"></polyline></svg></div>
+                Object.entries(ticketsByDate).sort((a, b) => b[0].localeCompare(a[0])).map(([date, tickets], idx) => {
+                  const isExpanded = expandedDates.has(date);
+                  const res = drawResultsList.find(r => r.drawDate === date);
+                  let totalPrize = 0;
+                  let div1Win = false;
+                  if (res) {
+                    tickets.forEach(t => {
+                      const c = compareNumbers(t.numbers, res.numbers, res.bonus, game);
+                      let prize = res.prizes[c.prizeTier] || 0;
+                      if (c.prizeTier === 'Division 1' && prize === 0) {
+                        const ledgerMatch = upcomingLedger.find(l => l.game?.toLowerCase().includes(game.toLowerCase().split(' ')[0]) && l.draw_date === date);
+                        if (ledgerMatch) prize = ledgerMatch.jackpot;
+                      }
+                      totalPrize += prize;
+                      if (c.prizeTier === 'Division 1') div1Win = true;
+                    });
+                  }
+                  const isWinner = res && (totalPrize > 0 || div1Win);
+                  
+                  return (
+                    <div key={date} className={`bg-white dark:bg-gray-900 rounded-[2rem] sm:rounded-[3rem] border transition-all duration-500 ${isWinner ? `border-${brandColor}-200 dark:border-${brandColor}-500 shadow-2xl` : 'border-gray-100 dark:border-white/5 shadow-sm hover:shadow-xl'} animate-in fade-in slide-in-from-bottom-4`} style={{ transitionDelay: `${idx * 100}ms` }}>
+                      <div className="flex items-center pr-4 sm:pr-6">
+                        <button onClick={() => { const next = new Set(expandedDates); if (next.has(date)) next.delete(date); else next.add(date); setExpandedDates(next); }} className="flex-1 p-6 sm:p-10 flex items-center justify-between text-left group gap-4 sm:gap-10">
+                          <div className="flex items-center gap-4 sm:gap-10">
+                            <div className={`w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl flex-shrink-0 flex items-center justify-center font-black text-lg sm:text-xl transition-all duration-500 group-hover:rotate-12 ${isWinner ? brandStyles.bg + ' text-white' : 'bg-gray-100 dark:bg-white/5 text-gray-400 dark:text-gray-500'}`}>{tickets.length}</div>
+                            <div className="truncate">
+                              <p className={`text-[9px] sm:text-[11px] font-black ${brandStyles.text} uppercase mb-1 sm:mb-2`}>Draw: {date}</p>
+                              <p className="text-lg sm:text-2xl font-black text-gray-900 dark:text-white tracking-tight truncate">{res ? (isWinner ? 'WINNER!' : (totalPrize === 0 ? 'NO LUCK' : 'RESULTS')) : 'AWAITING'}</p>
+                            </div>
+                          </div>
+                          {res ? (
+                            <div className="text-right flex-shrink-0">
+                              <p className={`text-xl sm:text-3xl font-black tracking-tighter ${isWinner ? brandStyles.text : 'text-gray-300 dark:text-gray-700'}`}>{formatJackpot(totalPrize)}</p>
+                            </div>
+                          ) : (
+                            <div className="text-right flex-shrink-0"><Countdown targetDate={date} /></div>
+                          )}
                         </button>
-                        {isExpanded && (
-                          <div className="px-5 sm:px-6 pb-6 space-y-3 animate-in slide-in-from-top-2 duration-300">
-                            {ticketsForDate.map((ticket) => {
-                              const comparison = result ? compareNumbers(ticket.numbers, result.numbers, result.bonus, ticket.game as any) : null;
+                        <button onClick={() => handleDeleteDateGroup(date)} className="text-gray-300 dark:text-gray-600 hover:text-red-500 p-2 sm:p-3 transition-colors transform hover:scale-125 duration-300"><TrashIcon /></button>
+                      </div>
+                      {isExpanded && (
+                        <div className={`p-6 sm:p-10 border-t dark:border-white/5 animate-in slide-in-from-top-4 duration-500 ${isWinner ? `${brandStyles.bgLight} dark:bg-${brandColor}-500/5` : 'bg-gray-50/50 dark:bg-white/5'}`}>
+                          {res && (
+                            <div className="mb-8 sm:mb-12 bg-white dark:bg-gray-800 p-6 sm:p-10 rounded-[2rem] sm:rounded-[3rem] border border-gray-100 dark:border-white/5 flex flex-col items-center shadow-inner relative overflow-hidden group">
+                              <p className="text-[8px] sm:text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase mb-6 sm:mb-8 tracking-[0.4em] relative z-10">Winning Numbers</p>
+                              <div className="flex flex-wrap gap-3 sm:gap-4 justify-center relative z-10">
+                                {res.numbers.map((n: number, i: number) => (<span key={n} className={`w-10 h-10 sm:w-14 sm:h-14 rounded-full ${brandStyles.bg} text-white flex items-center justify-center font-black border-b-[4px] sm:border-b-[6px] border-black/20 shadow-xl text-base sm:text-xl transform hover:-translate-y-1 transition-transform`} style={{ transitionDelay: `${i * 50}ms` }}>{n}</span>))}
+                                <div className="w-px h-10 sm:h-14 bg-gray-200 dark:bg-white/10 mx-1 sm:mx-2" />
+                                {res.bonus.map((n: number, i: number) => (<span key={n} className="w-10 h-10 sm:w-14 sm:h-14 rounded-full bg-amber-400 text-amber-950 flex items-center justify-center font-black border-b-[4px] sm:border-b-[6px] border-amber-600 shadow-xl text-base sm:text-xl transform hover:-translate-y-1 transition-transform" style={{ transitionDelay: `${(res.numbers.length + i) * 50}ms` }}>{n}</span>))}
+                              </div>
+                            </div>
+                          )}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+                            {tickets.map((t, tidx) => {
+                              const c = res ? compareNumbers(t.numbers, res.numbers, res.bonus, game) : null;
+                              let prize = (c && res) ? (res.prizes[c.prizeTier] || 0) : 0;
+                              const ticketWon = prize > 0 || c?.prizeTier === 'Division 1';
                               return (
-                                <div key={ticket.id} className="flex items-center justify-between p-4 bg-white dark:bg-gray-900 rounded-2xl border border-gray-50 dark:border-white/5 group shadow-sm">
-                                  <div className="flex flex-wrap gap-1.5 sm:gap-2">
-                                    {ticket.numbers.map((n, i) => {
-                                      const isMatch = result?.numbers.includes(n);
-                                      const isBonusMatch = comparison?.matchedBonusNumbers.includes(n);
-                                      return <span key={i} className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-[10px] sm:text-xs font-black transition-all ${isMatch ? `${brandStyles.bg} text-white shadow-lg` : isBonusMatch ? 'bg-amber-400 text-amber-950 shadow-lg' : 'bg-gray-100 dark:bg-white/5 text-gray-500'}`}>{n}</span>;
+                                <div key={t.id} className={`p-6 sm:p-8 rounded-[1.5rem] sm:rounded-[2.5rem] border transition-all duration-500 hover:-translate-y-1 ${ticketWon ? `bg-white dark:bg-gray-800 border-${brandColor}-300 dark:border-${brandColor}-500 shadow-2xl scale-[1.02] z-10` : 'bg-white/60 dark:bg-white/5 border-gray-100 dark:border-white/5 opacity-70 hover:opacity-100'}`}>
+                                  <div className="flex justify-between items-center mb-6 sm:mb-8">
+                                    <span className="text-[9px] sm:text-[11px] font-black text-gray-300 dark:text-gray-600 uppercase italic">Ticket #{tidx + 1}</span>
+                                    {c && <span className={`text-[8px] sm:text-[10px] font-black px-3 sm:px-4 py-1 sm:py-1.5 rounded-full uppercase tracking-widest ${ticketWon ? brandStyles.bg + ' text-white' : 'bg-gray-100 dark:bg-white/10 text-gray-400 dark:text-gray-500'}`}>{c.prizeTier}</span>}
+                                  </div>
+                                  <div className="flex flex-wrap gap-2 mb-2">
+                                    {t.numbers.map(n => { 
+                                      const isMainMatch = res && res.numbers.includes(n);
+                                      const isBonusMatch = res && res.bonus.includes(n);
+                                      return <span key={n} className={`w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full text-[10px] sm:text-[12px] font-black border-b-2 transition-all duration-500 ${isMainMatch ? brandStyles.bg + ' text-white' : isBonusMatch ? 'bg-amber-400 text-amber-950' : 'bg-gray-100 dark:bg-white/10 text-gray-400'}`}>{n}</span>; 
                                     })}
                                   </div>
-                                  <div className="flex items-center gap-3">{comparison && (<span className={`text-[9px] font-black uppercase tracking-widest ${comparison.prizeTier !== 'No Prize' ? 'text-emerald-500' : 'text-gray-300'}`}>{comparison.prizeTier === 'No Prize' ? 'Missed' : comparison.prizeTier.replace('Division ', 'Div ')}</span>)}<button onClick={() => handleDeleteTicket(ticket.id)} className="p-2 text-gray-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></div>
+                                  <button onClick={() => handleDeleteSingleTicket(t.id)} className="text-xs text-red-400 hover:text-red-600 font-bold uppercase tracking-widest mt-4 flex items-center gap-2"><TrashIcon /> Delete</button>
                                 </div>
                               );
                             })}
                           </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
               )}
             </div>
           </div>
         </div>
       </main>
-      <DivisionRules isOpen={isRulesModalOpen} onClose={() => setIsRulesModalOpen(false)} game={game} />
+
+      <DivisionRules game={game} isOpen={isRulesModalOpen} onClose={() => setIsRulesModalOpen(false)} />
       <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
     </div>
   );
@@ -439,7 +477,7 @@ function LuckContent() {
 
 export default function LuckPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-950"><p className="text-sm font-black text-gray-400 uppercase tracking-widest animate-pulse">Initializing Luck Tracker...</p></div>}>
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950 uppercase font-black tracking-widest animate-pulse">Initializing...</div>}>
       <LuckContent />
     </Suspense>
   );
