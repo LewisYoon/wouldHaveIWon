@@ -140,16 +140,21 @@ function LuckContent() {
     let totalWins = 0;
     let bestDivision = 'No Prize';
 
-    myTickets.forEach(t => {
+    // Filter tickets by the current game
+    const relevantTickets = myTickets.filter(t => t.game === game);
+
+    relevantTickets.forEach(t => {
       const res = drawResultsList.find(r => r.drawDate === t.drawDate && r.game === t.game);
       if (res) {
         totalTicketsChecked++;
         const c = compareNumbers(t.numbers, res.numbers, res.bonus, t.game as any);
+
         let prize = res.prizes[c.prizeTier] || 0;
         if (c.prizeTier === 'Division 1' && prize === 0) {
           const ledgerMatch = upcomingLedger.find(l => l.game?.toLowerCase().includes(t.game.toLowerCase().split(' ')[0]) && l.draw_date === t.drawDate);
           if (ledgerMatch) prize = ledgerMatch.jackpot;
         }
+
         totalMissedPrize += prize;
         if (c.prizeTier !== 'No Prize') {
           totalWins++;
@@ -160,9 +165,10 @@ function LuckContent() {
       }
     });
 
-    const totalInvested = myTickets.length * TICKET_COST;
+    const totalInvested = relevantTickets.length * TICKET_COST;
     return { totalMissedPrize, totalTicketsChecked, totalWins, bestDivision, totalInvested };
   }, [myTickets, drawResultsList, upcomingLedger, game]);
+
 
   useEffect(() => {
     setSelectedDate(upcomingDates[0]);
