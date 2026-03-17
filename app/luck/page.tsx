@@ -456,62 +456,81 @@ function LuckContent() {
                   const isWinner = res && (totalPrize > 0 || div1Win);
                   
                   return (
-                    <div key={date} className={`bg-white dark:bg-gray-900 rounded-[2.5rem] border transition-all duration-700 ${isWinner ? `border-${brandColor}-300 dark:border-${brandColor}-500 shadow-2xl` : 'border-gray-100 dark:border-white/5 shadow-sm hover:shadow-xl'} overflow-hidden animate-in fade-in slide-in-from-bottom-8`} style={{ transitionDelay: `${idx * 150}ms` }}>
-                      <div className="flex items-center group/card">
-                        <button onClick={() => { const next = new Set(expandedDates); if (next.has(date)) next.delete(date); else next.add(date); setExpandedDates(next); }} className="flex-1 p-8 sm:p-10 flex items-center justify-between text-left gap-10">
-                          <div className="flex items-center gap-10">
-                            <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-3xl flex-shrink-0 flex items-center justify-center font-black text-2xl transition-all duration-700 group-hover:rotate-12 ${isWinner ? brandStyles.bg + ' text-white shadow-2xl scale-110' : 'bg-gray-50 dark:bg-white/5 text-gray-400 dark:text-gray-500'}`}>{tickets.length}</div>
-                            <div>
-                              <p className={`text-[10px] font-black ${brandStyles.text} uppercase mb-2 tracking-[0.2em]`}>Draw {date}</p>
-                              <p className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white tracking-tighter italic">{res ? (isWinner ? 'JACKPOT!' : 'PROCESSED') : 'AWAITING'}</p>
+                    <div key={date} className={`bg-white dark:bg-gray-900 rounded-[2rem] sm:rounded-[3rem] border transition-all duration-500 ${isWinner ? `border-${brandColor}-200 dark:border-${brandColor}-500 shadow-2xl` : 'border-gray-100 dark:border-white/5 shadow-sm hover:shadow-xl'} overflow-hidden animate-in fade-in slide-in-from-bottom-4`} style={{ transitionDelay: `${idx * 100}ms` }}>
+                      <div className="flex items-center pr-4 sm:pr-6 group/row">
+                        <button onClick={() => { const next = new Set(expandedDates); if (next.has(date)) next.delete(date); else next.add(date); setExpandedDates(next); }} className="flex-1 p-6 sm:p-10 flex items-center justify-between text-left gap-4 sm:gap-10">
+                          <div className="flex items-center gap-4 sm:gap-10">
+                            <div className={`w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl flex-shrink-0 flex items-center justify-center font-black text-lg sm:text-xl transition-all duration-500 group-hover/row:rotate-12 ${isWinner ? brandStyles.bg + ' text-white' : 'bg-gray-100 dark:bg-white/5 text-gray-400 dark:text-gray-500'}`}>{tickets.length}</div>
+                            <div className="truncate">
+                              <p className={`text-[9px] sm:text-[11px] font-black ${brandStyles.text} uppercase mb-1 sm:mb-2`}>Draw: {date}</p>
+                              <p className="text-lg sm:text-2xl font-black text-gray-900 dark:text-white tracking-tight truncate uppercase italic">
+                                {res ? (div1Win ? 'JACKPOT!' : (isWinner ? 'WIN!' : 'NO WIN')) : 'AWAITING'}
+                              </p>
                             </div>
                           </div>
                           {res ? (
-                            <div className="text-right">
-                              <p className={`text-2xl sm:text-4xl font-black tracking-tighter ${isWinner ? brandStyles.text : 'text-gray-300 dark:text-gray-700'}`}>{formatJackpot(totalPrize)}</p>
+                            <div className="text-right flex-shrink-0">
+                              <p className={`text-xl sm:text-3xl font-black tracking-tighter ${isWinner ? brandStyles.text : 'text-gray-300 dark:text-gray-700'}`}>{formatJackpot(totalPrize)}</p>
                             </div>
                           ) : (
-                            <div className="text-right hidden sm:block scale-125"><Countdown targetDate={date} /></div>
+                            <div className="text-right flex-shrink-0 hidden sm:block"><Countdown targetDate={date} /></div>
                           )}
                         </button>
-                        <div className="pr-10">
-                          <button onClick={() => handleDeleteDateGroup(date)} className="text-gray-300 dark:text-gray-700 hover:text-red-500 transition-all duration-300 p-4 rounded-2xl hover:bg-red-50 dark:hover:bg-red-500/10 transform hover:scale-110"><TrashIcon /></button>
-                        </div>
+                        <button onClick={() => handleDeleteDateGroup(date)} className="text-gray-200 dark:text-gray-800 hover:text-red-500 p-2 sm:p-3 transition-all transform hover:scale-125 duration-300"><TrashIcon /></button>
                       </div>
+                      
                       {isExpanded && (
-                        <div className={`p-8 sm:p-12 border-t dark:border-white/5 animate-in slide-in-from-top-8 duration-700 ${isWinner ? `${brandStyles.bgLight} dark:bg-${brandColor}-500/5` : 'bg-gray-50/30 dark:bg-white/5'}`}>
+                        <div className={`p-6 sm:p-10 border-t dark:border-white/5 animate-in slide-in-from-top-4 duration-500 ${isWinner ? `${brandStyles.bgLight}` : 'bg-gray-50/30'}`}>
+                          
+                          {/* Mini Stats for this Draw */}
+                          <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-8">
+                            <div className="bg-white/50 dark:bg-black/20 p-3 sm:p-4 rounded-2xl border border-white dark:border-white/5">
+                              <p className="text-[8px] font-black text-gray-400 uppercase mb-1">Spent</p>
+                              <p className="text-xs sm:text-sm font-black">{formatCurrency(tickets.length * TICKET_COST)}</p>
+                            </div>
+                            <div className="bg-white/50 dark:bg-black/20 p-3 sm:p-4 rounded-2xl border border-white dark:border-white/5">
+                              <p className="text-[8px] font-black text-gray-400 uppercase mb-1">Won</p>
+                              <p className={`text-xs sm:text-sm font-black ${totalPrize > 0 ? 'text-emerald-500' : ''}`}>{formatCurrency(totalPrize)}</p>
+                            </div>
+                            <div className={`p-3 sm:p-4 rounded-2xl border ${totalPrize - (tickets.length * TICKET_COST) >= 0 ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600' : 'bg-rose-500/10 border-rose-500/20 text-rose-600'}`}>
+                              <p className="text-[8px] font-black uppercase mb-1 opacity-60">Net</p>
+                              <p className="text-xs sm:text-sm font-black">{formatCurrency(totalPrize - (tickets.length * TICKET_COST))}</p>
+                            </div>
+                          </div>
+
                           {res && (
-                            <div className="mb-12 bg-white dark:bg-gray-800 p-10 sm:p-14 rounded-[3rem] border border-gray-100 dark:border-white/5 flex flex-col items-center shadow-2xl relative">
-                              <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase mb-10 tracking-[0.5em]">Official Result</p>
-                              <div className="flex flex-wrap gap-4 sm:gap-6 justify-center">
-                                {res.numbers.map((n: number, i: number) => (<span key={n} className={`w-12 h-12 sm:w-16 sm:h-16 rounded-full ${brandStyles.bg} text-white flex items-center justify-center font-black border-b-[6px] border-black/20 shadow-2xl text-xl sm:text-2xl transform hover:-translate-y-2 transition-transform`} style={{ transitionDelay: `${i * 100}ms` }}>{n}</span>))}
-                                <div className="w-px h-12 sm:h-16 bg-gray-200 dark:bg-white/10 mx-4" />
-                                {res.bonus.map((n: number, i: number) => (<span key={n} className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-amber-400 text-amber-950 flex items-center justify-center font-black border-b-[6px] border-amber-600 shadow-2xl text-xl sm:text-2xl transform hover:-translate-y-2 transition-transform" style={{ transitionDelay: `${(res.numbers.length + i) * 100}ms` }}>{n}</span>))}
+                            <div className="mb-8 sm:mb-10 bg-white/80 dark:bg-gray-800/50 p-6 sm:p-8 rounded-[2rem] border border-white dark:border-white/5 flex flex-col items-center shadow-inner relative overflow-hidden group">
+                              <p className="text-[8px] font-black text-gray-400 uppercase mb-6 tracking-[0.4em]">Official Draw Results</p>
+                              <div className="flex flex-wrap gap-2.5 sm:gap-3 justify-center">
+                                {res.numbers.map((n: number, i: number) => (<span key={n} className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full ${brandStyles.bg} text-white flex items-center justify-center font-black border-b-[3px] border-black/20 shadow-md text-xs sm:text-sm transform hover:-translate-y-1 transition-transform`} style={{ transitionDelay: `${i * 50}ms` }}>{n}</span>))}
+                                <div className="w-px h-8 sm:h-10 bg-gray-200 dark:bg-white/10 mx-1" />
+                                {res.bonus.map((n: number, i: number) => (<span key={n} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-amber-400 text-amber-950 flex items-center justify-center font-black border-b-[3px] border-amber-600 shadow-md text-xs sm:text-sm transform hover:-translate-y-1 transition-transform" style={{ transitionDelay: `${(res.numbers.length + i) * 50}ms` }}>{n}</span>))}
                               </div>
                             </div>
                           )}
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-10">
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                             {tickets.map((t, tidx) => {
                               const c = res ? compareNumbers(t.numbers, res.numbers, res.bonus, game) : null;
                               let prize = (c && res) ? (res.prizes[c.prizeTier] || 0) : 0;
                               const ticketWon = prize > 0 || c?.prizeTier === 'Division 1';
                               return (
-                                <div key={t.id} className={`p-8 sm:p-10 rounded-[2rem] sm:rounded-[3rem] border transition-all duration-700 group/ticket ${ticketWon ? `bg-white dark:bg-gray-800 border-${brandColor}-400 dark:border-${brandColor}-500 shadow-2xl scale-[1.02] z-10` : 'bg-white/60 dark:bg-white/5 border-gray-100 dark:border-white/5 opacity-60 hover:opacity-100 shadow-sm'}`}>
-                                  <div className="flex justify-between items-center mb-8">
-                                    <span className="text-[10px] font-black text-gray-300 dark:text-gray-600 uppercase tracking-widest italic">Sequence #{tidx + 1}</span>
-                                    <div className="flex items-center gap-4">
-                                      {c && <span className={`text-[10px] font-black px-5 py-2 rounded-xl uppercase tracking-[0.2em] shadow-sm ${ticketWon ? brandStyles.bg + ' text-white shadow-indigo-500/20' : 'bg-gray-100 dark:bg-white/10 text-gray-400 dark:text-gray-500'}`}>{c.prizeTier}</span>}
-                                      <button onClick={() => handleDeleteSingleTicket(t.id)} className="text-gray-300 dark:text-gray-700 hover:text-red-500 transition-colors p-2"><TrashIcon /></button>
-                                    </div>
+                                <div key={t.id} className={`p-5 sm:p-6 rounded-[1.5rem] sm:rounded-[2rem] border transition-all duration-500 ${ticketWon ? 'bg-white dark:bg-gray-800 border-amber-200 dark:border-amber-500 shadow-xl scale-[1.02]' : 'bg-white/40 dark:bg-white/5 border-gray-100 dark:border-white/5 opacity-80 hover:opacity-100'}`}>
+                                  <div className="flex justify-between items-center mb-4">
+                                    <span className="text-[9px] font-black text-gray-300 dark:text-gray-600 uppercase italic">Set #{tidx + 1}</span>
+                                    {c && <span className={`text-[8px] font-black px-3 py-1 rounded-full uppercase tracking-widest ${ticketWon ? 'bg-amber-400 text-amber-950' : 'bg-gray-50 dark:bg-white/10 text-gray-400'}`}>{c.prizeTier}</span>}
                                   </div>
-                                  <div className="flex flex-wrap gap-3">
+                                  <div className="flex flex-wrap gap-1.5 mb-2">
                                     {t.numbers.map(n => { 
                                       const isMainMatch = res && res.numbers.includes(n);
                                       const isBonusMatch = res && res.bonus.includes(n);
-                                      return <span key={n} className={`w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-full text-xs sm:text-sm font-black border-b-[4px] transition-all duration-700 ${isMainMatch ? brandStyles.bg + ' text-white border-black/20 shadow-xl scale-110' : isBonusMatch ? 'bg-amber-400 text-amber-950 border-amber-600 shadow-xl scale-110' : 'bg-gray-50 dark:bg-white/10 text-gray-400 dark:text-gray-600 border-gray-200 dark:border-white/10 opacity-50'}`}>{n}</span>; 
+                                      return <span key={n} className={`w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-full text-[10px] font-black border-b-2 transition-all duration-500 ${isMainMatch ? brandStyles.bg + ' text-white' : isBonusMatch ? 'bg-amber-400 text-amber-950' : 'bg-gray-100 dark:bg-white/10 text-gray-400'}`}>{n}</span>; 
                                     })}
                                   </div>
-                                  {ticketWon && <p className={`mt-10 text-lg font-black ${brandStyles.text} italic tracking-tighter`}>+{formatCurrency(prize)} MISSING</p>}
+                                  <div className="flex justify-between items-center mt-4">
+                                    <p className={`text-[10px] font-black ${ticketWon ? brandStyles.text : 'text-transparent'}`}>{ticketWon ? `+${formatCurrency(prize)}` : ''}</p>
+                                    <button onClick={() => handleDeleteSingleTicket(t.id)} className="text-[10px] text-gray-300 hover:text-red-500 font-bold uppercase tracking-widest transition-colors flex items-center gap-1">Delete</button>
+                                  </div>
                                 </div>
                               );
                             })}
