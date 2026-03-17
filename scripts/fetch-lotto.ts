@@ -136,7 +136,7 @@ function getEmailTemplate(game: string, drawDate: string, status: { won: boolean
   const isTatts = game === 'Tatts Lotto';
   const brandColor = isOz ? '#10b981' : isTatts ? '#ef4444' : '#4f46e5'; 
   
-  const title = status.won ? `You've got a match!` : `The results are in`;
+  const title = status.won ? "You've got a match!" : "The results are in";
   const heroText = status.won 
     ? `Hey! Great news—one of your tracked sets for the ${game} draw on ${drawDate} just matched some winning numbers. Log in to see which division you hit!`
     : `The official ${game} results for ${drawDate} are out. We've updated your archive so you can see how your lucky numbers performed this time around.`;
@@ -149,31 +149,37 @@ function getEmailTemplate(game: string, drawDate: string, status: { won: boolean
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>${game} Results</title>
       <style>
-        body { margin: 0; padding: 0; background-color: #f4f7f9; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-        .container { max-width: 600px; margin: 40px auto; background: #ffffff; border-radius: 24px; border: 1px solid #e1e8ed; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
-        .header { padding: 40px 30px 20px; text-align: center; }
-        .content { padding: 0 40px 40px; text-align: center; }
-        .footer { padding: 30px; text-align: center; font-size: 13px; color: #8899a6; background: #f8f9fa; line-height: 1.6; }
-        .btn { display: inline-block; padding: 16px 36px; background: ${brandColor}; color: #ffffff !important; text-decoration: none; border-radius: 14px; font-weight: 800; text-transform: uppercase; font-size: 14px; letter-spacing: 0.05em; }
-        h1 { color: #14171a; font-size: 28px; font-weight: 900; margin-bottom: 20px; tracking: -0.02em; }
-        p { color: #4b5563; font-size: 17px; line-height: 1.6; margin-bottom: 36px; }
+        body { margin: 0; padding: 0; background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+        .wrapper { width: 100%; table-layout: fixed; background-color: #f8fafc; padding-bottom: 40px; }
+        .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 32px; border: 1px solid #eef2ff; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.05); margin-top: 40px; }
+        .header { background-color: #ffffff; padding: 40px 40px 20px; text-align: center; }
+        .content { padding: 0 40px 60px; text-align: center; }
+        .footer { padding: 40px; text-align: center; font-size: 12px; color: #94a3b8; background-color: #f8fafc; line-height: 1.8; border-top: 1px solid #f1f5f9; }
+        .btn-container { text-align: center; margin-top: 40px; }
+        .btn { display: inline-block; padding: 18px 44px; background-color: ${brandColor}; color: #ffffff !important; text-decoration: none; border-radius: 18px; font-weight: 800; text-transform: uppercase; font-size: 14px; letter-spacing: 0.1em; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        h1 { color: #1e293b; font-size: 32px; font-weight: 900; margin-bottom: 24px; tracking: -0.03em; line-height: 1.1; }
+        p { color: #64748b; font-size: 17px; line-height: 1.6; margin-bottom: 0; }
+        .logo { font-weight: 900; font-size: 22px; color: #1e293b; letter-spacing: -0.04em; text-transform: uppercase; margin-bottom: 10px; }
       </style>
     </head>
     <body>
-      <div class="container">
-        <div class="header">
-          <div style="font-weight: 900; font-size: 22px; color: #14171a; letter-spacing: -0.04em; text-transform: uppercase;">WhatIF<span style="color: ${brandColor};">Lotto</span></div>
-        </div>
-        <div className="content">
-          <h1>${title}</h1>
-          <p>${heroText}</p>
-          <a href="${siteUrl}/luck/?game=${encodeURIComponent(game)}" class="btn">Check My Numbers</a>
-        </div>
-
-        <div class="footer">
-          Sent by WhatIFLotto Australia<br>
-          Helping you track your luck, every week.<br><br>
-          <a href="${siteUrl}/privacy" style="color: #8899a6; text-decoration: underline;">Privacy</a> • <a href="${siteUrl}/unsubscribe" style="color: #8899a6; text-decoration: underline;">Unsubscribe</a>
+      <div class="wrapper">
+        <div class="container">
+          <div class="header">
+            <div class="logo">WhatIF<span style="color: ${brandColor};">Lotto</span></div>
+          </div>
+          <div class="content">
+            <h1>${title}</h1>
+            <p>${heroText}</p>
+            <div class="btn-container">
+              <a href="${siteUrl}/luck/?game=${encodeURIComponent(game)}" class="btn">Check My Numbers</a>
+            </div>
+          </div>
+          <div class="footer">
+            <strong>WhatIFLotto Australia</strong><br>
+            Helping you track your luck, every week.<br><br>
+            <a href="${siteUrl}/privacy" style="color: #94a3b8; text-decoration: underline;">Privacy Policy</a> • <a href="${siteUrl}/unsubscribe" style="color: #94a3b8; text-decoration: underline;">Unsubscribe</a>
+          </div>
         </div>
       </div>
     </body>

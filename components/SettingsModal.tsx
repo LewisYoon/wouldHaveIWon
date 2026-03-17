@@ -190,7 +190,7 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
                               <input 
                                 type="range" 
                                 min="5" 
-                                max="50" 
+                                max="100" 
                                 step="5"
                                 value={currentQty} 
                                 onChange={(e) => {
