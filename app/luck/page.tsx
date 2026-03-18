@@ -1,3 +1,4 @@
+// lotto-project/app/luck/page.tsx
 'use client';
 
 import { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
@@ -271,27 +272,56 @@ function LuckContent() {
     <div className="flex min-h-screen flex-col bg-gray-50 dark:bg-gray-950 pb-24 transition-colors duration-500 text-gray-900 dark:text-gray-100 overflow-x-hidden text-left">
       <Navbar />
 
-      <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-white/5 py-10 sm:py-16 px-4 sm:px-6 mb-8 sm:mb-16 shadow-sm transition-all duration-500 relative overflow-hidden text-left">
-        <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.07] bg-[radial-gradient(#4f46e5_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none" />
-        <div className="max-w-7xl mx-auto relative z-10 animate-in fade-in slide-in-from-left-8 duration-700">
-          <h1 className="text-4xl sm:text-5xl md:text-7xl font-black text-gray-900 dark:text-white tracking-tighter uppercase mb-6 sm:mb-8">
-            Track My <span className={`text-transparent bg-clip-text bg-gradient-to-r ${isOz ? 'from-emerald-600 to-teal-600' : isTatts ? 'from-red-600 to-orange-600' : 'from-indigo-600 to-purple-600'} italic`}>Luck</span>
-          </h1>
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-            {['Oz Lotto', 'Powerball', 'Tatts Lotto'].map((g) => (
-              <button 
-                key={g} 
-                onClick={() => handleGameChange(g as any)} 
-                className={`flex-1 sm:flex-none px-4 sm:px-10 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl text-[10px] sm:text-sm font-black uppercase tracking-widest transition-all duration-300 transform active:scale-95 ${
-                  game === g 
-                    ? (g === 'Oz Lotto' ? 'bg-emerald-600 text-white shadow-xl shadow-emerald-500/20' : g === 'Tatts Lotto' ? 'bg-red-600 text-white shadow-xl shadow-red-500/20' : 'bg-indigo-600 text-white shadow-xl shadow-indigo-500/20') 
-                    : 'bg-white dark:bg-white/5 text-gray-400 dark:text-gray-500 hover:bg-gray-50 dark:hover:bg-white/10 border border-gray-100 dark:border-white/5'
-                }`}
-              >
-                {g}
+      <header className="relative py-12 sm:py-20 px-4 sm:px-6 mb-8 sm:mb-12 overflow-hidden">
+        {/* Dynamic Background */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] rounded-full blur-[120px] opacity-20 transition-colors duration-1000 ${isOz ? 'bg-emerald-500' : isTatts ? 'bg-red-500' : 'bg-indigo-500'}`} />
+          <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] opacity-[0.03] dark:opacity-[0.07]" />
+        </div>
+
+        <div className="max-w-7xl mx-auto relative z-10 flex flex-col md:flex-row items-end justify-between gap-8 md:gap-12">
+          
+          <div className="text-left space-y-4 max-w-2xl animate-in fade-in slide-in-from-bottom-8 duration-700">
+            <div className="flex items-center gap-3">
+              <span className={`h-px w-8 sm:w-12 ${brandStyles.bg}`} />
+              <h2 className="text-xs sm:text-sm font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.3em]">Official Results Sync</h2>
+            </div>
+            
+            <h1 className="text-5xl sm:text-7xl lg:text-8xl font-black text-gray-900 dark:text-white tracking-tighter uppercase leading-[0.9]">
+              Track My <br />
+              <span className={`text-transparent bg-clip-text bg-gradient-to-r ${isOz ? 'from-emerald-500 to-teal-400' : isTatts ? 'from-red-500 to-orange-400' : 'from-indigo-500 to-purple-400'} italic`}>Luck</span>
+            </h1>
+            
+            <p className="text-sm sm:text-lg font-medium text-gray-500 dark:text-gray-400 max-w-lg leading-relaxed">
+              Simulate your entries against official draw results without spending a dime. <span className={`${brandStyles.text} font-bold`}>Zero risk, pure thrill.</span>
+            </p>
+          </div>
+
+          <div className="w-full md:w-auto animate-in fade-in slide-in-from-right-8 duration-1000 delay-100">
+            <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-2 rounded-[2rem] border border-gray-200/50 dark:border-white/10 shadow-2xl shadow-gray-200/50 dark:shadow-black/50 flex flex-col sm:flex-row gap-2">
+              {(['Oz Lotto', 'Powerball', 'Tatts Lotto'] as const).map((g) => (
+                <button 
+                  key={g} 
+                  onClick={() => handleGameChange(g)} 
+                  className={`relative px-6 sm:px-8 py-4 sm:py-5 rounded-[1.5rem] text-xs sm:text-sm font-black uppercase tracking-widest transition-all duration-500 overflow-hidden group ${
+                    game === g 
+                      ? 'text-white shadow-lg transform scale-[1.02]' 
+                      : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5'
+                  }`}
+                >
+                  {game === g && (
+                    <div className={`absolute inset-0 ${g === 'Oz Lotto' ? 'bg-gradient-to-br from-emerald-500 to-teal-600' : g === 'Tatts Lotto' ? 'bg-gradient-to-br from-red-500 to-orange-600' : 'bg-gradient-to-br from-indigo-500 to-purple-600'} transition-all duration-500`} />
+                  )}
+                  <span className="relative z-10 flex items-center gap-2">
+                    {g}
+                    {game === g && <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />}
+                  </span>
+                </button>
+              ))}
+              <button onClick={() => setIsRulesModalOpen(true)} className="hidden sm:flex w-14 items-center justify-center rounded-[1.5rem] hover:bg-gray-100 dark:hover:bg-white/10 text-gray-400 transition-all">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
               </button>
-            ))}
-            <button onClick={() => setIsRulesModalOpen(true)} className="ml-auto bg-gray-100 dark:bg-white/5 text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center font-black text-base sm:text-lg shadow-sm border border-gray-200 dark:border-white/10">?</button>
+            </div>
           </div>
         </div>
       </header>
@@ -385,7 +415,35 @@ function LuckContent() {
 
         <div className="lg:col-span-7 space-y-10 animate-in fade-in slide-in-from-right-8 duration-1000 text-left">
           
-          <div className={`rounded-[2.5rem] p-8 sm:p-10 border shadow-2xl relative overflow-hidden transition-all duration-700 ${!isPremium ? 'bg-gray-50/50 dark:bg-white/5 grayscale-[0.5] border-gray-100 dark:border-white/5' : ((autoTrackGames[game] || 0) > 0 ? 'bg-white dark:bg-gray-900 border-amber-400 dark:border-amber-500/50 shadow-amber-500/10' : 'bg-white dark:bg-gray-900 border-gray-100 dark:border-white/5')}`}>
+          <div className={`rounded-[2.5rem] p-8 sm:p-10 border shadow-2xl relative overflow-hidden bg-white dark:bg-gray-900 border-gray-100 dark:border-white/5`}>
+            <div className={`absolute top-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full blur-[80px] opacity-20 ${isOz ? 'bg-emerald-500' : isTatts ? 'bg-red-500' : 'bg-indigo-500'}`} />
+            <div className="relative z-10">
+              <div className="flex justify-between items-center mb-10">
+                <p className={`text-[10px] font-black uppercase tracking-[0.4em] ${brandStyles.text}`}>Luck Stats</p>
+                <div className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${brandStyles.bgLight} ${brandStyles.text}`}>Live Sync</div>
+              </div>
+              
+              <div className="grid grid-cols-1 gap-10">
+                <div>
+                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2">Total Missed</p>
+                  <p className={`text-5xl sm:text-6xl font-black tracking-tighter ${brandStyles.text}`}>{formatCurrency(stats.totalMissedPrize)}</p>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-6 pt-10 border-t border-gray-100 dark:border-white/5">
+                  <div className="space-y-1">
+                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Money "Saved"</p>
+                    <p className="text-2xl font-black text-gray-900 dark:text-white">{formatCurrency(stats.totalInvested)}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Best Win</p>
+                    <p className={`text-2xl font-black ${brandStyles.text}`}>{stats.bestDivision === 'No Prize' ? '-' : stats.bestDivision.replace('Division ', 'Div ')}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className={`rounded-[2.5rem] p-8 sm:p-10 border shadow-2xl relative overflow-hidden ${!isPremium ? 'bg-gray-50/50 dark:bg-white/5 grayscale-[0.5] border-gray-100 dark:border-white/5' : ((autoTrackGames[game] || 0) > 0 ? 'bg-white dark:bg-gray-900 border-amber-400 dark:border-amber-500/50 shadow-amber-500/10' : 'bg-white dark:bg-gray-900 border-gray-100 dark:border-white/5')}`}>
             <div className="flex justify-between items-start mb-10">
               <div className="space-y-1">
                 <div className="flex items-center gap-3">
@@ -482,7 +540,7 @@ function LuckContent() {
                             <div className={`w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl flex-shrink-0 flex items-center justify-center font-black text-lg sm:text-xl transition-all duration-500 group-hover/row:rotate-12 ${isWinner ? brandStyles.bg + ' text-white' : 'bg-gray-100 dark:bg-white/5 text-gray-400 dark:text-gray-500'}`}>{tickets.length}</div>
                             <div className="truncate">
                               <p className={`text-[9px] sm:text-[11px] font-black ${brandStyles.text} uppercase mb-1 sm:mb-2`}>Draw: {date}</p>
-                              <p className="text-lg sm:text-2xl font-black text-gray-900 dark:text-white tracking-tight truncate uppercase italic">
+                              <p className="text-lg sm:text-2xl font-black text-gray-900 dark:text-white tracking-tighter truncate uppercase italic">
                                 {res ? (div1Win ? 'JACKPOT!' : (isWinner ? 'WIN!' : 'NO WIN')) : 'AWAITING'}
                               </p>
                             </div>
@@ -539,7 +597,7 @@ function LuckContent() {
                                     <span className="text-[9px] font-black text-gray-300 dark:text-gray-600 uppercase italic">Set #{tidx + 1}</span>
                                     {c && <span className={`text-[8px] font-black px-3 py-1 rounded-full uppercase tracking-widest ${ticketWon ? 'bg-amber-400 text-amber-950' : 'bg-gray-50 dark:bg-white/10 text-gray-400'}`}>{c.prizeTier}</span>}
                                   </div>
-                                  <div className="flex flex-wrap gap-1.5 mb-2">
+                                  <div className="flex flex-wrap gap-1.5 sm:gap-2">
                                     {t.numbers.map(n => { 
                                       const isMainMatch = res && res.numbers.includes(n);
                                       const isBonusMatch = res && res.bonus.includes(n);
@@ -568,7 +626,6 @@ function LuckContent() {
       <DivisionRules game={game} isOpen={isRulesModalOpen} onClose={() => setIsRulesModalOpen(false)} />
       <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
 
-      {/* Notification Toast */}
       {notification && (
         <div className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-6 py-3 rounded-full shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500">
           <p className="text-sm font-bold tracking-wider">{notification}</p>
