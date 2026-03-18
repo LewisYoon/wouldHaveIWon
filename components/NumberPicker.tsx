@@ -14,7 +14,6 @@ const TATTS_REQUIRED = 6;
 const TICKET_COST = 1.45;
 const MAX_WINNING_FEED_ITEMS = 5000; // 최대 5000개의 당첨 기록만 유지
 
-
 type LottoLine = {
   id: string;
   numbers: number[];
@@ -83,12 +82,11 @@ export default function NumberPicker({
   const [stats, setStats] = useState({ draws: 0, spent: 0, won: 0 });
   const [lastWinType, setLastWinType] = useState<string | null>(null);
   const [nearMiss, setNearMiss] = useState<string | null>(null);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
-  
-  // [추가] ticketsPerSec의 최신 값을 참조하기 위한 Ref
+  // timerRef는 requestAnimationFrame ID를 저장하기 위해 사용
+  const animationFrameIdRef = useRef<number | null>(null);
+
   const ticketsPerSecRef = useRef(ticketsPerSec);
 
-  // [수정] ticketsPerSec 상태가 변경될 때마다 Ref 업데이트
   useEffect(() => { ticketsPerSecRef.current = ticketsPerSec; }, [ticketsPerSec]);
 
   const storageCurrentKey = `lottoLines_${game.replace(/\s/g, '')}`;
@@ -152,7 +150,10 @@ export default function NumberPicker({
   }, [lines, storageCurrentKey, mode]);
 
   const stopSimulation = () => {
-    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+    if (animationFrameIdRef.current) {
+      cancelAnimationFrame(animationFrameIdRef.current);
+      animationFrameIdRef.current = null;
+    }
     setIsRunning(false);
   };
 
@@ -162,15 +163,20 @@ export default function NumberPicker({
         return;
     }
     setIsRunning(true);
-    const interval = 1000; // 1초 간격으로 실행
+    
+    const simulationLoop = () => {
+      // Stop if simulation is no longer running
+      if (!isRunning) return;
 
-    timerRef.current = setInterval(() => {
+      // Process tickets based on ticketsPerSecRef.current
+      const ticketsToProcess = ticketsPerSecRef.current;
+      const newWinners: WinningResult[] = [];
+      let weeklyWinTotal = 0;
+      let highestMainMatches = 0;
+      
+      // Use functional updates for stats to ensure latest state
       setStats(prevStats => {
-        // [수정] interval마다 생성될 티켓 수 결정
-        const ticketsToProcess = ticketsPerSecRef.current;
-        const newWinners: WinningResult[] = [];
-        let weeklyWinTotal = 0;
-        let highestMainMatches = 0;
+        const currentTotalTickets = prevStats.draws + ticketsToProcess; // stats.draws will now track total tickets
         
         for (let i = 0; i < ticketsToProcess; i++) {
           const ticketNumbers = generateQuickPick(game);
@@ -180,25 +186,53 @@ export default function NumberPicker({
             const prize = ESTIMATED_PRIZES[game][result.prizeTier] || 0;
             weeklyWinTotal += prize;
             if (prize > 1000) setLastWinType(result.prizeTier);
-            // weekNumber를 총 티켓 수에 맞춰 업데이트 (interval count가 아닌)
-            newWinners.push({ id: Math.random().toString(36).substr(2, 9), numbers: ticketNumbers, drawNumbers: drawResult.numbers, drawBonus: drawResult.bonus, drawDate: drawResult.drawDate, prizeTier: result.prizeTier, mainMatchesCount: result.mainMatchesCount, bonusMatchesCount: result.bonusMatchesCount, game: game, prizeValue: prize, weekNumber: prevStats.draws + i + 1, isSimulated: true });
+            
+            // weekNumber now refers to the total tickets processed up to this point
+            newWinners.push({ 
+              id: Math.random().toString(36).substr(2, 9), 
+              numbers: ticketNumbers, 
+              drawNumbers: drawResult.numbers, 
+              drawBonus: drawResult.bonus, 
+              drawDate: drawResult.drawDate, 
+              prizeTier: result.prizeTier, 
+              mainMatchesCount: result.mainMatchesCount, 
+              bonusMatchesCount: result.bonusMatchesCount, 
+              game: game, 
+              prizeValue: prize, 
+              weekNumber: currentTotalTickets, // Reflects total tickets processed
+              isSimulated: true 
+            });
           }
         }
+
         if (highestMainMatches >= (game === 'Oz Lotto' ? 6 : game === 'Powerball' ? 6 : 5)) {
           setNearMiss("SO CLOSE!");
           setTimeout(() => setNearMiss(null), 500);
         }
 
+        // Update autoWinnersRef directly and trigger state update for re-render
         if (newWinners.length > 0) {
           autoWinnersRef.current = [...newWinners, ...autoWinnersRef.current].slice(0, MAX_WINNING_FEED_ITEMS);
           setAutoWinnersStateTrigger(prev => prev + 1);
         }
         
-        // [수정] stats.draws는 총 생성된 티켓 수를 나타냄
-        return { draws: prevStats.draws + ticketsToProcess, spent: prevStats.spent + (ticketsToProcess * TICKET_COST), won: prevStats.won + weeklyWinTotal };
+        return { 
+          draws: currentTotalTickets, // Total tickets processed
+          spent: prevStats.spent + (ticketsToProcess * TICKET_COST), 
+          won: prevStats.won + weeklyWinTotal 
+        };
       });
-    }, 1000); // interval을 1000ms (1초)로 고정
-  }, [drawResult, game, ticketsPerSecRef, autoWinnersRef, setLastWinType, setNearMiss, setAutoWinnersStateTrigger]); // 의존성에서 drawsPerSec 제거
+      
+      animationFrameIdRef.current = requestAnimationFrame(simulationLoop);
+    };
+
+    simulationLoop(); // Start the loop
+
+    return () => { // Cleanup
+      if (animationFrameIdRef.current) cancelAnimationFrame(animationFrameIdRef.current);
+      if (timerRef.current) clearInterval(timerRef.current); // Clear interval if it was somehow set
+    };
+  }, [drawResult, game, ticketsPerSecRef, autoWinnersRef, setLastWinType, setNearMiss, setAutoWinnersStateTrigger, isRunning]); // Added isRunning for dependency, though it's controlled by state
 
   const handleManualCheck = async () => {
     const required = game === 'Oz Lotto' ? OZ_REQUIRED : game === 'Powerball' ? PB_REQUIRED : TATTS_REQUIRED;
@@ -237,6 +271,7 @@ export default function NumberPicker({
 
   const formatCurrency = (val: number) => new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', maximumFractionDigits: 0 }).format(val);
   
+  // [수정] 단일 데이터 소스(autoWinnersRef.current)에서 모든 통계와 정렬된 피드를 계산
   const { divisionStats, currentFeed } = useMemo(() => {
     const newDivisionStats: Record<string, number> = {};
     for (const winner of autoWinnersRef.current) {
@@ -379,18 +414,24 @@ export default function NumberPicker({
                         <input type="range" min="1" max="50" value={ticketsPerSec} onChange={(e) => { setTicketsPerSec(parseInt(e.target.value)); if (isRunning) stopSimulation(); }} className={`w-full accent-emerald-500 h-1.5 bg-gray-100 dark:bg-white/5 rounded-full appearance-none cursor-pointer`} />
                     </div>
                 </div>
-             
+                <div className="space-y-4 sm:space-y-6">
+                    <p className="text-[9px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Simulation Details</p>
+                    <div className="bg-gray-100 dark:bg-white/5 p-4 rounded-xl">
+                      <p className="text-[9px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Tickets per Interval</p>
+                      <p className="text-sm font-black text-gray-900 dark:text-white">{ticketsPerSec} (Dynamic based on rate)</p>
+                    </div>
+                </div>
             </div>
             <button onClick={isRunning ? stopSimulation : startSimulation} className={`w-full py-5 sm:py-6 rounded-xl sm:rounded-[2rem] font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] text-xs sm:text-sm shadow-2xl transition-all active:scale-95 ${isRunning ? 'bg-red-500 text-white' : `${brandStyles.bg} text-white ${brandStyles.shadow}`}`}>{isRunning ? 'Abort Simulation' : 'Enter Time Machine'}</button>
           </div>
           <div className={`bg-gray-950 rounded-[2.5rem] sm:rounded-[3.5rem] p-6 sm:p-10 text-white shadow-2xl border transition-all duration-500 mb-8 sm:mb-12 relative overflow-hidden ${isRunning ? `${brandStyles.border}/50 ${brandStyles.shadow}` : 'border-white/10'}`}>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-10 relative z-10 text-center md:text-left">
-              <div><p className="text-[9px] sm:text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1 sm:mb-2">Time Traveled</p><p className="text-3xl sm:text-5xl font-black tabular-nums">{(stats.draws / 52).toFixed(1)}<span className="text-lg sm:text-xl text-gray-600 ml-1 font-serif italic lowercase">yrs</span></p></div>
-              <div><p className="text-[9px] sm:text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1 sm:mb-2">Total "Spent"</p><p className="text-3xl sm:text-5xl font-black text-red-500 tabular-nums tracking-tighter">{formatCurrency(stats.spent)}</p></div>
+              <div><p className="text-[9px] sm:text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1 sm:mb-2">Time Simulated</p><p className="text-3xl sm:text-5xl font-black tabular-nums">{(stats.draws / 52).toFixed(1)}<span className="text-lg sm:text-xl text-gray-600 ml-1 font-serif italic lowercase">yrs</span></p></div>
+              <div><p className="text-[9px] sm:text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1 sm:mb-2">Total Tickets Gen.</p><p className="text-3xl sm:text-5xl font-black text-red-500 tabular-nums tracking-tighter">{stats.draws.toLocaleString()}</p></div>
               <div><p className="text-[9px] sm:text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1 sm:mb-2">Total Won</p><p className={`text-3xl sm:text-5xl font-black text-emerald-400 tabular-nums tracking-tighter`}>{formatCurrency(stats.won)}</p></div>
             </div>
             <div className="mt-8 sm:mt-12 pt-6 sm:pt-10 border-t border-white/5 text-center relative z-10">
-              <p className="text-[9px] sm:text-[10px] font-black text-gray-500 uppercase tracking-[0.3em] sm:tracking-[0.4em] mb-1 sm:mb-2">Temporal Balance</p>
+              <p className="text-[9px] sm:text-[10px] font-black text-gray-500 uppercase tracking-[0.3em] sm:tracking-[0.4em] mb-1 sm:mb-2">Balance</p>
               <p className={`text-4xl sm:text-7xl font-black tracking-tighter tabular-nums ${stats.won - stats.spent >= 0 ? 'text-emerald-400' : 'text-red-600'}`}>{formatCurrency(stats.won - stats.spent)}</p>
             </div>
           </div>
