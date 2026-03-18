@@ -109,15 +109,10 @@ async function performAutoTrack(draws: any[]) {
       const { error } = await supabase.from('tickets').insert(ticketsToInsert);
       
       if (error) {
-        if (error.message.includes("is_auto_tracked")) {
-          const simpleTickets = ticketsToInsert.map(({ is_auto_tracked, ...rest }) => rest);
-          await supabase.from('tickets').insert(simpleTickets);
-          addLog(`SUCCESS: Auto-tracked ${quantity} tickets (no flag).`);
-        } else {
-          console.error(`Auto-track insert error:`, error.message);
-        }
+        console.error(`CRITICAL: Auto-track insert failed for user ${user.user_id}. Reason: ${error.message}`);
+        console.error('Hint: This could be due to a missing "is_auto_tracked" column in your "tickets" table or a policy violation.');
       } else {
-        addLog(`SUCCESS: Auto-tracked ${quantity} tickets.`);
+        addLog(`SUCCESS: Auto-tracked ${quantity} tickets for user ${user.user_id}.`);
       }
     }
   }
