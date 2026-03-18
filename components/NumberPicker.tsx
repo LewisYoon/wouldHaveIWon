@@ -82,12 +82,17 @@ export default function NumberPicker({
   const [stats, setStats] = useState({ draws: 0, spent: 0, won: 0 });
   const [lastWinType, setLastWinType] = useState<string | null>(null);
   const [nearMiss, setNearMiss] = useState<string | null>(null);
-  // timerRef는 requestAnimationFrame ID를 저장하기 위해 사용
+  
+  // [수정] timerRef를 animationFrameIdRef로 변경, setInterval 관련 로직 제거
   const animationFrameIdRef = useRef<number | null>(null);
 
+  // Refs for dynamic values used in animation loop
   const ticketsPerSecRef = useRef(ticketsPerSec);
+  const statsRef = useRef(stats); // Ref to hold latest stats for interval callback
 
+  // Update refs when state changes
   useEffect(() => { ticketsPerSecRef.current = ticketsPerSec; }, [ticketsPerSec]);
+  useEffect(() => { statsRef.current = stats; }, [stats]); // Sync stats ref with state
 
   const storageCurrentKey = `lottoLines_${game.replace(/\s/g, '')}`;
   const storageHistoryKey = `lottoWins_${game.replace(/\s/g, '')}`;
@@ -165,10 +170,8 @@ export default function NumberPicker({
     setIsRunning(true);
     
     const simulationLoop = () => {
-      // Stop if simulation is no longer running
       if (!isRunning) return;
 
-      // Process tickets based on ticketsPerSecRef.current
       const ticketsToProcess = ticketsPerSecRef.current;
       const newWinners: WinningResult[] = [];
       let weeklyWinTotal = 0;
@@ -176,7 +179,7 @@ export default function NumberPicker({
       
       // Use functional updates for stats to ensure latest state
       setStats(prevStats => {
-        const currentTotalTickets = prevStats.draws + ticketsToProcess; // stats.draws will now track total tickets
+        const currentTotalTickets = prevStats.draws + ticketsToProcess;
         
         for (let i = 0; i < ticketsToProcess; i++) {
           const ticketNumbers = generateQuickPick(game);
@@ -187,7 +190,6 @@ export default function NumberPicker({
             weeklyWinTotal += prize;
             if (prize > 1000) setLastWinType(result.prizeTier);
             
-            // weekNumber now refers to the total tickets processed up to this point
             newWinners.push({ 
               id: Math.random().toString(36).substr(2, 9), 
               numbers: ticketNumbers, 
@@ -216,8 +218,9 @@ export default function NumberPicker({
           setAutoWinnersStateTrigger(prev => prev + 1);
         }
         
+        // stats.draws now counts total tickets generated
         return { 
-          draws: currentTotalTickets, // Total tickets processed
+          draws: currentTotalTickets, 
           spent: prevStats.spent + (ticketsToProcess * TICKET_COST), 
           won: prevStats.won + weeklyWinTotal 
         };
@@ -230,9 +233,8 @@ export default function NumberPicker({
 
     return () => { // Cleanup
       if (animationFrameIdRef.current) cancelAnimationFrame(animationFrameIdRef.current);
-      if (timerRef.current) clearInterval(timerRef.current); // Clear interval if it was somehow set
     };
-  }, [drawResult, game, ticketsPerSecRef, autoWinnersRef, setLastWinType, setNearMiss, setAutoWinnersStateTrigger, isRunning]); // Added isRunning for dependency, though it's controlled by state
+  }, [drawResult, game, ticketsPerSecRef, autoWinnersRef, setLastWinType, setNearMiss, setAutoWinnersStateTrigger, isRunning]); // Dependencies for useCallback
 
   const handleManualCheck = async () => {
     const required = game === 'Oz Lotto' ? OZ_REQUIRED : game === 'Powerball' ? PB_REQUIRED : TATTS_REQUIRED;
@@ -271,7 +273,6 @@ export default function NumberPicker({
 
   const formatCurrency = (val: number) => new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', maximumFractionDigits: 0 }).format(val);
   
-  // [수정] 단일 데이터 소스(autoWinnersRef.current)에서 모든 통계와 정렬된 피드를 계산
   const { divisionStats, currentFeed } = useMemo(() => {
     const newDivisionStats: Record<string, number> = {};
     for (const winner of autoWinnersRef.current) {
