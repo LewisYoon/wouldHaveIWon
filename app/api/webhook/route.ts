@@ -135,13 +135,10 @@ export async function POST(req: Request) {
           finalCancelAtEnd = cancelAtPeriodEnd;
         }
 
-        // [수정] 프리미엄 판정 로직
-        // 1. 상태가 active, trialing, past_due 인 경우 (정상 이용 중)
-        // 2. 또는 상태가 canceled 여도 만료일(current_period_end)이 아직 지나지 않은 경우 (유예 기간)
-        const isPremium = (
-          (finalStatus === 'active' || finalStatus === 'trialing' || finalStatus === 'past_due') ||
-          (finalStatus === 'canceled' && finalPeriodEnd && new Date(finalPeriodEnd) > new Date())
-        );
+        // [수정] 프리미엄 판정 로직 (Stripe 표준 방식)
+        // active, trialing, past_due 상태인 경우만 프리미엄으로 인정합니다.
+        // Stripe에서 'canceled'는 유예 기간이 완전히 끝났음을 의미하므로 즉시 해제합니다.
+        const isPremium = ['active', 'trialing', 'past_due'].includes(finalStatus || '');
 
         addLog(`Premium Check -> Status: ${finalStatus}, Expiry: ${finalPeriodEnd}, Result: ${isPremium}`);
 
