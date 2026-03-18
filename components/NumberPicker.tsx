@@ -295,16 +295,19 @@ export default function NumberPicker({
   const formatCurrency = (val: number) => new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', maximumFractionDigits: 0 }).format(val);
   
   const currentFeed = useMemo(() => {
-    const raw = autoWinners;
-    if (sortBy === 'latest') return raw;
-    return [...raw].sort((a, b) => {
-        // [버그 수정] "Division 10"이 "Division 3"보다 앞에 오는 문자열 정렬 오류 방지
-        const rankA = parseInt(a.prizeTier.replace('Division ', ''), 10) || 99;
-        const rankB = parseInt(b.prizeTier.replace('Division ', ''), 10) || 99;
-        if (rankA !== rankB) return rankA - rankB;
-        return (b.weekNumber || 0) - (a.weekNumber || 0);
+    if (sortBy === 'latest') return autoWinners;
+    // Top Divisions 정렬 시, autoWinners를 divisionStats 순서대로 정렬
+    const sortedTiers = Object.entries(divisionStats)
+      .sort(([a], [b]) => parseInt(a.replace('Division ', '')) - parseInt(b.replace('Division ', '')))
+      .map(([tier]) => tier);
+
+    return [...autoWinners].sort((a, b) => {
+      const rankA = sortedTiers.indexOf(a.prizeTier);
+      const rankB = sortedTiers.indexOf(b.prizeTier);
+      if (rankA !== rankB) return rankA - rankB;
+      return (b.weekNumber || 0) - (a.weekNumber || 0);
     });
-  }, [autoWinners, sortBy, stats]);
+  }, [autoWinners, sortBy, divisionStats]);
 
   const getEquivalentItem = (spent: number) => {
     if (spent < 50) return "a Fancy Pizza";
@@ -427,7 +430,7 @@ export default function NumberPicker({
                 <div className="space-y-4 sm:space-y-6">
                     <p className="text-[9px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Simulation Settings</p>
                     <div>
-                        <label className="block text-[9px] sm:text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-3 sm:mb-4">Tickets per Week: {ticketsPerDraw}</label>
+                        <label className="block text-[9px] sm:text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-3 sm:mb-4">Tickets per Draw: {ticketsPerDraw}</label>
                         <input type="range" min="1" max="100" value={ticketsPerDraw} onChange={(e) => setTicketsPerDraw(parseInt(e.target.value))} className={`w-full ${brandStyles.accent} h-1.5 bg-gray-100 dark:bg-white/5 rounded-full appearance-none cursor-pointer`} />
                     </div>
                 </div>
