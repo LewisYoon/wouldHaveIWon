@@ -298,8 +298,9 @@ export default function NumberPicker({
     const raw = autoWinners;
     if (sortBy === 'latest') return raw;
     return [...raw].sort((a, b) => {
-        const rankA = parseInt(a.prizeTier.replace(/[^0-9]/g, '')) || 99;
-        const rankB = parseInt(b.prizeTier.replace(/[^0-9]/g, '')) || 99;
+        // [버그 수정] "Division 10"이 "Division 3"보다 앞에 오는 문자열 정렬 오류 방지
+        const rankA = parseInt(a.prizeTier.replace('Division ', ''), 10) || 99;
+        const rankB = parseInt(b.prizeTier.replace('Division ', ''), 10) || 99;
         if (rankA !== rankB) return rankA - rankB;
         return (b.weekNumber || 0) - (a.weekNumber || 0);
     });
