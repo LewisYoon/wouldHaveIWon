@@ -38,6 +38,7 @@ export async function POST(req: Request) {
     const relevantEvents = [
       'checkout.session.completed',
       'invoice.payment_succeeded',
+      'customer.subscription.created',
       'customer.subscription.updated',
       'customer.subscription.deleted'
     ];
