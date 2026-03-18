@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import NumberPicker from '../../components/NumberPicker';
 import LottoLinePicker from '../../components/LottoLinePicker';
 import DivisionRules from '../../components/DivisionRules';
@@ -21,9 +22,31 @@ interface DrawResult {
 const TICKET_COST = 1.45;
 
 export default function SimulatorPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, isLoading } = useAuth();
-  const [game, setGame] = useState<'Oz Lotto' | 'Powerball' | 'Tatts Lotto'>('Oz Lotto');
-  const [simMode, setSimMode] = useState<'classic' | 'auto'>('classic');
+  
+  // Initialize from URL params or defaults
+  const [game, setGame] = useState<'Oz Lotto' | 'Powerball' | 'Tatts Lotto'>(
+    (searchParams.get('game') as any) || 'Oz Lotto'
+  );
+  const [simMode, setSimMode] = useState<'classic' | 'auto'>(
+    (searchParams.get('mode') as any) || 'classic'
+  );
+
+  // Update URL when state changes, only if different from current URL
+  useEffect(() => {
+    const currentGame = searchParams.get('game');
+    const currentMode = searchParams.get('mode');
+    
+    if (currentGame !== game || currentMode !== simMode) {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('game', game);
+      params.set('mode', simMode);
+      router.replace(`?${params.toString()}`, { scroll: false });
+    }
+  }, [game, simMode, router, searchParams]);
+
   const [allComparisonResults, setAllComparisonResults] = useState<ComparisonResult[] | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
   const [isRulesModalOpen, setIsRulesModalOpen] = useState(false);

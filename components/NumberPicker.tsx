@@ -65,7 +65,26 @@ export default function NumberPicker({
 }: NumberPickerProps) {
   const { user, isLoading: isAuthLoading } = useAuth();
   
-  const [mode, setMode] = useState<'classic' | 'auto'>('classic');
+  // Get initial mode from URL if available
+  const getInitialMode = useCallback(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const m = params.get('mode');
+      if (m === 'classic' || m === 'auto') return m;
+    }
+    return 'classic';
+  }, []);
+
+  const [mode, setMode] = useState<'classic' | 'auto'>(getInitialMode());
+
+  // Sync mode when it's updated elsewhere (like via URL change)
+  useEffect(() => {
+    const m = getInitialMode();
+    if (m !== mode) {
+      setMode(m);
+    }
+  }, [getInitialMode, mode]);
+
   const [viewMode, setViewMode] = useState<'detailed' | 'compact'>('detailed');
   const [isDataLoading, setIsDataLoading] = useState(true);
   const [sortBy, setSortBy] = useState<'latest' | 'division'>('latest');
@@ -78,19 +97,18 @@ export default function NumberPicker({
   const [autoWinnersStateTrigger, setAutoWinnersStateTrigger] = useState(0);
 
   const [isRunning, setIsRunning] = useState(false);
-  const [ticketsPerSec, setTicketsPerSec] = useState(10); // 슬라이더가 tickets/sec를 제어
-  const [stats, setStats] = useState({ draws: 0, spent: 0, won: 0 });
+  const [ticketsPerSec, setTicketsPerSec] = useState(10); 
+  const [stats, setStats] = useState({ draws: 0, spent: 0, won: 0, startTime: 0, elapsedSecs: 0 });
+  const [chartData, setChartData] = useState<{spent: number, won: number}[]>([]);
   const [lastWinType, setLastWinType] = useState<string | null>(null);
   const [nearMiss, setNearMiss] = useState<string | null>(null);
   
-  // Refs for dynamic values used in animation loop
   const animationFrameIdRef = useRef<number | null>(null);
   const ticketsPerSecRef = useRef(ticketsPerSec);
-  const statsRef = useRef(stats); // Ref to hold latest stats for simulation loop
+  const startTimeRef = useRef<number | null>(null);
+  const totalDrawsRef = useRef(0);
 
-  // Update refs when state changes
   useEffect(() => { ticketsPerSecRef.current = ticketsPerSec; }, [ticketsPerSec]);
-  useEffect(() => { statsRef.current = stats; }, [stats]); // Sync stats ref with state
 
   const storageCurrentKey = `lottoLines_${game.replace(/\s/g, '')}`;
   const storageHistoryKey = `lottoWins_${game.replace(/\s/g, '')}`;
@@ -110,9 +128,12 @@ export default function NumberPicker({
     stopSimulation();
     autoWinnersRef.current = [];
     setAutoWinnersStateTrigger(prev => prev + 1);
-    setStats({ draws: 0, spent: 0, won: 0 });
+    setStats({ draws: 0, spent: 0, won: 0, startTime: 0, elapsedSecs: 0 });
+    setChartData([]);
+    totalDrawsRef.current = 0;
     setLastWinType(null);
     setNearMiss(null);
+    startTimeRef.current = null;
   }, [game]);
 
   const handleAddLine = useCallback((initialNumbers: number[] = []) => {
@@ -152,39 +173,55 @@ export default function NumberPicker({
     if (lines.length > 0 && mode === 'classic') localStorage.setItem(storageCurrentKey, JSON.stringify(lines));
   }, [lines, storageCurrentKey, mode]);
 
-  const stopSimulation = () => {
+  const stopSimulation = useCallback(() => {
     if (animationFrameIdRef.current) {
       cancelAnimationFrame(animationFrameIdRef.current);
       animationFrameIdRef.current = null;
     }
     setIsRunning(false);
-  };
+    startTimeRef.current = null;
+  }, []);
 
   const startSimulation = useCallback(() => {
     if (!drawResult || drawResult.numbers.length < (game === 'Tatts Lotto' ? 6 : 7)) {
         alert("Please ensure the target winning numbers are set correctly at the top!");
         return;
     }
+    startTimeRef.current = performance.now();
     setIsRunning(true);
-    
-    const simulationLoop = () => {
-      if (!isRunning) return;
+  }, [drawResult, game]);
 
-      const ticketsToProcess = ticketsPerSecRef.current;
-      const newWinners: WinningResult[] = [];
-      let weeklyWinTotal = 0;
-      let highestMainMatches = 0;
+  useEffect(() => {
+    if (!isRunning || !drawResult) return;
+
+    let lastFrameTime = performance.now();
+    let accumulatedTime = 0;
+
+    const simulationLoop = (currentTime: DOMHighResTimeStamp) => {
+      const deltaTime = currentTime - lastFrameTime;
+      lastFrameTime = currentTime;
+      accumulatedTime += deltaTime;
+
+      const targetMsPerTicket = 1000 / Math.max(1, ticketsPerSecRef.current);
       
-      setStats(prevStats => {
-        const currentTotalTickets = prevStats.draws + ticketsToProcess;
+      let frameDraws = 0;
+      let frameWon = 0;
+      let frameSpent = 0;
+      const newWinners: WinningResult[] = [];
+
+      while (accumulatedTime >= targetMsPerTicket) {
+        accumulatedTime -= targetMsPerTicket;
         
-        for (let i = 0; i < ticketsToProcess; i++) {
-          const ticketNumbers = generateQuickPick(game);
-          const result = compareNumbers(ticketNumbers, drawResult.numbers, drawResult.bonus, game);
-          if (result.mainMatchesCount > highestMainMatches) highestMainMatches = result.mainMatchesCount;
-          if (result.prizeTier !== "No Prize") {
+        const ticketNumbers = generateQuickPick(game);
+        const result = compareNumbers(ticketNumbers, drawResult.numbers, drawResult.bonus, game);
+        
+        frameDraws++;
+        totalDrawsRef.current++;
+        frameSpent += TICKET_COST;
+
+        if (result.prizeTier !== "No Prize") {
             const prize = ESTIMATED_PRIZES[game][result.prizeTier] || 0;
-            weeklyWinTotal += prize;
+            frameWon += prize;
             if (prize > 1000) setLastWinType(result.prizeTier);
             
             newWinners.push({ 
@@ -198,38 +235,55 @@ export default function NumberPicker({
               bonusMatchesCount: result.bonusMatchesCount, 
               game: game, 
               prizeValue: prize, 
-              weekNumber: currentTotalTickets, // Reflects total tickets processed
+              weekNumber: totalDrawsRef.current,
               isSimulated: true 
             });
-          }
         }
-        if (highestMainMatches >= (game === 'Oz Lotto' ? 6 : game === 'Powerball' ? 6 : 5)) {
+
+        if (result.mainMatchesCount >= (game === 'Oz Lotto' ? 6 : game === 'Powerball' ? 6 : 5)) {
           setNearMiss("SO CLOSE!");
           setTimeout(() => setNearMiss(null), 500);
         }
+      }
 
+      if (frameDraws > 0) {
         if (newWinners.length > 0) {
           autoWinnersRef.current = [...newWinners, ...autoWinnersRef.current].slice(0, MAX_WINNING_FEED_ITEMS);
           setAutoWinnersStateTrigger(prev => prev + 1);
         }
         
-        // stats.draws now counts total tickets generated
-        return { 
-          draws: currentTotalTickets, 
-          spent: prevStats.spent + (ticketsToProcess * TICKET_COST), 
-          won: prevStats.won + weeklyWinTotal 
-        };
-      });
+        const totalElapsed = startTimeRef.current ? (currentTime - startTimeRef.current) / 1000 : 0;
+
+        setStats(prev => {
+          const newStats = { 
+            ...prev,
+            draws: prev.draws + frameDraws,
+            spent: prev.spent + frameSpent,
+            won: prev.won + frameWon,
+            elapsedSecs: totalElapsed
+          };
+          
+          // Update chart data every 500 draws
+          if (Math.floor(newStats.draws / 500) > Math.floor(prev.draws / 500)) {
+            setChartData(prevData => [...prevData, { spent: newStats.spent, won: newStats.won }].slice(-50));
+          }
+          
+          return newStats;
+        });
+      }
       
       animationFrameIdRef.current = requestAnimationFrame(simulationLoop);
     };
 
-    simulationLoop(); // Start the loop
+    animationFrameIdRef.current = requestAnimationFrame(simulationLoop);
 
-    return () => { // Cleanup
-      if (animationFrameIdRef.current) cancelAnimationFrame(animationFrameIdRef.current);
+    return () => {
+      if (animationFrameIdRef.current) {
+        cancelAnimationFrame(animationFrameIdRef.current);
+        animationFrameIdRef.current = null;
+      }
     };
-  }, [drawResult, game, ticketsPerSecRef, autoWinnersRef, setLastWinType, setNearMiss, setAutoWinnersStateTrigger, isRunning]); // Added isRunning as dependency
+  }, [isRunning, drawResult, game, ticketsPerSecRef, autoWinnersRef]);
 
   const handleManualCheck = async () => {
     const required = game === 'Oz Lotto' ? OZ_REQUIRED : game === 'Powerball' ? PB_REQUIRED : TATTS_REQUIRED;
@@ -257,7 +311,60 @@ export default function NumberPicker({
     if (!window.confirm("Clear all simulation results?")) return;
     autoWinnersRef.current = [];
     setAutoWinnersStateTrigger(prev => prev + 1);
-    setStats({ draws: 0, spent: 0, won: 0 });
+    setStats({ draws: 0, spent: 0, won: 0, startTime: 0, elapsedSecs: 0 });
+    setChartData([]);
+    totalDrawsRef.current = 0;
+  };
+
+  const jackpotOdds = useMemo(() => {
+    if (game === 'Oz Lotto') return 45379620;
+    if (game === 'Powerball') return 134490400;
+    return 8145060; // Tatts Lotto
+  }, [game]);
+
+  const timeToJackpot = useMemo(() => {
+    if (!isRunning || ticketsPerSec === 0) return null;
+    const remainingTickets = jackpotOdds - totalDrawsRef.current;
+    if (remainingTickets <= 0) return "Any second now!";
+    
+    const seconds = remainingTickets / ticketsPerSec;
+    const years = Math.floor(seconds / (365 * 24 * 3600));
+    const days = Math.floor((seconds % (365 * 24 * 3600)) / (24 * 3600));
+    const hours = Math.floor((seconds % (24 * 3600)) / 3600);
+    
+    if (years > 1000) return "> 1,000 years";
+    if (years > 0) return `${years}y ${days}d`;
+    if (days > 0) return `${days}d ${hours}h`;
+    return `${hours}h ${Math.floor((seconds % 3600) / 60)}m`;
+  }, [isRunning, ticketsPerSec, game, stats.draws]);
+
+  const SimpleLineChart = ({ data }: { data: {spent: number, won: number}[] }) => {
+    if (data.length < 2) return <div className="h-32 flex items-center justify-center text-[10px] font-black text-gray-500 uppercase tracking-widest italic opacity-50">Generating Trend Data...</div>;
+    
+    const width = 400;
+    const height = 120;
+    const padding = 10;
+    
+    const maxVal = Math.max(...data.map(d => Math.max(d.spent, d.won)), 1);
+    
+    const getX = (i: number) => (i / (data.length - 1)) * (width - 2 * padding) + padding;
+    const getY = (val: number) => height - ((val / maxVal) * (height - 2 * padding) + padding);
+    
+    const spentPoints = data.map((d, i) => `${getX(i)},${getY(d.spent)}`).join(' ');
+    const wonPoints = data.map((d, i) => `${getX(i)},${getY(d.won)}`).join(' ');
+    
+    return (
+      <div className="relative w-full h-32 bg-gray-50 dark:bg-black/20 rounded-2xl overflow-hidden border border-gray-100 dark:border-white/5 shadow-inner">
+        <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full preserve-3d">
+          <polyline points={spentPoints} fill="none" stroke="#ef4444" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="drop-shadow-[0_0_8px_rgba(239,68,68,0.3)]" />
+          <polyline points={wonPoints} fill="none" stroke="#10b981" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="drop-shadow-[0_0_8px_rgba(16,185,129,0.3)]" />
+        </svg>
+        <div className="absolute top-2 left-3 flex gap-4">
+          <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-red-500" /><span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Spent</span></div>
+          <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-emerald-500" /><span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Won</span></div>
+        </div>
+      </div>
+    );
   };
 
   const handleModeToggle = (newMode: 'classic' | 'auto') => {
@@ -398,7 +505,13 @@ export default function NumberPicker({
                         </p>
                     </div>
                 </div>
-                <button onClick={() => { setStats({ draws: 0, spent: 0, won: 0 }); autoWinnersRef.current = []; setAutoWinnersStateTrigger(prev => prev + 1); }} className="w-full py-3.5 sm:py-4 rounded-xl sm:rounded-2xl bg-gray-100 dark:bg-white/5 text-gray-400 font-black uppercase text-[9px] sm:text-[10px] tracking-[0.3em] hover:bg-gray-200 transition-all">Reset Simulation</button>
+                <button onClick={() => { 
+                  setStats({ draws: 0, spent: 0, won: 0, startTime: 0, elapsedSecs: 0 }); 
+                  setChartData([]);
+                  autoWinnersRef.current = []; 
+                  setAutoWinnersStateTrigger(prev => prev + 1); 
+                  totalDrawsRef.current = 0;
+                }} className="w-full py-3.5 sm:py-4 rounded-xl sm:rounded-2xl bg-gray-100 dark:bg-white/5 text-gray-400 font-black uppercase text-[9px] sm:text-[10px] tracking-[0.3em] hover:bg-gray-200 transition-all">Reset Simulation</button>
             </div>
           )}
           <div className="bg-white dark:bg-gray-900 rounded-[2rem] sm:rounded-[3rem] p-6 sm:p-10 border border-gray-100 dark:border-white/5 shadow-xl mb-8 sm:mb-10 space-y-8 sm:space-y-10 text-left">
@@ -407,23 +520,33 @@ export default function NumberPicker({
                     <p className="text-[9px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Simulation Settings</p>
                     <div>
                         <label className="block text-[9px] sm:text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-3 sm:mb-4">Tickets/Secs: {ticketsPerSec} (Tickets per Second)</label>
-                        <input type="range" min="1" max="50" value={ticketsPerSec} onChange={(e) => { setTicketsPerSec(parseInt(e.target.value)); if (isRunning) stopSimulation(); }} className={`w-full accent-emerald-500 h-1.5 bg-gray-100 dark:bg-white/5 rounded-full appearance-none cursor-pointer`} />
+                        <input type="range" min="1" max="50" value={ticketsPerSec} onChange={(e) => { setTicketsPerSec(parseInt(e.target.value)); }} className={`w-full accent-emerald-500 h-1.5 bg-gray-100 dark:bg-white/5 rounded-full appearance-none cursor-pointer`} />
                     </div>
                 </div>
                 <div className="space-y-4 sm:space-y-6">
-                    <p className="text-[9px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Simulation Details</p>
-                    <div className="bg-gray-100 dark:bg-white/5 p-4 rounded-xl">
-                      <p className="text-[9px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Tickets per Interval</p>
-                      <p className="text-sm font-black text-gray-900 dark:text-white">{ticketsPerSec} (Dynamic based on rate)</p>
+                    <p className="text-[9px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Jackpot Prediction</p>
+                    <div className="bg-gray-100 dark:bg-white/5 p-4 rounded-xl relative overflow-hidden group">
+                      <div className="absolute top-0 right-0 w-16 h-16 bg-amber-500/5 rounded-full -mr-8 -mt-8 animate-pulse" />
+                      <p className="text-[9px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 relative z-10">Est. Time to Div 1</p>
+                      <p className={`text-sm sm:text-lg font-black tracking-tight relative z-10 ${isRunning ? 'text-amber-500' : 'text-gray-400'}`}>
+                        {isRunning ? timeToJackpot : '--'}
+                      </p>
                     </div>
                 </div>
             </div>
+            
+            <div className="space-y-4 sm:space-y-6">
+              <p className="text-[9px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Trend Analysis</p>
+              <SimpleLineChart data={chartData} />
+            </div>
+
             <button onClick={isRunning ? stopSimulation : startSimulation} className={`w-full py-5 sm:py-6 rounded-xl sm:rounded-[2rem] font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] text-xs sm:text-sm shadow-2xl transition-all active:scale-95 ${isRunning ? 'bg-red-500 text-white' : `${brandStyles.bg} text-white ${brandStyles.shadow}`}`}>{isRunning ? 'Abort Simulation' : 'Enter Time Machine'}</button>
           </div>
           <div className={`bg-gray-950 rounded-[2.5rem] sm:rounded-[3.5rem] p-6 sm:p-10 text-white shadow-2xl border transition-all duration-500 mb-8 sm:mb-12 relative overflow-hidden ${isRunning ? `${brandStyles.border}/50 ${brandStyles.shadow}` : 'border-white/10'}`}>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-10 relative z-10 text-center md:text-left">
-              <div><p className="text-[9px] sm:text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1 sm:mb-2">Time Simulated</p><p className="text-3xl sm:text-5xl font-black tabular-nums">{(stats.draws / 52).toFixed(1)}<span className="text-lg sm:text-xl text-gray-600 ml-1 font-serif italic lowercase">yrs</span></p></div>
-              <div><p className="text-[9px] sm:text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1 sm:mb-2">Total Tickets Gen.</p><p className="text-3xl sm:text-5xl font-black text-red-500 tabular-nums tracking-tighter">{stats.draws.toLocaleString()}</p></div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-10 relative z-10 text-center md:text-left">
+              <div><p className="text-[9px] sm:text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1 sm:mb-2">Time Simulated</p><p className="text-3xl sm:text-5xl font-black tabular-nums">{stats.elapsedSecs.toFixed(1)}<span className="text-lg sm:text-xl text-gray-600 ml-1 font-serif italic lowercase">sec</span></p></div>
+              <div><p className="text-[9px] sm:text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1 sm:mb-2">Money Spent</p><p className="text-3xl sm:text-5xl font-black text-red-500 tabular-nums tracking-tighter">{formatCurrency(stats.spent)}</p></div>
+              <div><p className="text-[9px] sm:text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1 sm:mb-2">Total Tickets Gen.</p><p className="text-3xl sm:text-5xl font-black text-indigo-400 tabular-nums tracking-tighter">{stats.draws.toLocaleString()}</p></div>
               <div><p className="text-[9px] sm:text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1 sm:mb-2">Total Won</p><p className={`text-3xl sm:text-5xl font-black text-emerald-400 tabular-nums tracking-tighter`}>{formatCurrency(stats.won)}</p></div>
             </div>
             <div className="mt-8 sm:mt-12 pt-6 sm:pt-10 border-t border-white/5 text-center relative z-10">
@@ -431,7 +554,7 @@ export default function NumberPicker({
               <p className={`text-4xl sm:text-7xl font-black tracking-tighter tabular-nums ${stats.won - stats.spent >= 0 ? 'text-emerald-400' : 'text-red-600'}`}>{formatCurrency(stats.won - stats.spent)}</p>
             </div>
           </div>
-          <div className="mt-8 sm:mt-12 space-y-4 sm:sm-space-y-6 text-left">
+          <div className="mt-8 sm:mt-12 space-y-4 sm:space-y-6 text-left">
             <div className="flex flex-col sm:flex-row sm:items-end justify-between px-4 sm:px-6 mb-4 gap-4">
               <div>
                 <h3 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter italic">Winning Feed</h3>
@@ -451,7 +574,9 @@ export default function NumberPicker({
                     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 sm:gap-6">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
-                          <span className={`text-[8px] sm:text-[10px] font-black uppercase tracking-widest px-2 py-0.5 sm:px-3 py-1 rounded-md sm:rounded-lg bg-gray-100 dark:bg-white/10 ${brandStyles.text}`}>{winner.drawDate} {winner.weekNumber && `• Week ${winner.weekNumber}`}</span>
+                          <span className={`text-[8px] sm:text-[10px] font-black uppercase tracking-widest px-2 py-0.5 sm:px-3 py-1 rounded-md sm:rounded-lg bg-gray-100 dark:bg-white/10 ${brandStyles.text}`}>
+                            Ticket #{winner.weekNumber?.toLocaleString()}
+                          </span>
                         </div>
                         <h4 className="text-xl sm:text-3xl font-black text-gray-900 dark:text-white tracking-tighter mb-3 sm:mb-4">{winner.prizeTier}</h4>
                         <div className="flex flex-wrap gap-1.5 sm:gap-2">
