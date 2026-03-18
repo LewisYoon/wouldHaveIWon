@@ -4,8 +4,14 @@ import Stripe from 'stripe';
 export const runtime = 'edge';
 
 export async function POST(req: Request) {
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-    apiVersion: '2026-02-25.clover',
+  const stripeSecret = process.env.STRIPE_SECRET_KEY;
+  if (!stripeSecret) {
+    console.error("CRITICAL: STRIPE_SECRET_KEY is missing.");
+    return NextResponse.json({ error: 'Billing configuration error.' }, { status: 500 });
+  }
+
+  const stripe = new Stripe(stripeSecret, {
+    apiVersion: '2025-01-27.acacia', // Use a stable, non-beta version
   });
   const origin = req.headers.get('origin') || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
   try {
