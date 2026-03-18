@@ -59,7 +59,15 @@ function LuckContent() {
   const [isDataLoading, setIsDataLoading] = useState(true);
   const [isRulesModalOpen, setIsRulesModalOpen] = useState(false);
   const [selectedJackpot, setSelectedJackpot] = useState<number | null>(null);
+  const [notification, setNotification] = useState<string | null>(null);
 
+  const showNotification = (message: string) => {
+    setNotification(message);
+    setTimeout(() => {
+      setNotification(null);
+    }, 3000); // 3초 후 알림 사라짐
+  };
+  
   const [autoTrackGames, setAutoTrackGames] = useState<{ [key: string]: number }>({});
   const [isUpdatingPrefs, setIsUpdatingPrefs] = useState(false);
 
@@ -198,6 +206,7 @@ function LuckContent() {
     if (!error && data) {
       setMyTickets([{ id: data[0].id, drawDate: data[0].draw_date, numbers: data[0].numbers, game: data[0].game }, ...myTickets]);
       setCurrentNumbers([]);
+      showNotification('1 Ticket Added');
     }
   };
 
@@ -206,11 +215,15 @@ function LuckContent() {
     if (!isPremium && myTickets.filter(t => t.drawDate === selectedDate).length >= FREE_TICKET_LIMIT) {
       alert("Free tier limit reached for this draw."); return;
     }
-    const tickets = Array.from({ length: quickPickQty }, () => ({ user_id: user.id, draw_date: selectedDate, numbers: generateQuickPick(game), game: game }));
+    const ticketsToCreate = Math.min(quickPickQty, isPremium ? 1000 : FREE_TICKET_LIMIT - myTickets.filter(t => t.drawDate === selectedDate).length);
+    if (ticketsToCreate <= 0) return;
+
+    const tickets = Array.from({ length: ticketsToCreate }, () => ({ user_id: user.id, draw_date: selectedDate, numbers: generateQuickPick(game), game: game }));
     const { data, error } = await supabase.from('tickets').insert(tickets).select();
     if (!error && data) {
       const mapped = data.map(t => ({ id: t.id, drawDate: t.draw_date, numbers: t.numbers, game: t.game }));
       setMyTickets([...mapped, ...myTickets]);
+      showNotification(`${data.length} Tickets Added`);
     }
   };
 
@@ -554,6 +567,13 @@ function LuckContent() {
 
       <DivisionRules game={game} isOpen={isRulesModalOpen} onClose={() => setIsRulesModalOpen(false)} />
       <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+
+      {/* Notification Toast */}
+      {notification && (
+        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-6 py-3 rounded-full shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <p className="text-sm font-bold tracking-wider">{notification}</p>
+        </div>
+      )}
     </div>
   );
 }
