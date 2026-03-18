@@ -60,41 +60,40 @@ export async function POST(req: Request) {
         status = dataObject.payment_status === 'paid' ? 'active' : 'incomplete';
       } else if (event.type === 'invoice.payment_succeeded') {
         subscriptionId = dataObject.subscription as string;
-        status = 'active';
+        // [수정] 상태를 여기서 active로 강제하지 않음. 하단 2번 단계에서 실제 구독 정보를 조회하게 유도.
         const pEnd = dataObject.lines?.data?.[0]?.period?.end;
         if (pEnd) currentPeriodEnd = new Date(pEnd * 1000).toISOString();
       } else if (event.type.startsWith('customer.subscription.')) {
         subscriptionId = dataObject.id;
         status = dataObject.status;
         
-        // [수정] 취소 여부를 판단하는 가장 확실한 3가지 경로 체크
         cancelAtPeriodEnd = (
           dataObject.cancel_at_period_end === true || 
           !!dataObject.cancel_at || 
-          dataObject.cancellation_details?.reason === 'cancellation_requested' ||
-          dataObject.cancellation_details?.feedback === 'customer_service' // 일부 환경 대응
+          dataObject.cancellation_details?.reason === 'cancellation_requested'
         );
         
-        addLog(`Subscription Object Detected. ID: ${subscriptionId}, Status: ${status}, CancelFlag Found: ${cancelAtPeriodEnd}`);
-
         const pEnd = dataObject.current_period_end || dataObject.cancel_at;
         if (pEnd) currentPeriodEnd = new Date(pEnd * 1000).toISOString();
         userId = userId || dataObject.metadata?.userId;
         planType = planType || dataObject.metadata?.planType;
       }
 
-      // 2. Fetch full details if data is still missing
-      if (subscriptionId && (!currentPeriodEnd || !userId)) {
-        addLog(`Fetching full details for Subscription: ${subscriptionId}`);
+      // 2. Fetch full details if data is still missing or from invoice event
+      // [수정] invoice 이벤트일 때도 최신 상태(canceled 등)를 가져오기 위해 조회를 수행함
+      if (subscriptionId && (!currentPeriodEnd || !userId || event.type === 'invoice.payment_succeeded')) {
+        addLog(`Fetching latest subscription state for ID: ${subscriptionId}`);
         try {
           const sub = await stripe.subscriptions.retrieve(subscriptionId) as any;
           userId = userId || sub.metadata?.userId;
           planType = planType || sub.metadata?.planType;
-          status = status || sub.status;
+          status = sub.status; // 최신 상태 (active, canceled 등) 반영
           cancelAtPeriodEnd = sub.cancel_at_period_end === true || !!sub.cancel_at;
-          const pEnd = sub.current_period_end || sub.cancel_at || sub.trial_end;
+          
+          // [수정] 취소된 경우 cancel_at이나 ended_at이 만료일이 됨
+          const pEnd = sub.cancel_at || sub.ended_at || sub.current_period_end;
           if (pEnd) currentPeriodEnd = new Date(pEnd * 1000).toISOString();
-          addLog(`Fetched from API: Status=${status}, Expiry=${currentPeriodEnd}`);
+          addLog(`Latest State from Stripe: Status=${status}, Expiry=${currentPeriodEnd}`);
         } catch (subErr: any) {
           addLog(`Sub Fetch Error: ${subErr.message}`);
         }
@@ -124,23 +123,27 @@ export async function POST(req: Request) {
         // [핵심 로직] Stripe에서 온 값을 최우선으로 하되, 없을 때만 기존 값 유지
         const finalSubscriptionId = subscriptionId || existing?.stripe_subscription_id;
         const finalStatus = status || existing?.subscription_status;
+        
+        // [수정] 잭팟 날짜나 수동 수정 시 ended_at이나 cancel_at이 더 정확할 수 있음
         const finalPeriodEnd = currentPeriodEnd || existing?.current_period_end;
         
         // 취소 플래그는 이번 이벤트에서 명시적으로 확인된 값을 최우선 적용
         let finalCancelAtEnd = existing?.cancel_at_period_end ?? false;
-        if (event.type.startsWith('customer.subscription.') || event.type === 'checkout.session.completed') {
-          finalCancelAtEnd = cancelAtPeriodEnd;
-          addLog(`Overriding CancelFlag with fresh signal: ${finalCancelAtEnd}`);
-        } else if (cancelAtPeriodEnd === true) {
+        if (event.type === 'customer.subscription.deleted') {
           finalCancelAtEnd = true;
+        } else if (event.type === 'customer.subscription.updated' || event.type === 'checkout.session.completed') {
+          finalCancelAtEnd = cancelAtPeriodEnd;
         }
 
+        // [수정] 프리미엄 판정 로직
+        // 1. 상태가 active, trialing, past_due 인 경우 (정상 이용 중)
+        // 2. 또는 상태가 canceled 여도 만료일(current_period_end)이 아직 지나지 않은 경우 (유예 기간)
         const isPremium = (
-          finalStatus === 'active' || 
-          finalStatus === 'trialing' || 
-          finalStatus === 'past_due' || 
-          (finalPeriodEnd && new Date(finalPeriodEnd) > new Date())
+          (finalStatus === 'active' || finalStatus === 'trialing' || finalStatus === 'past_due') ||
+          (finalStatus === 'canceled' && finalPeriodEnd && new Date(finalPeriodEnd) > new Date())
         );
+
+        addLog(`Premium Check -> Status: ${finalStatus}, Expiry: ${finalPeriodEnd}, Result: ${isPremium}`);
 
         const upsertData = {
           user_id: userId,
