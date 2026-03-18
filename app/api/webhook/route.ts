@@ -125,7 +125,14 @@ export async function POST(req: Request) {
         const finalStatus = status || existing?.subscription_status;
         
         // [수정] 잭팟 날짜나 수동 수정 시 ended_at이나 cancel_at이 더 정확할 수 있음
-        const finalPeriodEnd = currentPeriodEnd || existing?.current_period_end;
+        let finalPeriodEnd = currentPeriodEnd || existing?.current_period_end;
+        
+        // [추가] Lifetime 플랜이거나 구독이 완전히 취소된 경우 날짜 정보를 초기화
+        const isLifetime = (planType === 'lifetime' || existing?.plan_type === 'lifetime');
+        if (isLifetime || finalStatus === 'canceled') {
+          finalPeriodEnd = null;
+          addLog(`Clearing period end for ${isLifetime ? 'Lifetime plan' : 'Canceled status'}`);
+        }
         
         // 취소 플래그는 이번 이벤트에서 명시적으로 확인된 값을 최우선 적용
         let finalCancelAtEnd = existing?.cancel_at_period_end ?? false;
