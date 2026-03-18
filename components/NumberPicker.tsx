@@ -304,7 +304,7 @@ export default function NumberPicker({
         if (rankA !== rankB) return rankA - rankB;
         return (b.weekNumber || 0) - (a.weekNumber || 0);
     });
-  }, [autoWinners, sortBy]);
+  }, [autoWinners, sortBy, stats]);
 
   const getEquivalentItem = (spent: number) => {
     if (spent < 50) return "a Fancy Pizza";
