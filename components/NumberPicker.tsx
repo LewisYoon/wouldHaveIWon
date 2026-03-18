@@ -83,12 +83,10 @@ export default function NumberPicker({
   const [lastWinType, setLastWinType] = useState<string | null>(null);
   const [nearMiss, setNearMiss] = useState<string | null>(null);
   
-  // [수정] timerRef를 animationFrameIdRef로 변경, setInterval 관련 로직 제거
-  const animationFrameIdRef = useRef<number | null>(null);
-
   // Refs for dynamic values used in animation loop
+  const animationFrameIdRef = useRef<number | null>(null);
   const ticketsPerSecRef = useRef(ticketsPerSec);
-  const statsRef = useRef(stats); // Ref to hold latest stats for interval callback
+  const statsRef = useRef(stats); // Ref to hold latest stats for simulation loop
 
   // Update refs when state changes
   useEffect(() => { ticketsPerSecRef.current = ticketsPerSec; }, [ticketsPerSec]);
@@ -177,7 +175,6 @@ export default function NumberPicker({
       let weeklyWinTotal = 0;
       let highestMainMatches = 0;
       
-      // Use functional updates for stats to ensure latest state
       setStats(prevStats => {
         const currentTotalTickets = prevStats.draws + ticketsToProcess;
         
@@ -206,13 +203,11 @@ export default function NumberPicker({
             });
           }
         }
-
         if (highestMainMatches >= (game === 'Oz Lotto' ? 6 : game === 'Powerball' ? 6 : 5)) {
           setNearMiss("SO CLOSE!");
           setTimeout(() => setNearMiss(null), 500);
         }
 
-        // Update autoWinnersRef directly and trigger state update for re-render
         if (newWinners.length > 0) {
           autoWinnersRef.current = [...newWinners, ...autoWinnersRef.current].slice(0, MAX_WINNING_FEED_ITEMS);
           setAutoWinnersStateTrigger(prev => prev + 1);
@@ -234,7 +229,7 @@ export default function NumberPicker({
     return () => { // Cleanup
       if (animationFrameIdRef.current) cancelAnimationFrame(animationFrameIdRef.current);
     };
-  }, [drawResult, game, ticketsPerSecRef, autoWinnersRef, setLastWinType, setNearMiss, setAutoWinnersStateTrigger, isRunning]); // Dependencies for useCallback
+  }, [drawResult, game, ticketsPerSecRef, autoWinnersRef, setLastWinType, setNearMiss, setAutoWinnersStateTrigger, isRunning]); // Added isRunning as dependency
 
   const handleManualCheck = async () => {
     const required = game === 'Oz Lotto' ? OZ_REQUIRED : game === 'Powerball' ? PB_REQUIRED : TATTS_REQUIRED;
@@ -436,7 +431,7 @@ export default function NumberPicker({
               <p className={`text-4xl sm:text-7xl font-black tracking-tighter tabular-nums ${stats.won - stats.spent >= 0 ? 'text-emerald-400' : 'text-red-600'}`}>{formatCurrency(stats.won - stats.spent)}</p>
             </div>
           </div>
-          <div className="mt-8 sm:mt-12 space-y-4 sm:space-y-6 text-left">
+          <div className="mt-8 sm:mt-12 space-y-4 sm:sm-space-y-6 text-left">
             <div className="flex flex-col sm:flex-row sm:items-end justify-between px-4 sm:px-6 mb-4 gap-4">
               <div>
                 <h3 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter italic">Winning Feed</h3>
