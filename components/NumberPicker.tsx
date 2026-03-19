@@ -286,6 +286,7 @@ export default function NumberPicker({
   }, [isRunning, drawResult, game, ticketsPerSecRef, autoWinnersRef]);
 
   const handleManualCheck = async () => {
+    if (!drawResult) return;
     const required = game === 'Oz Lotto' ? OZ_REQUIRED : game === 'Powerball' ? PB_REQUIRED : TATTS_REQUIRED;
     const completeLines = lines.filter(line => line.numbers.filter(n => n > 0).length === required);
     if (completeLines.length === 0) { alert(`Complete at least one set.`); return; }
