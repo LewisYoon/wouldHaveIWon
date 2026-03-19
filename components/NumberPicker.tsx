@@ -296,14 +296,13 @@ export default function NumberPicker({
         if (result.prizeTier !== "No Prize") return { id: Date.now().toString() + Math.random(), numbers: line.numbers, drawNumbers: drawResult.numbers, drawBonus: drawResult.bonus, drawDate: drawResult.drawDate, prizeTier: result.prizeTier, mainMatchesCount: result.mainMatchesCount, bonusMatchesCount: result.bonusMatchesCount, game: game };
         return null;
       })
-      .filter((winner): winner is WinningResult => winner !== null);
-      }).filter((r): r is WinningResult => r !== null);
-      if (currentWinners.length > 0) {
-        if (user) await supabase.from('simulator_history').insert({ user_id: user.id, lines: currentWinners, game: game });
-        const updatedHistory = [...currentWinners, ...winningHistory];
-        setWinningHistory(updatedHistory);
-        if (!user) localStorage.setItem(storageHistoryKey, JSON.stringify(updatedHistory));
-      }
+      .filter((r): r is WinningResult => r !== null);
+
+    if (currentWinners.length > 0) {
+      if (user) await supabase.from('simulator_history').insert({ user_id: user.id, lines: currentWinners, game: game });
+      const updatedHistory = [...currentWinners, ...winningHistory];
+      setWinningHistory(updatedHistory);
+      if (!user) localStorage.setItem(storageHistoryKey, JSON.stringify(updatedHistory));
     }
     onCheckAllResults(completeLines.map(line => line.numbers));
     resultsRef.current?.scrollIntoView({ behavior: 'smooth' });
