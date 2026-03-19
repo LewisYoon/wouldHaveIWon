@@ -20,8 +20,8 @@ export default function SimulatorContent() {
   const searchParams = useSearchParams();
   const { isLoading } = useAuth();
   
-  const [game, setGame] = useState<'Oz Lotto' | 'Powerball' | 'Tatts Lotto'>((searchParams.get('game') as any) || 'Oz Lotto');
-  const [simMode, setSimMode] = useState<'classic' | 'auto'>((searchParams.get('mode') as any) || 'classic');
+  const game = (searchParams.get('game') as 'Oz Lotto' | 'Powerball' | 'Tatts Lotto') || 'Oz Lotto';
+  const simMode = (searchParams.get('mode') as 'classic' | 'auto') || 'classic';
   const [drawMode, setDrawMode] = useState<'official' | 'random' | 'manual'>('official');
 
   const updateUrl = (newGame: string, newMode: string) => {
@@ -32,11 +32,15 @@ export default function SimulatorContent() {
   };
 
   const [showConfetti, setShowConfetti] = useState(false);
-  const [isRulesModalOpen, setIsRulesModalOpen] = useState(false);
   const resultsRef = useRef<HTMLDivElement>(null);
 
   const { activeResult, setCustomResult, generateRandomResult } = useLatestDraw(game, drawMode);
   const { allComparisonResults, stats, handleCheckAllResults, clearResults, luckNarrative, realWorldValue, saveTurboSummary, saveInProgress, loadSavedSession, setStatsFromSession } = useSimulator(game, activeResult);
+
+  const clearAllSimulatorData = () => {
+    clearResults();
+    setPickerKey(prev => prev + 1);
+  };
 
   useEffect(() => {
     const saved = loadSavedSession(game);
@@ -107,13 +111,13 @@ export default function SimulatorContent() {
           </div>
 
           <div className="flex justify-center gap-4 mb-8">
-            <button onClick={() => { setSimMode('classic'); updateUrl(game, 'classic'); }} className={`px-8 py-3 rounded-xl font-black uppercase text-xs ${simMode === 'classic' ? `${brandStyles.bg} text-white` : 'bg-gray-200 dark:bg-gray-800 text-gray-500'}`}>Classic</button>
-            <button onClick={() => { setSimMode('auto'); updateUrl(game, 'auto'); }} className={`px-8 py-3 rounded-xl font-black uppercase text-xs ${simMode === 'auto' ? `${brandStyles.bg} text-white` : 'bg-gray-200 dark:bg-gray-800 text-gray-500'}`}>Turbo</button>
+            <button onClick={() => { updateUrl(game, 'classic'); }} className={`px-8 py-3 rounded-xl font-black uppercase text-xs ${simMode === 'classic' ? `${brandStyles.bg} text-white` : 'bg-gray-200 dark:bg-gray-800 text-gray-500'}`}>Classic</button>
+            <button onClick={() => { updateUrl(game, 'auto'); }} className={`px-8 py-3 rounded-xl font-black uppercase text-xs ${simMode === 'auto' ? `${brandStyles.bg} text-white` : 'bg-gray-200 dark:bg-gray-800 text-gray-500'}`}>Turbo</button>
           </div>
 
           <div className="inline-flex bg-white dark:bg-gray-900 p-1.5 rounded-2xl shadow-sm border border-gray-100 dark:border-white/5">
             {['Oz Lotto', 'Powerball', 'Tatts Lotto'].map(g => (
-              <button key={g} onClick={() => { setGame(g as any); updateUrl(g as any, simMode); clearResults(); }} className={`px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition ${game === g ? `${brandStyles.bg} text-white` : 'text-gray-400 hover:text-gray-600'}`}>{g}</button>
+              <button key={g} onClick={() => { updateUrl(g, simMode); clearResults(); }} className={`px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition ${game === g ? `${brandStyles.bg} text-white` : 'text-gray-400 hover:text-gray-600'}`}>{g}</button>
             ))}
           </div>
         </header>
@@ -129,20 +133,26 @@ export default function SimulatorContent() {
                         <div className="w-full max-w-lg space-y-6">
                             <div className="p-6 bg-indigo-50 dark:bg-indigo-950/20 rounded-3xl border-2 border-indigo-500/20">
                                 <p className="text-[10px] font-black text-gray-400 uppercase mb-4 ml-2">Main Numbers</p>
-                                <LottoLinePicker lineId="manual-main" displayIndex={1} selectedNumbers={activeResult.numbers} onNumbersChange={(_, nums) => setCustomResult({...activeResult, numbers: nums.filter(n => n > 0).slice(0, game === 'Tatts Lotto' ? 6 : 7)})} game={game} />
+                                <LottoLinePicker 
+                                    lineId="manual-main" displayIndex={1} selectedNumbers={activeResult.numbers} 
+                                    onNumbersChange={(_, nums) => setCustomResult((prev) => ({...prev, numbers: nums.filter(n => n > 0).sort((a,b) => a-b)}))} 
+                                    game={game} minRange={1} maxRange={game === 'Powerball' ? 35 : (game === 'Oz Lotto' ? 47 : 45)}
+                                />
                             </div>
                             <div className="p-6 bg-amber-50 dark:bg-amber-950/20 rounded-3xl border-2 border-amber-500/20">
-                                <p className="text-[10px] font-black text-gray-400 uppercase mb-4 ml-2">Bonus Numbers (Max {game === 'Oz Lotto' ? 3 : 2})</p>
+                                <p className="text-[10px] font-black text-gray-400 uppercase mb-4 ml-2">{game === 'Powerball' ? 'Powerball Number' : 'Bonus Numbers'}</p>
                                 <LottoLinePicker 
-                                    lineId="manual-bonus" 
-                                    displayIndex={2} 
-                                    selectedNumbers={activeResult.bonus} 
+                                    lineId="manual-bonus" displayIndex={2} maxSlots={game === 'Powerball' ? 1 : (game === 'Oz Lotto' ? 3 : 2)}
+                                    minRange={1} maxRange={game === 'Powerball' ? 20 : (game === 'Oz Lotto' ? 47 : 45)}
+                                    selectedNumbers={activeResult.bonus}
                                     onNumbersChange={(_, nums) => {
-                                        const limit = game === 'Oz Lotto' ? 3 : 2;
-                                        const validBonus = nums
-                                            .filter(n => n > 0 && !activeResult.numbers.includes(n))
-                                            .slice(0, limit);
-                                        setCustomResult({...activeResult, bonus: validBonus});
+                                        setCustomResult((prev) => {
+                                            const limit = game === 'Powerball' ? 1 : (game === 'Oz Lotto' ? 3 : 2);
+                                            const validBonus = nums
+                                                .filter(n => n > 0 && !prev.numbers.includes(n))
+                                                .slice(0, limit);
+                                            return { ...prev, bonus: validBonus };
+                                        });
                                     }} 
                                     game={game} 
                                 />
@@ -173,7 +183,7 @@ export default function SimulatorContent() {
             </div>
         )}
 
-        <NumberPicker onCheckAllResults={onRunSimulation} onClearAll={clearResults} resultsRef={resultsRef} drawResult={activeResult} game={game} mode={simMode} onModeChange={(m) => { setSimMode(m); updateUrl(game, m); }} />
+        <NumberPicker onCheckAllResults={onRunSimulation} onClearAll={clearAllSimulatorData} resultsRef={resultsRef} drawResult={activeResult} game={game} mode={simMode} onModeChange={(m) => updateUrl(game, m)} />
 
         <div ref={resultsRef} className="scroll-mt-20 space-y-12">
             {allComparisonResults && (
@@ -196,23 +206,32 @@ export default function SimulatorContent() {
                             ))}
                         </div>
                     </div>
-                    
+
                     <div className="bg-white dark:bg-gray-900 p-8 rounded-3xl border border-gray-100 shadow-xl dark:border-white/5">
                         <h2 className="text-xl font-black mb-8 uppercase italic">Draw Analysis</h2>
                         <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
-                            {allComparisonResults.map((res, i) => (
-                               <div key={i} className={`p-6 rounded-2xl ${res.prizeTier !== "No Prize" ? 'bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-500/20' : 'bg-gray-50 dark:bg-gray-800'}`}>
-                                   <div className="flex justify-between items-center mb-4">
-                                       <span className="font-black text-sm text-gray-900 dark:text-gray-100">{res.prizeTier}</span>
-                                       <span className="text-[10px] font-bold text-gray-500">{res.mainMatchesCount} Main + {res.bonusMatchesCount} Bonus</span>
+                            {allComparisonResults.map((res: any, i: number) => {
+                               const isWinner = res.prizeTier !== "No Prize";
+                               return (
+                               <div key={i} className={`p-6 rounded-2xl border ${isWinner ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-500/20' : 'bg-gray-50 dark:bg-gray-800 border-transparent'}`}>
+                                   <div className="flex justify-between items-center mb-4 text-xs font-black uppercase text-gray-500">
+                                       <div className="flex items-center gap-2">
+                                            <span className="bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded-md">#{i + 1}</span>
+                                            <span className={isWinner ? 'text-emerald-600' : 'text-gray-400'}>{res.prizeTier}</span>
+                                       </div>
+                                       <span>{res.mainMatchesCount} Main + {res.bonusMatchesCount} Bonus</span>
                                    </div>
                                    <div className="flex flex-wrap gap-2">
-                                       {res.numbers.map((n, idx) => (
-                                           <span key={idx} className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-xs shadow-md border-b-2 ${activeResult?.numbers.includes(n) ? `${brandStyles.bg} text-white` : 'bg-gray-200 dark:bg-gray-700 text-gray-500'}`}>{n}</span>
+                                       {(res.userNumbers || []).map((n: number, idx: number) => (
+                                           <span key={idx} className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-xs shadow-md border-b-2 ${res.drawNumbers.includes(n) ? `${brandStyles.bg} text-white` : 'bg-gray-200 dark:bg-gray-700 text-gray-500'}`}>{n}</span>
+                                       ))}
+                                       {(res.drawBonus || []).map((n: number, idx: number) => (
+                                           <span key={`b-${idx}`} className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-xs shadow-md border-b-2 ${res.matchedBonusNumbers.includes(n) ? 'bg-amber-400 text-amber-950' : 'bg-gray-200 dark:bg-gray-700 text-gray-500'}`}>{n}</span>
                                        ))}
                                    </div>
                                </div>
-                            ))}
+                               );
+                            })}
                         </div>
                     </div>
                 </>
