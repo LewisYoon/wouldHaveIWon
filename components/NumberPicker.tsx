@@ -28,7 +28,7 @@ type WinningResult = {
   prizeTier: string;
   mainMatchesCount: number;
   bonusMatchesCount: number;
-  game: string;
+  game: 'Oz Lotto' | 'Powerball' | 'Tatts Lotto';
   prizeValue?: number;
   weekNumber?: number;
   isSimulated?: boolean;
