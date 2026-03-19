@@ -70,10 +70,11 @@ export default function SimulatorPage() {
   const onRunSimulation = (allLines: number[][]) => {
     const { error, currentWins } = handleCheckAllResults(allLines);
     if (error) {
-      alert(error);
+      toast.error(error);
       return;
     }
-    if (currentWins > 0) {
+    const wins = typeof currentWins === 'number' ? currentWins : 0;
+    if (wins > 0) {
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 10000);
     }
