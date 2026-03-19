@@ -290,13 +290,13 @@ export default function NumberPicker({
     const completeLines = lines.filter(line => line.numbers.filter(n => n > 0).length === required);
     if (completeLines.length === 0) { alert(`Complete at least one set.`); return; }
 
-    const currentWinners: WinningResult[] = completeLines
-      .map(line => {
+    const rawWinners = completeLines.map(line => {
         const result = compareNumbers(line.numbers, drawResult.numbers, drawResult.bonus, game);
         if (result.prizeTier !== "No Prize") return { id: Date.now().toString() + Math.random(), numbers: line.numbers, drawNumbers: drawResult.numbers, drawBonus: drawResult.bonus, drawDate: drawResult.drawDate, prizeTier: result.prizeTier, mainMatchesCount: result.mainMatchesCount, bonusMatchesCount: result.bonusMatchesCount, game: game };
         return null;
-      })
-      .filter((r): r is WinningResult => r !== null);
+    });
+
+    const currentWinners: WinningResult[] = rawWinners.filter((r): r is WinningResult => r !== null);
 
     if (currentWinners.length > 0) {
       if (user) await supabase.from('simulator_history').insert({ user_id: user.id, lines: currentWinners, game: game });
