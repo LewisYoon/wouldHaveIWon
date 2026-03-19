@@ -1,33 +1,23 @@
 // lotto-project/app/luck/page.tsx
 'use client';
 
-import { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
+import { useState, useEffect, useMemo, Suspense } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import Navbar from '../../components/Navbar';
 import LottoLinePicker from '../../components/LottoLinePicker';
 import DivisionRules from '../../components/DivisionRules';
 import Countdown from '../../components/Countdown';
 import SettingsModal from '../../components/SettingsModal';
-import { getNextDrawDates, compareNumbers, generateQuickPick } from '../../lib/lotto-utils';
+import { getNextDrawDates, compareNumbers, Ticket } from '../../lib/lotto-utils';
 import { supabase } from '../../lib/supabase';
+import { toast } from 'sonner';
 import Link from 'next/link';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 
-interface Ticket {
-  id: string;
-  drawDate: string;
-  numbers: number[];
-  game: string;
-}
-
-interface DrawResult {
-  game: string;
-  drawDate: string;
-  drawNumber?: number;
-  numbers: number[];
-  bonus: number[];
-  prizes: Record<string, number>;
-}
+// Custom Hooks
+import { useLuckData } from '../../hooks/useLuckData';
+import { useUserTickets } from '../../hooks/useUserTickets';
+import { useUserPreferences } from '../../hooks/useUserPreferences';
 
 const TICKET_COST = 1.45;
 const FREE_TICKET_LIMIT = 25;
@@ -37,10 +27,45 @@ function LuckContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
+  
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isRulesModalOpen, setIsRulesModalOpen] = useState(false);
+  const [expandedDates, setExpandedDates] = useState<Set<string>>(new Set());
 
+  // Game & Date State
   const initialGame = (searchParams.get('game') as any) || 'Oz Lotto';
   const [game, setGame] = useState<'Oz Lotto' | 'Powerball' | 'Tatts Lotto'>(initialGame);
+  const upcomingDates = useMemo(() => getNextDrawDates(5, game), [game]);
+  const [selectedDate, setSelectedDate] = useState(upcomingDates[0]);
+  
+  // Picker State
+  const [currentNumbers, setCurrentNumbers] = useState<number[]>([]);
+  const [quickPickQty, setQuickPickQuantity] = useState(10);
+  
+  // Custom Hooks
+  const { 
+    myTickets, 
+    isTicketsLoading, 
+    addTicket, 
+    addQuickPicks, 
+    deleteTicketsByDate, 
+    deleteSingleTicket 
+  } = useUserTickets(user, !!isPremium, isAuthLoading);
+
+  const { 
+    drawResultsList, 
+    upcomingLedger, 
+    isDataLoading, 
+    stats 
+  } = useLuckData(game, myTickets);
+
+  const { 
+    autoTrackGames, 
+    isUpdatingPrefs, 
+    updateAutoTrack 
+  } = useUserPreferences(user, isAuthLoading, subscriptionInfo, refreshPremiumStatus);
+
+  const [selectedJackpot, setSelectedJackpot] = useState<number | null>(null);
 
   const handleGameChange = (newGame: 'Oz Lotto' | 'Powerball' | 'Tatts Lotto') => {
     setGame(newGame);
@@ -49,58 +74,10 @@ function LuckContent() {
     router.push(`${pathname}?${params.toString()}`, { scroll: false });
   };
 
-  const upcomingDates = useMemo(() => getNextDrawDates(5, game), [game]);
-  const [selectedDate, setSelectedDate] = useState(upcomingDates[0]);
-  const [currentNumbers, setCurrentNumbers] = useState<number[]>([]);
-  const [quickPickQty, setQuickPickQuantity] = useState(10);
-  const [myTickets, setMyTickets] = useState<Ticket[]>([]);
-  const [drawResultsList, setDrawResultsList] = useState<DrawResult[]>([]);
-  const [upcomingLedger, setUpcomingLedger] = useState<any[]>([]);
-  const [expandedDates, setExpandedDates] = useState<Set<string>>(new Set());
-  const [isDataLoading, setIsDataLoading] = useState(true);
-  const [isRulesModalOpen, setIsRulesModalOpen] = useState(false);
-  const [selectedJackpot, setSelectedJackpot] = useState<number | null>(null);
-  const [notification, setNotification] = useState<string | null>(null);
-
-  const showNotification = (message: string) => {
-    setNotification(message);
-    setTimeout(() => {
-      setNotification(null);
-    }, 3000); // 3초 후 알림 사라짐
-  };
-  
-  const [autoTrackGames, setAutoTrackGames] = useState<{ [key: string]: number }>({});
-  const [isUpdatingPrefs, setIsUpdatingPrefs] = useState(false);
-
   useEffect(() => {
-    const fetchPrefs = async () => {
-      if (!user) return;
-      if (subscriptionInfo?.autoTrackGames) setAutoTrackGames(subscriptionInfo.autoTrackGames);
-      const { data } = await supabase.from('user_preferences').select('auto_track_games').eq('user_id', user.id).maybeSingle();
-      if (data?.auto_track_games) setAutoTrackGames(data.auto_track_games);
-    };
-    if (!isAuthLoading) fetchPrefs();
-  }, [user, isAuthLoading, subscriptionInfo]);
-
-  useEffect(() => {
-    const loadPublicData = async () => {
-      const { data: ledger } = await supabase.from('upcoming_draws').select('*');
-      if (ledger) setUpcomingLedger(ledger);
-
-      const { data: results } = await supabase.from('draw_results').select('*').order('draw_date', { ascending: false });
-      if (results) {
-        setDrawResultsList(results.map(r => ({
-          game: r.game,
-          drawDate: r.draw_date,
-          drawNumber: r.draw_number,
-          numbers: r.numbers,
-          bonus: r.bonus,
-          prizes: r.prizes
-        })));
-      }
-    };
-    loadPublicData();
-  }, []);
+    setSelectedDate(upcomingDates[0]);
+    setCurrentNumbers([]);
+  }, [game, upcomingDates]);
 
   useEffect(() => {
     const fetchJackpot = async () => {
@@ -117,132 +94,64 @@ function LuckContent() {
     fetchJackpot();
   }, [game, selectedDate, upcomingLedger]);
 
-  useEffect(() => {
-    const fetchTickets = async () => {
-      if (!user) { setMyTickets([]); setIsDataLoading(false); return; }
-      setIsDataLoading(true);
-      const { data } = await supabase.from('tickets').select('*').eq('user_id', user.id).order('draw_date', { ascending: false });
-      if (data) {
-        setMyTickets(data.map(t => ({ id: t.id, drawDate: t.draw_date, numbers: t.numbers, game: t.game })));
-      }
-      setIsDataLoading(false);
-    };
-    if (!isAuthLoading) fetchTickets();
-  }, [user, isAuthLoading]);
-
-  const isOz = game === 'Oz Lotto';
-  const isTatts = game === 'Tatts Lotto';
-  const brandColor = isOz ? 'emerald' : isTatts ? 'red' : 'indigo';
-  
-  const brandStyles = {
-    text: isOz ? 'text-emerald-600 dark:text-emerald-400' : isTatts ? 'text-red-600 dark:text-red-400' : 'text-indigo-600 dark:text-indigo-400',
-    bg: isOz ? 'bg-emerald-600' : isTatts ? 'bg-red-600' : 'bg-indigo-600',
-    bgLight: isOz ? 'bg-emerald-50 dark:bg-emerald-950/30' : isTatts ? 'bg-red-50 dark:bg-red-950/30' : 'bg-indigo-50 dark:bg-indigo-950/20',
-    border: isOz ? 'border-emerald-100 dark:border-emerald-500/20' : isTatts ? 'border-red-100 dark:border-red-500/20' : 'border-indigo-100 dark:border-indigo-500/20',
-    shadow: isOz ? 'shadow-emerald-500/20' : isTatts ? 'shadow-red-500/20' : 'shadow-indigo-500/20',
-    focus: isOz ? 'focus:border-emerald-500' : isTatts ? 'focus:border-red-500' : 'focus:border-indigo-500'
-  };
-
-  const stats = useMemo(() => {
-    let totalMissedPrize = 0;
-    let totalTicketsChecked = 0;
-    let totalWins = 0;
-    let bestDivision = 'No Prize';
-
-    // Filter tickets by the current game
-    const relevantTickets = myTickets.filter(t => t.game === game);
-
-    relevantTickets.forEach(t => {
-      const res = drawResultsList.find(r => r.drawDate === t.drawDate && r.game === t.game);
-      if (res) {
-        totalTicketsChecked++;
-        const c = compareNumbers(t.numbers, res.numbers, res.bonus, t.game as any);
-
-        let prize = res.prizes[c.prizeTier] || 0;
-        if (c.prizeTier === 'Division 1' && prize === 0) {
-          const ledgerMatch = upcomingLedger.find(l => l.game?.toLowerCase().includes(t.game.toLowerCase().split(' ')[0]) && l.draw_date === t.drawDate);
-          if (ledgerMatch) prize = ledgerMatch.jackpot;
-        }
-
-        totalMissedPrize += prize;
-        if (c.prizeTier !== 'No Prize') {
-          totalWins++;
-          if (bestDivision === 'No Prize' || parseInt(c.prizeTier.replace('Division ', '')) < (bestDivision === 'No Prize' ? 99 : parseInt(bestDivision.replace('Division ', '')))) {
-            bestDivision = c.prizeTier;
-          }
-        }
-      }
-    });
-
-    const totalInvested = relevantTickets.length * TICKET_COST;
-    return { totalMissedPrize, totalTicketsChecked, totalWins, bestDivision, totalInvested };
-  }, [myTickets, drawResultsList, upcomingLedger, game]);
-
-
-  useEffect(() => {
-    setSelectedDate(upcomingDates[0]);
-    setCurrentNumbers([]);
-  }, [game, upcomingDates]);
-
-  const handleUpdateAutoTrack = async (gameName: string, qty: number) => {
-    if (!user || !isPremium) return;
-    const newGames = { ...autoTrackGames, [gameName]: qty };
-    setAutoTrackGames(newGames);
-    setIsUpdatingPrefs(true);
-    const { error } = await supabase.from('user_preferences').upsert({ user_id: user.id, auto_track_games: newGames }, { onConflict: 'user_id' });
-    if (!error) refreshPremiumStatus();
-    setIsUpdatingPrefs(false);
-  };
-
   const handleSaveTicket = async () => {
     if (!user) { router.push('/login'); return; }
     const required = game === 'Powerball' ? 8 : game === 'Oz Lotto' ? 7 : 6;
     if (currentNumbers.filter(n => n > 0).length < required) {
-      alert(`Please select all ${required} numbers.`); return;
+      toast.error(`Please select all ${required} numbers.`); return;
     }
-    if (!isPremium && myTickets.filter(t => t.drawDate === selectedDate).length >= FREE_TICKET_LIMIT) {
-      alert("Free tier limit reached for this draw."); return;
+    const ticketsForThisDraw = myTickets.filter(t => t.drawDate === selectedDate).length;
+    if (!isPremium && ticketsForThisDraw >= FREE_TICKET_LIMIT) {
+      toast.warning("Free tier limit reached for this draw.", {
+        description: "Upgrade to Premium for unlimited tickets.",
+        action: {
+          label: 'Upgrade',
+          onClick: () => router.push('/premium')
+        }
+      });
+      return;
     }
-    const { data, error } = await supabase.from('tickets').insert([{ user_id: user.id, draw_date: selectedDate, numbers: currentNumbers, game: game }]).select();
-    if (!error && data) {
-      setMyTickets([{ id: data[0].id, drawDate: data[0].draw_date, numbers: data[0].numbers, game: data[0].game }, ...myTickets]);
+
+    const { error } = await addTicket(game, selectedDate, currentNumbers);
+    if (!error) {
       setCurrentNumbers([]);
-      showNotification('1 Ticket Added');
+      toast.success('1 Ticket Added');
+    } else {
+      toast.error('Failed to save ticket');
     }
   };
 
   const handleMultiQuickPick = async () => {
     if (!user) { router.push('/login'); return; }
-    if (!isPremium && myTickets.filter(t => t.drawDate === selectedDate).length >= FREE_TICKET_LIMIT) {
-      alert("Free tier limit reached for this draw."); return;
-    }
-    const ticketsToCreate = Math.min(quickPickQty, isPremium ? 1000 : FREE_TICKET_LIMIT - myTickets.filter(t => t.drawDate === selectedDate).length);
-    if (ticketsToCreate <= 0) return;
-
-    const tickets = Array.from({ length: ticketsToCreate }, () => ({ user_id: user.id, draw_date: selectedDate, numbers: generateQuickPick(game), game: game }));
-    const { data, error } = await supabase.from('tickets').insert(tickets).select();
-    if (!error && data) {
-      const mapped = data.map(t => ({ id: t.id, drawDate: t.draw_date, numbers: t.numbers, game: t.game }));
-      setMyTickets([...mapped, ...myTickets]);
-      showNotification(`${data.length} Tickets Added`);
+    const ticketsForThisDraw = myTickets.filter(t => t.drawDate === selectedDate).length;
+    
+    const { data, error } = await addQuickPicks(game, selectedDate, quickPickQty, ticketsForThisDraw, FREE_TICKET_LIMIT);
+    if (error === 'Limit reached') {
+      toast.warning("Free tier limit reached for this draw.", {
+        description: "Upgrade to Premium for unlimited tickets.",
+        action: {
+          label: 'Upgrade',
+          onClick: () => router.push('/premium')
+        }
+      });
+    } else if (!error && data) {
+      toast.success(`${data.length} Tickets Added`);
+    } else if (error) {
+      toast.error('Failed to add tickets');
     }
   };
 
   const handleDeleteDateGroup = async (date: string) => {
     if (!window.confirm(`Delete all ${game} tickets for ${date}?`)) return;
-    if (user) {
-      const { error } = await supabase.from('tickets').delete().eq('user_id', user.id).eq('game', game).eq('draw_date', date);
-      if (error) { alert(`Error: ${error.message}`); return; }
-    }
-    setMyTickets(prev => prev.filter(t => !(t.drawDate === date && t.game === game)));
+    const { error } = await deleteTicketsByDate(game, date);
+    if (!error) toast.success('Tickets deleted');
+    else toast.error('Failed to delete tickets');
   };
 
   const handleDeleteSingleTicket = async (id: string) => {
-    if (user) {
-      const { error } = await supabase.from('tickets').delete().eq('id', id).eq('user_id', user.id);
-      if (error) { alert(`Error: ${error.message}`); return; }
-    }
-    setMyTickets(prev => prev.filter(t => t.id !== id));
+    const { error } = await deleteSingleTicket(id);
+    if (!error) toast.success('Ticket deleted');
+    else toast.error('Failed to delete ticket');
   };
 
   const formatCurrency = (val: number) => new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(val);
@@ -265,6 +174,19 @@ function LuckContent() {
       return acc;
     }, {} as Record<string, Ticket[]>);
   }, [myTickets, game]);
+
+  const isOz = game === 'Oz Lotto';
+  const isTatts = game === 'Tatts Lotto';
+  const brandColor = isOz ? 'emerald' : isTatts ? 'red' : 'indigo';
+  
+  const brandStyles = {
+    text: isOz ? 'text-emerald-600 dark:text-emerald-400' : isTatts ? 'text-red-600 dark:text-red-400' : 'text-indigo-600 dark:text-indigo-400',
+    bg: isOz ? 'bg-emerald-600' : isTatts ? 'bg-red-600' : 'bg-indigo-600',
+    bgLight: isOz ? 'bg-emerald-50 dark:bg-emerald-950/30' : isTatts ? 'bg-red-50 dark:bg-red-950/30' : 'bg-indigo-50 dark:bg-indigo-950/20',
+    border: isOz ? 'border-emerald-100 dark:border-emerald-500/20' : isTatts ? 'border-red-100 dark:border-red-500/20' : 'border-indigo-100 dark:border-indigo-500/20',
+    shadow: isOz ? 'shadow-emerald-500/20' : isTatts ? 'shadow-red-500/20' : 'shadow-indigo-500/20',
+    focus: isOz ? 'focus:border-emerald-500' : isTatts ? 'focus:border-red-500' : 'focus:border-indigo-500'
+  };
 
   if (isAuthLoading) return <div className={`min-h-screen flex items-center justify-center bg-white dark:bg-gray-950 font-black ${brandStyles.text} animate-pulse uppercase tracking-widest`}>Loading...</div>;
 
@@ -457,7 +379,7 @@ function LuckContent() {
                 <Link href="/premium/" className="bg-amber-400 text-amber-950 px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-amber-500 transition-all shadow-lg shadow-amber-500/20">Upgrade</Link>
               ) : (
                 <button 
-                  onClick={() => handleUpdateAutoTrack(game, (autoTrackGames[game] || 0) > 0 ? 0 : 10)}
+                  onClick={() => updateAutoTrack(game, (autoTrackGames[game] || 0) > 0 ? 0 : 10, true)}
                   disabled={isUpdatingPrefs}
                   className={`w-14 h-8 rounded-full transition-all duration-500 relative flex-shrink-0 ${((autoTrackGames[game] || 0) > 0) ? 'bg-amber-50 shadow-lg shadow-amber-500/30' : 'bg-gray-200 dark:bg-gray-800'}`}
                 >
@@ -477,7 +399,7 @@ function LuckContent() {
                     <input 
                       type="range" min="5" max="100" step="5"
                       value={autoTrackGames[game] || 0} 
-                      onChange={(e) => handleUpdateAutoTrack(game, parseInt(e.target.value))}
+                      onChange={(e) => updateAutoTrack(game, parseInt(e.target.value), true)}
                       className="w-full accent-amber-500 h-2 bg-gray-100 dark:bg-white/5 rounded-full appearance-none cursor-pointer"
                     />
                   </div>
@@ -505,7 +427,7 @@ function LuckContent() {
             </div>
 
             <div className="max-h-[800px] overflow-y-auto pr-4 custom-scrollbar space-y-8 pb-20">
-              {isDataLoading ? (
+              {isTicketsLoading || isDataLoading ? (
                 <div className="py-40 flex flex-col items-center gap-6 animate-pulse"><div className={`w-16 h-16 border-[6px] ${brandStyles.text.replace('text-', 'border-')} border-t-transparent rounded-full animate-spin`} /><p className="text-gray-400 font-black uppercase tracking-[0.4em] text-xs italic">Syncing History...</p></div>
               ) : Object.keys(ticketsByDate).length === 0 ? (
                 <div className="bg-white dark:bg-gray-900 p-24 sm:p-32 rounded-[3rem] border-2 border-dashed border-gray-100 dark:border-white/5 text-center group hover:border-indigo-500/30 transition-all duration-700">
@@ -520,7 +442,7 @@ function LuckContent() {
                   let div1Win = false;
                   if (res) {
                     tickets.forEach(t => {
-                      const c = compareNumbers(t.numbers, res.numbers, res.bonus, game);
+                      const c = compareNumbers(t.numbers, res.numbers, res.bonus, game as any);
                       let prize = res.prizes[c.prizeTier] || 0;
                       if (c.prizeTier === 'Division 1' && prize === 0) {
                         const ledgerMatch = upcomingLedger.find(l => l.game?.toLowerCase().includes(game.toLowerCase().split(' ')[0]) && l.draw_date === date);
@@ -588,7 +510,7 @@ function LuckContent() {
 
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                             {tickets.map((t, tidx) => {
-                              const c = res ? compareNumbers(t.numbers, res.numbers, res.bonus, game) : null;
+                              const c = res ? compareNumbers(t.numbers, res.numbers, res.bonus, game as any) : null;
                               let prize = (c && res) ? (res.prizes[c.prizeTier] || 0) : 0;
                               const ticketWon = prize > 0 || c?.prizeTier === 'Division 1';
                               return (
@@ -625,12 +547,6 @@ function LuckContent() {
 
       <DivisionRules game={game} isOpen={isRulesModalOpen} onClose={() => setIsRulesModalOpen(false)} />
       <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
-
-      {notification && (
-        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-6 py-3 rounded-full shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <p className="text-sm font-bold tracking-wider">{notification}</p>
-        </div>
-      )}
     </div>
   );
 }

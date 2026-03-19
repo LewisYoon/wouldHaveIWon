@@ -1,5 +1,21 @@
 // lotto-project/lib/lotto-utils.ts
 
+export interface Ticket {
+  id: string;
+  drawDate: string;
+  numbers: number[];
+  game: string;
+}
+
+export interface DrawResult {
+  game: string;
+  drawDate: string;
+  drawNumber?: number;
+  numbers: number[];
+  bonus: number[];
+  prizes: Record<string, number>;
+}
+
 /**
  * Oz Lotto: Tuesdays
  * Powerball: Thursdays

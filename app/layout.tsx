@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "../context/AuthContext";
+import { Toaster } from 'sonner';
 import Link from 'next/link';
 import Logo from "../components/Logo";
 
@@ -61,6 +62,7 @@ export default function RootLayout({
         <meta name="google-adsense-account" content="ca-pub-4486035001722503" />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-white dark:bg-gray-950 transition-colors duration-500`}>
+        <Toaster position="top-center" richColors />
         <AuthProvider>
           <div className="flex flex-col min-h-screen">
             <div className="flex-grow">
