@@ -8,6 +8,7 @@ import DivisionRules from '../../components/DivisionRules';
 import Confetti from 'react-confetti';
 import Navbar from '../../components/Navbar';
 import { useAuth } from '../../context/AuthContext';
+import { toast } from 'sonner';
 
 // Custom Hooks
 import { useSimulator } from '../../hooks/useSimulator';
