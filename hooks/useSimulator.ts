@@ -1,9 +1,12 @@
 import { useState, useCallback, useMemo } from 'react';
 import { compareNumbers, ComparisonResult, DrawResult } from '../lib/lotto-utils';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext';
 
 const TICKET_COST = 1.45;
 
 export function useSimulator(game: string, activeResult: DrawResult | null) {
+  const { user } = useAuth();
   const [allComparisonResults, setAllComparisonResults] = useState<ComparisonResult[] | null>(null);
   const [stats, setStats] = useState({
     totalSpent: 0, totalWon: 0, profit: 0, winCount: 0, jackpotHit: false, roi: 0
@@ -80,12 +83,39 @@ export function useSimulator(game: string, activeResult: DrawResult | null) {
     }
   }, [stats.profit, stats.totalWon]);
 
+  const saveTurboSummary = useCallback(async (stats: any, game: string) => {
+    const sessionData = { game, stats, date: new Date().toISOString() };
+    if (!user) {
+      const history = JSON.parse(localStorage.getItem('turbo_history') || '[]');
+      localStorage.setItem('turbo_history', JSON.stringify([sessionData, ...history].slice(0, 50)));
+      return;
+    }
+    await supabase.from('turbo_sessions').insert([{ user_id: user.id, game, stats }]);
+  }, [user]);
+
+  const saveInProgress = useCallback((stats: any, game: string) => {
+    localStorage.setItem(`turbo_save_${game}`, JSON.stringify({ stats, date: new Date().toISOString() }));
+  }, []);
+
+  const loadSavedSession = useCallback((game: string) => {
+    const saved = localStorage.getItem(`turbo_save_${game}`);
+    return saved ? JSON.parse(saved) : null;
+  }, []);
+
+  const setStatsFromSession = useCallback((savedStats: any) => {
+    setStats(savedStats);
+  }, []);
+
   return { 
     allComparisonResults, 
     stats, 
     handleCheckAllResults, 
     clearResults, 
     luckNarrative, 
-    realWorldValue 
+    realWorldValue,
+    saveTurboSummary,
+    saveInProgress,
+    loadSavedSession,
+    setStatsFromSession
   };
 }
