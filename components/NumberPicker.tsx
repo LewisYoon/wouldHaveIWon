@@ -61,29 +61,17 @@ export default function NumberPicker({
   resultsRef, 
   drawResult,
   game = 'Oz Lotto',
-  onModeChange
-}: NumberPickerProps) {
+  onModeChange,
+  mode: externalMode // 추가
+}: NumberPickerProps & { mode?: 'classic' | 'auto' }) { // 타입 확장
   const { user, isLoading: isAuthLoading } = useAuth();
   
-  // Get initial mode from URL if available
-  const getInitialMode = useCallback(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      const m = params.get('mode');
-      if (m === 'classic' || m === 'auto') return m;
-    }
-    return 'classic';
-  }, []);
+  // 외부 mode prop이 있으면 우선 사용
+  const [mode, setMode] = useState<'classic' | 'auto'>(externalMode || 'classic');
 
-  const [mode, setMode] = useState<'classic' | 'auto'>(getInitialMode());
-
-  // Sync mode when it's updated elsewhere (like via URL change)
   useEffect(() => {
-    const m = getInitialMode();
-    if (m !== mode) {
-      setMode(m);
-    }
-  }, [getInitialMode, mode]);
+    if (externalMode) setMode(externalMode);
+  }, [externalMode]);
 
   const [viewMode, setViewMode] = useState<'detailed' | 'compact'>('detailed');
   const [isDataLoading, setIsDataLoading] = useState(true);
