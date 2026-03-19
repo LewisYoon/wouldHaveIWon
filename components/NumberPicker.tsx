@@ -453,7 +453,13 @@ export default function NumberPicker({
                 <select value={quickPickQuantity} onChange={(e) => setQuickPickQuantity(Number(e.target.value))} className="bg-transparent px-2 sm:px-3 font-black text-xs sm:text-sm outline-none text-gray-700 dark:text-gray-300 cursor-pointer">{[10, 25, 50, 100].map(qty => <option key={qty} value={qty}>x{qty}</option>)}</select>
                 <button onClick={() => { const newPicks = Array.from({ length: quickPickQuantity }, () => ({ id: (uniqueIdCounter.current++).toString(), numbers: generateQuickPick(game) })); setLines(prev => [...newPicks, ...prev]); }} className={`px-4 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl ${brandStyles.bg} text-white font-black text-[10px] sm:text-xs uppercase tracking-widest active:scale-95 shadow-sm`}>Burst</button>
               </div>
-              <button onClick={() => { if(window.confirm('Clear all?')) { setLines([]); onClearAll(); } }} className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-red-50 dark:bg-red-500/10 text-red-500 active:scale-95 hover:bg-red-100 transition-colors flex-shrink-0"><TrashIcon size={20} /></button>
+              <button onClick={() => { 
+                if(window.confirm('Clear all?')) { 
+                  setLines([]); 
+                  localStorage.removeItem(storageCurrentKey);
+                  onClearAll(); 
+                } 
+              }} className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-red-50 dark:bg-red-500/10 text-red-500 active:scale-95 hover:bg-red-100 transition-colors flex-shrink-0"><TrashIcon size={20} /></button>
               <button onClick={handleManualCheck} className={`flex-1 py-4 sm:py-5 px-6 sm:px-10 rounded-xl sm:rounded-[1.5rem] bg-emerald-500 text-white font-black text-xs sm:text-sm uppercase tracking-[0.15em] sm:tracking-[0.2em] shadow-lg shadow-emerald-500/20 active:scale-95 hover:brightness-110 transition-all`}>Check Results</button>
             </div>
           </div>
