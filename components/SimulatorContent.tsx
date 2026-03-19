@@ -23,6 +23,7 @@ export default function SimulatorContent() {
   const game = (searchParams.get('game') as 'Oz Lotto' | 'Powerball' | 'Tatts Lotto') || 'Oz Lotto';
   const simMode = (searchParams.get('mode') as 'classic' | 'auto') || 'classic';
   const [drawMode, setDrawMode] = useState<'official' | 'random' | 'manual'>('official');
+  const [pickerKey, setPickerKey] = useState(0);
 
   const updateUrl = (newGame: string, newMode: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -59,7 +60,7 @@ export default function SimulatorContent() {
   }, [stats, simMode, game]);
 
   const onRunSimulation = async (allLines: number[][]) => {
-    const { error, currentWins } = handleCheckAllResults(allLines);
+    const { currentWins, error } = handleCheckAllResults(allLines);
     if (error) { toast.error(error); return; }
     
     if (simMode === 'auto') {
@@ -131,30 +132,21 @@ export default function SimulatorContent() {
                     
                     {drawMode === 'manual' && (
                         <div className="w-full max-w-lg space-y-6">
-                            <div className="p-6 bg-indigo-50 dark:bg-indigo-950/20 rounded-3xl border-2 border-indigo-500/20">
+                            <div className="p-6 bg-indigo-50 dark:bg-indigo-950/20 rounded-3xl border-2 border-indigo-500/20 text-left">
                                 <p className="text-[10px] font-black text-gray-400 uppercase mb-4 ml-2">Main Numbers</p>
                                 <LottoLinePicker 
                                     lineId="manual-main" displayIndex={1} selectedNumbers={activeResult.numbers} 
                                     onNumbersChange={(_, nums) => setCustomResult((prev) => ({...prev, numbers: nums.filter(n => n > 0).sort((a,b) => a-b)}))} 
-                                    game={game} minRange={1} maxRange={game === 'Powerball' ? 35 : (game === 'Oz Lotto' ? 47 : 45)}
+                                    game={game} isBonus={false}
                                 />
                             </div>
-                            <div className="p-6 bg-amber-50 dark:bg-amber-950/20 rounded-3xl border-2 border-amber-500/20">
+                            <div className="p-6 bg-amber-50 dark:bg-amber-950/20 rounded-3xl border-2 border-amber-500/20 text-left">
                                 <p className="text-[10px] font-black text-gray-400 uppercase mb-4 ml-2">{game === 'Powerball' ? 'Powerball Number' : 'Bonus Numbers'}</p>
                                 <LottoLinePicker 
-                                    lineId="manual-bonus" displayIndex={2} maxSlots={game === 'Powerball' ? 1 : (game === 'Oz Lotto' ? 3 : 2)}
-                                    minRange={1} maxRange={game === 'Powerball' ? 20 : (game === 'Oz Lotto' ? 47 : 45)}
+                                    lineId="manual-bonus" displayIndex={2} 
                                     selectedNumbers={activeResult.bonus}
-                                    onNumbersChange={(_, nums) => {
-                                        setCustomResult((prev) => {
-                                            const limit = game === 'Powerball' ? 1 : (game === 'Oz Lotto' ? 3 : 2);
-                                            const validBonus = nums
-                                                .filter(n => n > 0 && !prev.numbers.includes(n))
-                                                .slice(0, limit);
-                                            return { ...prev, bonus: validBonus };
-                                        });
-                                    }} 
-                                    game={game} 
+                                    onNumbersChange={(_, nums) => setCustomResult((prev) => ({...prev, bonus: nums.filter(n => n > 0 && !prev.numbers.includes(n)).slice(0, game === 'Powerball' ? 1 : (game === 'Oz Lotto' ? 3 : 2))}))} 
+                                    game={game} isBonus={true}
                                 />
                             </div>
                         </div>
@@ -183,51 +175,94 @@ export default function SimulatorContent() {
             </div>
         )}
 
-        <NumberPicker onCheckAllResults={onRunSimulation} onClearAll={clearAllSimulatorData} resultsRef={resultsRef} drawResult={activeResult} game={game} mode={simMode} onModeChange={(m) => updateUrl(game, m)} />
+        <NumberPicker 
+            key={pickerKey}
+            onCheckAllResults={onRunSimulation} 
+            onClearAll={clearAllSimulatorData} 
+            resultsRef={resultsRef} 
+            drawResult={activeResult} 
+            game={game} 
+            mode={simMode} 
+            onModeChange={(m) => updateUrl(game, m)} 
+        />
 
         <div ref={resultsRef} className="scroll-mt-20 space-y-12">
             {allComparisonResults && (
                 <>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
                         <div className="bg-white dark:bg-gray-900 p-8 rounded-3xl border border-gray-100 shadow-xl dark:border-white/5">
                             <h3 className="text-sm font-black uppercase tracking-widest mb-6">Simulation Summary</h3>
-                            <p className="text-2xl font-black italic">{luckNarrative}</p>
+                            <p className="text-2xl font-black italic mb-8">"{luckNarrative}"</p>
                             
-                            <div className="grid grid-cols-3 gap-4 mt-8 pt-8 border-t border-gray-100 dark:border-white/5 text-center">
-                                <div><p className="text-[10px] text-gray-400 uppercase tracking-widest">Spent</p><p className="font-black text-sm">{formatCurrency(stats.totalSpent)}</p></div>
-                                <div><p className="text-[10px] text-gray-400 uppercase tracking-widest">Won</p><p className="font-black text-emerald-500 text-sm">{formatCurrency(stats.totalWon)}</p></div>
-                                <div><p className="text-[10px] text-gray-400 uppercase tracking-widest">Net</p><p className={`font-black text-sm ${stats.profit >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>{formatCurrency(stats.profit)}</p></div>
+                            <div className="grid grid-cols-3 gap-4 pt-8 border-t border-gray-100 dark:border-white/5 text-center">
+                                <div><p className="text-[10px] text-gray-400 uppercase tracking-widest">Spent</p><p className="font-black text-sm tabular-nums">{formatCurrency(stats.totalSpent)}</p></div>
+                                <div><p className="text-[10px] text-gray-400 uppercase tracking-widest">Won</p><p className="font-black text-emerald-500 text-sm tabular-nums">{formatCurrency(stats.totalWon)}</p></div>
+                                <div><p className="text-[10px] text-gray-400 uppercase tracking-widest">ROI</p><p className={`font-black text-sm tabular-nums ${stats.roi >= 100 ? 'text-emerald-500' : 'text-rose-500'}`}>{stats.roi.toFixed(1)}%</p></div>
                             </div>
                         </div>
                         <div className="bg-white dark:bg-gray-900 p-8 rounded-3xl border border-gray-100 shadow-xl dark:border-white/5">
                             <h3 className="text-sm font-black uppercase tracking-widest mb-6">{realWorldValue.label}</h3>
-                            {realWorldValue.items.map((item, i) => (
-                                 <div key={i} className="flex justify-between py-3 border-b border-gray-50 dark:border-white/5 last:border-0"><span className="text-gray-600 dark:text-gray-400">{item.name}</span><span className="font-black">{item.qty.toLocaleString()}x</span></div>
-                            ))}
+                            <div className="space-y-3">
+                                {realWorldValue.items.map((item, i) => (
+                                    <div key={i} className="flex justify-between py-2 border-b border-gray-50 dark:border-white/5 last:border-0"><span className="text-gray-600 dark:text-gray-400 font-medium">{item.name}</span><span className="font-black tabular-nums text-gray-900 dark:text-white">{item.qty.toLocaleString()}x</span></div>
+                                ))}
+                            </div>
                         </div>
                     </div>
 
-                    <div className="bg-white dark:bg-gray-900 p-8 rounded-3xl border border-gray-100 shadow-xl dark:border-white/5">
-                        <h2 className="text-xl font-black mb-8 uppercase italic">Draw Analysis</h2>
-                        <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
+                    <div className="bg-white dark:bg-gray-900 p-8 rounded-3xl border border-gray-100 shadow-xl dark:border-white/5 text-left">
+                        <h2 className="text-xl font-black mb-8 uppercase italic">Detailed Draw Analysis</h2>
+                        <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
                             {allComparisonResults.map((res: any, i: number) => {
                                const isWinner = res.prizeTier !== "No Prize";
                                return (
                                <div key={i} className={`p-6 rounded-2xl border ${isWinner ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-500/20' : 'bg-gray-50 dark:bg-gray-800 border-transparent'}`}>
-                                   <div className="flex justify-between items-center mb-4 text-xs font-black uppercase text-gray-500">
-                                       <div className="flex items-center gap-2">
-                                            <span className="bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded-md">#{i + 1}</span>
+                                   <div className="flex justify-between items-center mb-4 text-[10px] font-black uppercase text-gray-500">
+                                       <div className="flex items-center gap-3">
+                                            <span className="bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded-md">Ticket #{i + 1}</span>
                                             <span className={isWinner ? 'text-emerald-600' : 'text-gray-400'}>{res.prizeTier}</span>
                                        </div>
-                                       <span>{res.mainMatchesCount} Main + {res.bonusMatchesCount} Bonus</span>
+                                       <div className="flex items-center gap-4">
+                                            <span className={isWinner ? 'text-emerald-500' : 'text-gray-400'}>{formatCurrency(res.prizeValue || 0)}</span>
+                                            <span>{res.mainMatchesCount} Main + {game === 'Powerball' ? (res.bonusMatchesCount > 0 ? 'PB' : 'No PB') : `${res.bonusMatchesCount} Supps`}</span>
+                                       </div>
                                    </div>
-                                   <div className="flex flex-wrap gap-2">
-                                       {(res.userNumbers || []).map((n: number, idx: number) => (
-                                           <span key={idx} className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-xs shadow-md border-b-2 ${res.drawNumbers.includes(n) ? `${brandStyles.bg} text-white` : 'bg-gray-200 dark:bg-gray-700 text-gray-500'}`}>{n}</span>
-                                       ))}
-                                       {(res.drawBonus || []).map((n: number, idx: number) => (
-                                           <span key={`b-${idx}`} className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-xs shadow-md border-b-2 ${res.matchedBonusNumbers.includes(n) ? 'bg-amber-400 text-amber-950' : 'bg-gray-200 dark:bg-gray-700 text-gray-500'}`}>{n}</span>
-                                       ))}
+                                   <div className="flex flex-wrap gap-2 items-center">
+                                       {(res.userNumbers || []).map((n: number, idx: number) => {
+                                            const isMatch = res.drawNumbers?.includes(n);
+                                            return (
+                                                <span key={idx} className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-[10px] shadow-sm border-b-2 transition-all ${isMatch ? `${brandStyles.bg} text-white border-black/20 scale-110 shadow-md` : 'bg-white dark:bg-gray-900 text-gray-400 dark:text-gray-600 border-gray-100 dark:border-white/5'}`}>
+                                                    {n}
+                                                </span>
+                                            );
+                                       })}
+                                       {game === 'Powerball' ? (
+                                           <>
+                                               <div className="w-px h-6 bg-gray-200 dark:bg-white/10 mx-1" />
+                                               {(res.userBonus || []).map((n: number, idx: number) => {
+                                                   const isMatch = res.drawBonus?.includes(n);
+                                                   return (
+                                                       <span key={`pb-${idx}`} className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-[10px] shadow-sm border-b-2 transition-all ${isMatch ? 'bg-amber-400 text-amber-950 border-amber-600 scale-110 shadow-md' : 'bg-white dark:bg-gray-900 text-gray-400 dark:text-gray-600 border-gray-100 dark:border-white/5'}`}>
+                                                           {n}
+                                                       </span>
+                                                   );
+                                               })}
+                                           </>
+                                       ) : (
+                                           res.userBonus && res.userBonus.length > 0 && (
+                                               <>
+                                                   <div className="w-px h-6 bg-gray-200 dark:bg-white/10 mx-1" />
+                                                   {res.userBonus.map((n: number, idx: number) => {
+                                                       const isMatch = res.drawBonus?.includes(n);
+                                                       return (
+                                                           <span key={`b-${idx}`} className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-[10px] shadow-sm border-b-2 transition-all ${isMatch ? 'bg-amber-400 text-amber-950 border-amber-600 scale-110 shadow-md' : 'bg-white dark:bg-gray-900 text-gray-400 dark:text-gray-600 border-gray-100 dark:border-white/5'}`}>
+                                                               {n}
+                                                           </span>
+                                                       );
+                                                   })}
+                                               </>
+                                           )
+                                       )}
                                    </div>
                                </div>
                                );
