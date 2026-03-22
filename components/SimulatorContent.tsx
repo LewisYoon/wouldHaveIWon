@@ -42,12 +42,6 @@ export default function SimulatorContent() {
     setPickerKey(prev => prev + 1);
   };
 
-  useEffect(() => {
-    if (stats.totalSpent > 0) {
-      saveInProgress(stats, game);
-    }
-  }, [stats, game]);
-
   const onRunSimulation = async (allLines: number[][]) => {
     const { currentWins, error } = handleCheckAllResults(allLines);
     if (error) { toast.error(error); return; }
