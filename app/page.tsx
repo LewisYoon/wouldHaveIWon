@@ -114,29 +114,29 @@ export default function Home() {
           
           <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-black mb-6 sm:mb-8 tracking-tighter uppercase leading-[0.95] sm:leading-[0.9] max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-700">
             Professional Australian <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-500 to-emerald-500 dark:from-indigo-400 dark:via-purple-400 dark:to-emerald-400 font-serif italic lowercase tracking-tight px-2">Luck</span> <span className="relative inline-block px-2">Tracker<span className="absolute inset-0 bg-indigo-500/10 dark:bg-indigo-500/20 -skew-x-12 -z-10 rounded-xl"></span></span>.
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-500 to-emerald-500 dark:from-indigo-400 dark:via-purple-400 dark:to-emerald-400 font-serif italic lowercase tracking-tight px-2">Lotto</span> <span className="relative inline-block px-2">Simulation<span className="absolute inset-0 bg-indigo-500/10 dark:bg-indigo-500/20 -skew-x-12 -z-10 rounded-xl"></span></span>.
           </h1>
           
           <p className="text-base sm:text-lg md:text-xl text-gray-500 dark:text-gray-400 mb-10 sm:mb-14 max-w-2xl mx-auto font-medium leading-relaxed animate-in fade-in slide-in-from-bottom-12 duration-1000 px-4">
-            Check your numbers against real Oz Lotto, Powerball, and Tatts Lotto results risk-free. Australia's most advanced <strong>Luck Tracking</strong> platform and <strong>Lotto Simulator</strong>.
+            The #1 Lotto Simulation platform for Oz Lotto, Powerball, and Tatts Lotto. Test your luck with our advanced <strong>Lotto Simulator</strong> and track real-time results risk-free.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 sm:gap-5 justify-center items-center animate-in fade-in slide-in-from-bottom-16 duration-1000 px-6">
             <Link 
-              href="/luck" 
+              href="/simulator" 
               className="w-full sm:w-auto group relative px-8 sm:px-12 py-4 sm:py-5 bg-indigo-600 text-white font-black rounded-2xl text-base sm:text-lg shadow-xl hover:bg-indigo-500 hover:-translate-y-1 active:scale-95 transition-all uppercase tracking-widest overflow-hidden"
             >
               <span className="relative z-10 flex items-center justify-center gap-2">
-                Track My Luck
+                Run Simulation
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" className="group-hover:translate-x-1 transition-transform"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
               </span>
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-shimmer" />
             </Link>
             <Link 
-              href="/simulator" 
+              href="/luck" 
               className="w-full sm:w-auto px-8 sm:px-12 py-4 sm:py-5 bg-white dark:bg-white/5 border-2 border-gray-100 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/10 text-gray-900 dark:text-white font-black rounded-2xl text-base sm:text-lg transition-all backdrop-blur-xl shadow-md uppercase tracking-widest"
             >
-              Lotto Simulator
+              Track Results
             </Link>
           </div>
         </div>

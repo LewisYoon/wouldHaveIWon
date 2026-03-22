@@ -112,8 +112,7 @@ export default function SimulatorContent() {
           </div>
 
           <div className="flex justify-center gap-4 mb-8">
-            <button onClick={() => { updateUrl(game, 'classic'); }} className={`px-8 py-3 rounded-xl font-black uppercase text-xs ${simMode === 'classic' ? `${brandStyles.bg} text-white` : 'bg-gray-200 dark:bg-gray-800 text-gray-500'}`}>Classic</button>
-            <button onClick={() => { updateUrl(game, 'auto'); }} className={`px-8 py-3 rounded-xl font-black uppercase text-xs ${simMode === 'auto' ? `${brandStyles.bg} text-white` : 'bg-gray-200 dark:bg-gray-800 text-gray-500'}`}>Turbo</button>
+
           </div>
 
           <div className="inline-flex bg-white dark:bg-gray-900 p-1.5 rounded-2xl shadow-sm border border-gray-100 dark:border-white/5">
