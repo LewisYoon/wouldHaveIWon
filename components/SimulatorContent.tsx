@@ -116,7 +116,7 @@ export default function SimulatorContent() {
                                 <p className="text-[10px] font-black text-gray-400 uppercase mb-4 ml-2">Main Numbers</p>
                                 <LottoLinePicker 
                                     lineId="manual-main" displayIndex={1} selectedNumbers={activeResult.numbers} 
-                                    onNumbersChange={(_, nums) => setCustomResult((prev) => ({...prev, numbers: nums.filter(n => n > 0).sort((a,b) => a-b)}))} 
+                                    onNumbersChange={(_: string, nums: number[]) => setCustomResult((prev: DrawResult) => ({...prev, numbers: nums.filter(n => n > 0).sort((a,b) => a-b)}))} 
                                     game={game} isBonus={false}
                                 />
                             </div>
