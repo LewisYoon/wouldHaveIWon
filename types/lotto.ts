@@ -22,3 +22,11 @@ export interface DrawResult {
   bonus: number[];
   prizes: Record<string, number>;
 }
+
+export interface ComparisonResult {
+  mainMatchesCount: number;
+  bonusMatchesCount: number;
+  matchedBonusNumbers: number[];
+  prizeTier: string;
+  isPowerballMatched?: boolean;
+}

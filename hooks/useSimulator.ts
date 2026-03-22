@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from 'react';
-import { compareNumbers, ComparisonResult } from '../lib/lotto-utils';
+import { compareNumbers, ComparisonResult, ESTIMATED_PRIZES, TICKET_COST } from '../lib/lotto-utils';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import type { DrawResult, WinningResult } from '../types/lotto';

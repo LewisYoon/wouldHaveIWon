@@ -1,19 +1,14 @@
 // lotto-project/lib/lotto-utils.ts
 
+import type { DrawResult, ComparisonResult } from '../types/lotto';
+
+export const TICKET_COST = 1.45;
+
 export interface Ticket {
   id: string;
   drawDate: string;
   numbers: number[];
   game: string;
-}
-
-export interface DrawResult {
-  game: string;
-  drawDate: string;
-  drawNumber?: number;
-  numbers: number[];
-  bonus: number[];
-  prizes: Record<string, number>;
 }
 
 /**
@@ -123,13 +118,7 @@ export function generateRandomDraw(game: 'Oz Lotto' | 'Powerball' | 'Tatts Lotto
   }
 }
 
-export interface ComparisonResult {
-  mainMatchesCount: number;
-  bonusMatchesCount: number;
-  matchedBonusNumbers: number[];
-  prizeTier: string;
-  isPowerballMatched?: boolean;
-}
+
 
 /**
  * Comparison logic for all games

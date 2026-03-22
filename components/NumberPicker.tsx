@@ -1,13 +1,12 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { generateQuickPick, compareNumbers, ESTIMATED_PRIZES } from '../lib/lotto-utils';
+import { generateQuickPick, compareNumbers, ESTIMATED_PRIZES, TICKET_COST } from '../lib/lotto-utils';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import type { WinningResult, DrawResult } from '../types/lotto';
 
 const MAX_WINNING_FEED_ITEMS = 100; // Limit rendering to 100 items to prevent crashes
-const TICKET_COST = 1.45;
 
 interface NumberPickerProps {
   onCheckAllResults: (allLines: number[][]) => void;
