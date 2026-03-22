@@ -126,7 +126,7 @@ export default function SimulatorContent() {
                                 <LottoLinePicker 
                                     lineId="manual-bonus" displayIndex={2} 
                                     selectedNumbers={activeResult.bonus}
-                                    onNumbersChange={(_, nums) => setCustomResult((prev) => ({...prev, bonus: nums.filter(n => n > 0 && !prev.numbers.includes(n)).slice(0, game === 'Powerball' ? 1 : (game === 'Oz Lotto' ? 3 : 2))}))} 
+                                    onNumbersChange={(_: string, nums) => setCustomResult((prev: DrawResult) => ({...prev, bonus: nums.filter(n => n > 0 && !prev.numbers.includes(n)).slice(0, game === 'Powerball' ? 1 : (game === 'Oz Lotto' ? 3 : 2))}))} 
                                     game={game} isBonus={true}
                                 />
                             </div>
