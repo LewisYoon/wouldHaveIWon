@@ -37,8 +37,8 @@ interface NumberPickerProps {
   resultsRef: React.RefObject<HTMLDivElement | null>;
   drawResult: DrawResult | null;
   game?: 'Oz Lotto' | 'Powerball' | 'Tatts Lotto';
-  saveTurboState?: (game: string, stats: any) => Promise<void>;
-  loadTurboState?: (game: string) => Promise<any>;
+  saveTurboState?: (game: string, stats: any, topWins: WinningResult[]) => Promise<void>;
+  loadTurboState?: (game: string) => Promise<{ stats: any; top_wins: WinningResult[] } | null>;
 }
 
 export default function NumberPicker({ 
@@ -50,7 +50,7 @@ export default function NumberPicker({
   saveTurboState,
   loadTurboState
 }: NumberPickerProps) {
-  const { user, isLoading: isAuthLoading } = useAuth();
+  const { user } = useAuth();
   const [sortBy, setSortBy] = useState<'latest' | 'division'>('latest');
 
   const autoWinnersRef = useRef<WinningResult[]>([]);
@@ -85,7 +85,7 @@ export default function NumberPicker({
     }
     setIsRunning(false);
     startTimeRef.current = null;
-    if (saveTurboState) saveTurboState(game, stats);
+    if (saveTurboState) saveTurboState(game, stats, autoWinnersRef.current.slice(0, 10));
   }, [game, stats, saveTurboState]);
 
   const resetSimulation = useCallback(() => {
@@ -95,35 +95,40 @@ export default function NumberPicker({
     setStats({ draws: 0, spent: 0, won: 0, startTime: 0, elapsedSecs: 0 });
     setChartData([]);
     totalDrawsRef.current = 0;
-    if (saveTurboState) saveTurboState(game, { draws: 0, spent: 0, won: 0 });
+    if (saveTurboState) saveTurboState(game, { draws: 0, spent: 0, won: 0 }, []);
   }, [game, stopSimulation, saveTurboState]);
-useEffect(() => {
-  const initLoad = async () => {
-      if (loadTurboState) {
-          const saved = await loadTurboState(game);
-          if (saved && saved.draws > 0) {
-              setStats(prev => ({ ...prev, draws: saved.draws, spent: saved.spent, won: saved.won }));
-              totalDrawsRef.current = saved.draws;
 
-              // Reconstruct chart data
-              const numDataPoints = Math.min(50, Math.floor(saved.draws / 500));
-              const reconstructedData = [];
-              for (let i = 1; i <= numDataPoints; i++) {
-                  const ratio = i / numDataPoints;
-                  reconstructedData.push({
-                      spent: saved.spent * ratio,
-                      won: saved.won * ratio,
-                  });
-              }
-              setChartData(reconstructedData);
+  useEffect(() => {
+    const initLoad = async () => {
+        if (loadTurboState) {
+            const saved = await loadTurboState(game);
+            if (saved && saved.stats && saved.stats.draws > 0) {
+                setStats(prev => ({ ...prev, ...saved.stats }));
+                totalDrawsRef.current = saved.stats.draws;
+                
+                if (saved.top_wins) {
+                  autoWinnersRef.current = saved.top_wins;
+                  setAutoWinnersStateTrigger(p => p + 1);
+                }
 
-          } else {
-              resetSimulation();
-          }
-      }
-  };
-  initLoad();
-}, [game, loadTurboState]);
+                const numDataPoints = Math.min(50, Math.floor(saved.stats.draws / 500));
+                const reconstructedData = [];
+                for (let i = 1; i <= numDataPoints; i++) {
+                    const ratio = i / numDataPoints;
+                    reconstructedData.push({
+                        spent: saved.stats.spent * ratio,
+                        won: saved.stats.won * ratio,
+                    });
+                }
+                setChartData(reconstructedData);
+
+            } else {
+                resetSimulation();
+            }
+        }
+    };
+    initLoad();
+  }, [game, loadTurboState]);
   
   const startSimulation = useCallback(() => {
     if (!drawResult) { alert("Please set target winning numbers first!"); return; }
@@ -180,7 +185,6 @@ useEffect(() => {
 
       if (frameDraws > 0) {
         if (newWinners.length > 0) {
-          // Combine new winners and sort to keep the BEST results, not just the latest
           const combined = [...newWinners, ...autoWinnersRef.current];
           combined.sort((a, b) => {
             const rankA = parseInt(a.prizeTier.replace('Division ', ''), 10) || Infinity;
@@ -202,7 +206,7 @@ useEffect(() => {
           };
           if (Math.floor(newStats.draws / 500) > Math.floor(prev.draws / 500)) {
             setChartData(prevData => [...prevData, { spent: newStats.spent, won: newStats.won }].slice(-50));
-            if (saveTurboState) saveTurboState(game, newStats);
+            if (saveTurboState) saveTurboState(game, newStats, autoWinnersRef.current.slice(0, 10));
           }
           return newStats;
         });
@@ -260,21 +264,14 @@ useEffect(() => {
       feed.sort((a, b) => {
         const rankA = parseInt(a.prizeTier.replace('Division ', ''), 10);
         const rankB = parseInt(b.prizeTier.replace('Division ', ''), 10);
-
-        // Treat NaN (e.g., "No Prize") as the lowest rank
         const validRankA = isNaN(rankA) ? Infinity : rankA;
         const validRankB = isNaN(rankB) ? Infinity : rankB;
-
         if (validRankA !== validRankB) {
           return validRankA - validRankB;
         }
-        
-        // If ranks are the same, sort by the highest prize value
         if (a.prizeValue !== b.prizeValue) {
           return (b.prizeValue || 0) - (a.prizeValue || 0);
         }
-
-        // If prize value is also the same, sort by week number
         return (b.weekNumber || 0) - (a.weekNumber || 0);
       });
     }

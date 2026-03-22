@@ -83,27 +83,26 @@ export function useSimulator(game: string, activeResult: DrawResult | null) {
     }
   }, [stats.profit, stats.totalWon]);
 
-  const saveTurboState = useCallback(async (game: string, currentStats: any) => {
+  const saveTurboState = useCallback(async (game: string, currentStats: any, topWins: WinningResult[]) => {
     const data = { 
-      game, 
       stats: {
         draws: currentStats.draws,
         spent: currentStats.spent,
         won: currentStats.won,
       },
+      top_wins: topWins,
       updated_at: new Date().toISOString() 
     };
 
     if (user) {
-      // Save to Supabase for logged in users
       await supabase.from('turbo_sessions').upsert({ 
         user_id: user.id, 
         game: game,
         stats: data.stats,
+        top_wins: data.top_wins,
         updated_at: data.updated_at
       }, { onConflict: 'user_id,game' });
     } else {
-      // Save to LocalStorage for guests
       localStorage.setItem(`turbo_state_${game}`, JSON.stringify(data));
     }
   }, [user]);
@@ -112,17 +111,17 @@ export function useSimulator(game: string, activeResult: DrawResult | null) {
     if (user) {
       const { data, error } = await supabase
         .from('turbo_sessions')
-        .select('stats')
+        .select('stats, top_wins')
         .eq('user_id', user.id)
         .eq('game', game)
         .single();
       
-      if (data && !error) return data.stats;
+      if (data && !error) return { stats: data.stats, top_wins: data.top_wins || [] };
     } else {
       const saved = localStorage.getItem(`turbo_state_${game}`);
       if (saved) {
         const parsed = JSON.parse(saved);
-        return parsed.stats;
+        return { stats: parsed.stats, top_wins: parsed.top_wins || [] };
       }
     }
     return null;
