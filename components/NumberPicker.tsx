@@ -4,32 +4,10 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { generateQuickPick, compareNumbers, ESTIMATED_PRIZES } from '../lib/lotto-utils';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
+import type { WinningResult, DrawResult } from '../../types/lotto';
 
 const MAX_WINNING_FEED_ITEMS = 100; // Limit rendering to 100 items to prevent crashes
 const TICKET_COST = 1.45;
-
-type WinningResult = {
-  id: string;
-  numbers: number[];
-  drawNumbers: number[];
-  drawBonus: number[];
-  drawDate: string;
-  prizeTier: string;
-  mainMatchesCount: number;
-  bonusMatchesCount: number;
-  game: 'Oz Lotto' | 'Powerball' | 'Tatts Lotto';
-  prizeValue?: number;
-  weekNumber?: number;
-  isSimulated?: boolean;
-};
-
-interface DrawResult {
-  game: string;
-  drawDate: string;
-  numbers: number[];
-  bonus: number[];
-  prizes: Record<string, number>;
-}
 
 interface NumberPickerProps {
   onCheckAllResults: (allLines: number[][]) => void;
