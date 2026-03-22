@@ -21,14 +21,13 @@ export default function SimulatorContent() {
   const { isLoading } = useAuth();
   
   const game = (searchParams.get('game') as 'Oz Lotto' | 'Powerball' | 'Tatts Lotto') || 'Oz Lotto';
-  const simMode = (searchParams.get('mode') as 'classic' | 'auto') || 'classic';
   const [drawMode, setDrawMode] = useState<'official' | 'random' | 'manual'>('official');
   const [pickerKey, setPickerKey] = useState(0);
 
-  const updateUrl = (newGame: string, newMode: string) => {
+  const updateUrl = (newGame: string) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set('game', newGame);
-    params.set('mode', newMode);
+    params.delete('mode');
     router.replace(`?${params.toString()}`, { scroll: false });
   };
 
@@ -54,20 +53,18 @@ export default function SimulatorContent() {
   }, [game]);
 
   useEffect(() => {
-    if (simMode === 'auto' && stats.totalSpent > 0) {
+    if (stats.totalSpent > 0) {
       saveInProgress(stats, game);
     }
-  }, [stats, simMode, game]);
+  }, [stats, game]);
 
   const onRunSimulation = async (allLines: number[][]) => {
     const { currentWins, error } = handleCheckAllResults(allLines);
     if (error) { toast.error(error); return; }
     
-    if (simMode === 'auto') {
-        await saveTurboSummary(stats, game);
-        localStorage.removeItem(`turbo_save_${game}`);
-        toast.success("Turbo Session Saved");
-    }
+    await saveTurboSummary(stats, game);
+    localStorage.removeItem(`turbo_save_${game}`);
+    toast.success("Turbo Session Saved");
 
     setTimeout(() => {
         resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -117,7 +114,7 @@ export default function SimulatorContent() {
 
           <div className="inline-flex bg-white dark:bg-gray-900 p-1.5 rounded-2xl shadow-sm border border-gray-100 dark:border-white/5">
             {['Oz Lotto', 'Powerball', 'Tatts Lotto'].map(g => (
-              <button key={g} onClick={() => { updateUrl(g, simMode); clearResults(); }} className={`px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition ${game === g ? `${brandStyles.bg} text-white` : 'text-gray-400 hover:text-gray-600'}`}>{g}</button>
+              <button key={g} onClick={() => { updateUrl(g); clearResults(); }} className={`px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition ${game === g ? `${brandStyles.bg} text-white` : 'text-gray-400 hover:text-gray-600'}`}>{g}</button>
             ))}
           </div>
         </header>
@@ -181,8 +178,6 @@ export default function SimulatorContent() {
             resultsRef={resultsRef} 
             drawResult={activeResult} 
             game={game} 
-            mode={simMode} 
-            onModeChange={(m) => updateUrl(game, m)} 
         />
 
         <div ref={resultsRef} className="scroll-mt-20 space-y-12">
