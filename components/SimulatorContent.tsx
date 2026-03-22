@@ -35,22 +35,12 @@ export default function SimulatorContent() {
   const resultsRef = useRef<HTMLDivElement>(null);
 
   const { activeResult, setCustomResult, generateRandomResult } = useLatestDraw(game, drawMode);
-  const { allComparisonResults, stats, handleCheckAllResults, clearResults, luckNarrative, realWorldValue, saveTurboSummary, saveInProgress, loadSavedSession, setStatsFromSession } = useSimulator(game, activeResult);
+  const { allComparisonResults, stats, handleCheckAllResults, clearResults, luckNarrative, realWorldValue, saveTurboState, loadTurboState, setStatsFromSession } = useSimulator(game, activeResult);
 
   const clearAllSimulatorData = () => {
     clearResults();
     setPickerKey(prev => prev + 1);
   };
-
-  useEffect(() => {
-    const saved = loadSavedSession(game);
-    if (saved) {
-      toast.info("Unfinished session found", {
-        description: "Continue from where you left off?",
-        action: { label: "Restore", onClick: () => setStatsFromSession(saved.stats) }
-      });
-    }
-  }, [game]);
 
   useEffect(() => {
     if (stats.totalSpent > 0) {
@@ -62,7 +52,7 @@ export default function SimulatorContent() {
     const { currentWins, error } = handleCheckAllResults(allLines);
     if (error) { toast.error(error); return; }
     
-    await saveTurboSummary(stats, game);
+    await saveTurboState(game, stats);
     localStorage.removeItem(`turbo_save_${game}`);
     toast.success("Turbo Session Saved");
 
@@ -178,6 +168,8 @@ export default function SimulatorContent() {
             resultsRef={resultsRef} 
             drawResult={activeResult} 
             game={game} 
+            saveTurboState={saveTurboState}
+            loadTurboState={loadTurboState}
         />
 
         <div ref={resultsRef} className="scroll-mt-20 space-y-12">

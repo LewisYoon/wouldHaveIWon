@@ -83,24 +83,50 @@ export function useSimulator(game: string, activeResult: DrawResult | null) {
     }
   }, [stats.profit, stats.totalWon]);
 
-  const saveTurboSummary = useCallback(async (stats: any, game: string) => {
-    const sessionData = { game, stats, date: new Date().toISOString() };
-    if (!user) {
-      const history = JSON.parse(localStorage.getItem('turbo_history') || '[]');
-      localStorage.setItem('turbo_history', JSON.stringify([sessionData, ...history].slice(0, 50)));
-      return;
+  const saveTurboState = useCallback(async (game: string, currentStats: any) => {
+    const data = { 
+      game, 
+      stats: {
+        draws: currentStats.draws,
+        spent: currentStats.spent,
+        won: currentStats.won,
+      },
+      updated_at: new Date().toISOString() 
+    };
+
+    if (user) {
+      // Save to Supabase for logged in users
+      await supabase.from('turbo_sessions').upsert({ 
+        user_id: user.id, 
+        game: game,
+        stats: data.stats,
+        updated_at: data.updated_at
+      }, { onConflict: 'user_id,game' });
+    } else {
+      // Save to LocalStorage for guests
+      localStorage.setItem(`turbo_state_${game}`, JSON.stringify(data));
     }
-    await supabase.from('turbo_sessions').insert([{ user_id: user.id, game, stats }]);
   }, [user]);
 
-  const saveInProgress = useCallback((stats: any, game: string) => {
-    localStorage.setItem(`turbo_save_${game}`, JSON.stringify({ stats, date: new Date().toISOString() }));
-  }, []);
-
-  const loadSavedSession = useCallback((game: string) => {
-    const saved = localStorage.getItem(`turbo_save_${game}`);
-    return saved ? JSON.parse(saved) : null;
-  }, []);
+  const loadTurboState = useCallback(async (game: string) => {
+    if (user) {
+      const { data, error } = await supabase
+        .from('turbo_sessions')
+        .select('stats')
+        .eq('user_id', user.id)
+        .eq('game', game)
+        .single();
+      
+      if (data && !error) return data.stats;
+    } else {
+      const saved = localStorage.getItem(`turbo_state_${game}`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return parsed.stats;
+      }
+    }
+    return null;
+  }, [user]);
 
   const setStatsFromSession = useCallback((savedStats: any) => {
     setStats(savedStats);
@@ -113,9 +139,8 @@ export function useSimulator(game: string, activeResult: DrawResult | null) {
     clearResults, 
     luckNarrative, 
     realWorldValue,
-    saveTurboSummary,
-    saveInProgress,
-    loadSavedSession,
+    saveTurboState,
+    loadTurboState,
     setStatsFromSession
   };
 }

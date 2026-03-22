@@ -337,33 +337,6 @@ function LuckContent() {
 
         <div className="lg:col-span-7 space-y-10 animate-in fade-in slide-in-from-right-8 duration-1000 text-left">
           
-          <div className={`rounded-[2.5rem] p-8 sm:p-10 border shadow-2xl relative overflow-hidden bg-white dark:bg-gray-900 border-gray-100 dark:border-white/5`}>
-            <div className={`absolute top-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full blur-[80px] opacity-20 ${isOz ? 'bg-emerald-500' : isTatts ? 'bg-red-500' : 'bg-indigo-500'}`} />
-            <div className="relative z-10">
-              <div className="flex justify-between items-center mb-10">
-                <p className={`text-[10px] font-black uppercase tracking-[0.4em] ${brandStyles.text}`}>Luck Stats</p>
-                <div className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${brandStyles.bgLight} ${brandStyles.text}`}>Live Sync</div>
-              </div>
-              
-              <div className="grid grid-cols-1 gap-10">
-                <div>
-                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2">Total Missed</p>
-                  <p className={`text-5xl sm:text-6xl font-black tracking-tighter ${brandStyles.text}`}>{formatCurrency(stats.totalMissedPrize)}</p>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-6 pt-10 border-t border-gray-100 dark:border-white/5">
-                  <div className="space-y-1">
-                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Money "Saved"</p>
-                    <p className="text-2xl font-black text-gray-900 dark:text-white">{formatCurrency(stats.totalInvested)}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Best Win</p>
-                    <p className={`text-2xl font-black ${brandStyles.text}`}>{stats.bestDivision === 'No Prize' ? '-' : stats.bestDivision.replace('Division ', 'Div ')}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
 
           <div className={`rounded-[2.5rem] p-8 sm:p-10 border shadow-2xl relative overflow-hidden ${!isPremium ? 'bg-gray-50/50 dark:bg-white/5 grayscale-[0.5] border-gray-100 dark:border-white/5' : ((autoTrackGames[game] || 0) > 0 ? 'bg-white dark:bg-gray-900 border-amber-400 dark:border-amber-500/50 shadow-amber-500/10' : 'bg-white dark:bg-gray-900 border-gray-100 dark:border-white/5')}`}>
             <div className="flex justify-between items-start mb-10">

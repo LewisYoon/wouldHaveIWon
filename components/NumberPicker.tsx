@@ -1,23 +1,12 @@
-// lotto-project/components/NumberPicker.tsx
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { generateQuickPick, compareNumbers, ESTIMATED_PRIZES } from '../lib/lotto-utils';
-import LottoLinePicker from './LottoLinePicker';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 
-const MAX_TOTAL_LINES = 1000;
-const OZ_REQUIRED = 7;
-const PB_REQUIRED = 8; 
-const TATTS_REQUIRED = 6;
+const MAX_WINNING_FEED_ITEMS = 100; // Limit rendering to 100 items to prevent crashes
 const TICKET_COST = 1.45;
-const MAX_WINNING_FEED_ITEMS = 1000;
-
-type LottoLine = {
-  id: string;
-  numbers: number[];
-};
 
 type WinningResult = {
   id: string;
@@ -48,6 +37,8 @@ interface NumberPickerProps {
   resultsRef: React.RefObject<HTMLDivElement | null>;
   drawResult: DrawResult | null;
   game?: 'Oz Lotto' | 'Powerball' | 'Tatts Lotto';
+  saveTurboState?: (game: string, stats: any) => Promise<void>;
+  loadTurboState?: (game: string) => Promise<any>;
 }
 
 export default function NumberPicker({ 
@@ -55,13 +46,12 @@ export default function NumberPicker({
   onClearAll, 
   resultsRef, 
   drawResult,
-  game = 'Oz Lotto'
+  game = 'Oz Lotto',
+  saveTurboState,
+  loadTurboState
 }: NumberPickerProps) {
   const { user, isLoading: isAuthLoading } = useAuth();
-  const [viewMode, setViewMode] = useState<'detailed' | 'compact'>('detailed');
-  const [winningHistory, setWinningHistory] = useState<WinningResult[]>([]);
   const [sortBy, setSortBy] = useState<'latest' | 'division'>('latest');
-  const [isDataLoading, setIsDataLoading] = useState(true);
 
   const autoWinnersRef = useRef<WinningResult[]>([]);
   const [autoWinnersStateTrigger, setAutoWinnersStateTrigger] = useState(0);
@@ -77,8 +67,6 @@ export default function NumberPicker({
   const totalDrawsRef = useRef(0);
 
   useEffect(() => { ticketsPerSecRef.current = ticketsPerSec; }, [ticketsPerSec]);
-
-  const storageHistoryKey = `lottoWins_${game.replace(/\s/g, '')}`;
 
   const isOz = game === 'Oz Lotto';
   const isTatts = game === 'Tatts Lotto';
@@ -97,7 +85,8 @@ export default function NumberPicker({
     }
     setIsRunning(false);
     startTimeRef.current = null;
-  }, []);
+    if (saveTurboState) saveTurboState(game, stats);
+  }, [game, stats, saveTurboState]);
 
   const resetSimulation = useCallback(() => {
     stopSimulation();
@@ -106,29 +95,36 @@ export default function NumberPicker({
     setStats({ draws: 0, spent: 0, won: 0, startTime: 0, elapsedSecs: 0 });
     setChartData([]);
     totalDrawsRef.current = 0;
-  }, [stopSimulation]);
+    if (saveTurboState) saveTurboState(game, { draws: 0, spent: 0, won: 0 });
+  }, [game, stopSimulation, saveTurboState]);
+useEffect(() => {
+  const initLoad = async () => {
+      if (loadTurboState) {
+          const saved = await loadTurboState(game);
+          if (saved && saved.draws > 0) {
+              setStats(prev => ({ ...prev, draws: saved.draws, spent: saved.spent, won: saved.won }));
+              totalDrawsRef.current = saved.draws;
 
-  useEffect(() => {
-    resetSimulation();
-  }, [game, resetSimulation]);
+              // Reconstruct chart data
+              const numDataPoints = Math.min(50, Math.floor(saved.draws / 500));
+              const reconstructedData = [];
+              for (let i = 1; i <= numDataPoints; i++) {
+                  const ratio = i / numDataPoints;
+                  reconstructedData.push({
+                      spent: saved.spent * ratio,
+                      won: saved.won * ratio,
+                  });
+              }
+              setChartData(reconstructedData);
 
-  useEffect(() => {
-    const loadData = async () => {
-      setIsDataLoading(true);
-      if (user) {
-        const { data } = await supabase.from('simulator_history').select('*').eq('game', game).order('created_at', { ascending: false });
-        if (data) {
-          setWinningHistory(data.flatMap(item => (Array.isArray(item.lines) ? item.lines : [item.lines])));
-        }
-      } else {
-        const storedWins = localStorage.getItem(storageHistoryKey);
-        if (storedWins) setWinningHistory(JSON.parse(storedWins));
+          } else {
+              resetSimulation();
+          }
       }
-      setIsDataLoading(false);
-    };
-    if (!isAuthLoading) loadData();
-  }, [user, isAuthLoading, game, storageHistoryKey]);
-
+  };
+  initLoad();
+}, [game, loadTurboState]);
+  
   const startSimulation = useCallback(() => {
     if (!drawResult) { alert("Please set target winning numbers first!"); return; }
     startTimeRef.current = performance.now();
@@ -184,7 +180,16 @@ export default function NumberPicker({
 
       if (frameDraws > 0) {
         if (newWinners.length > 0) {
-          autoWinnersRef.current = [...newWinners, ...autoWinnersRef.current].slice(0, MAX_WINNING_FEED_ITEMS);
+          // Combine new winners and sort to keep the BEST results, not just the latest
+          const combined = [...newWinners, ...autoWinnersRef.current];
+          combined.sort((a, b) => {
+            const rankA = parseInt(a.prizeTier.replace('Division ', ''), 10) || Infinity;
+            const rankB = parseInt(b.prizeTier.replace('Division ', ''), 10) || Infinity;
+            if (rankA !== rankB) return rankA - rankB;
+            return (b.prizeValue || 0) - (a.prizeValue || 0);
+          });
+
+          autoWinnersRef.current = combined.slice(0, MAX_WINNING_FEED_ITEMS);
           setAutoWinnersStateTrigger(prev => prev + 1);
         }
         setStats(prev => {
@@ -197,6 +202,7 @@ export default function NumberPicker({
           };
           if (Math.floor(newStats.draws / 500) > Math.floor(prev.draws / 500)) {
             setChartData(prevData => [...prevData, { spent: newStats.spent, won: newStats.won }].slice(-50));
+            if (saveTurboState) saveTurboState(game, newStats);
           }
           return newStats;
         });
@@ -206,7 +212,7 @@ export default function NumberPicker({
 
     animationFrameIdRef.current = requestAnimationFrame(simulationLoop);
     return () => { if (animationFrameIdRef.current) cancelAnimationFrame(animationFrameIdRef.current); };
-  }, [isRunning, drawResult, game]);
+  }, [isRunning, drawResult, game, saveTurboState]);
 
   const jackpotOdds = useMemo(() => {
     if (game === 'Oz Lotto') return 45379620;
@@ -254,7 +260,21 @@ export default function NumberPicker({
       feed.sort((a, b) => {
         const rankA = parseInt(a.prizeTier.replace('Division ', ''), 10);
         const rankB = parseInt(b.prizeTier.replace('Division ', ''), 10);
-        if (rankA !== rankB) return rankA - rankB;
+
+        // Treat NaN (e.g., "No Prize") as the lowest rank
+        const validRankA = isNaN(rankA) ? Infinity : rankA;
+        const validRankB = isNaN(rankB) ? Infinity : rankB;
+
+        if (validRankA !== validRankB) {
+          return validRankA - validRankB;
+        }
+        
+        // If ranks are the same, sort by the highest prize value
+        if (a.prizeValue !== b.prizeValue) {
+          return (b.prizeValue || 0) - (a.prizeValue || 0);
+        }
+
+        // If prize value is also the same, sort by week number
         return (b.weekNumber || 0) - (a.weekNumber || 0);
       });
     }
@@ -280,9 +300,14 @@ export default function NumberPicker({
                       <label className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Speed: {ticketsPerSec} Tickets / sec</label>
                       <input type="range" min="1" max="100" value={ticketsPerSec} onChange={(e) => setTicketsPerSec(parseInt(e.target.value))} className={`w-full accent-emerald-500 h-1.5 bg-gray-100 dark:bg-white/5 rounded-full appearance-none cursor-pointer`} />
                   </div>
-                  <div className="bg-gray-100 dark:bg-white/5 p-4 rounded-xl relative overflow-hidden">
-                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Time to Jackpot</p>
-                    <p className={`text-lg font-black tracking-tight ${isRunning ? 'text-amber-500' : 'text-gray-400'}`}>{isRunning ? timeToJackpot : '--'}</p>
+                  <div className="bg-gray-100 dark:bg-white/5 p-4 rounded-xl relative overflow-hidden flex justify-between items-center">
+                    <div>
+                      <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Time to Jackpot</p>
+                      <p className={`text-lg font-black tracking-tight ${isRunning ? 'text-amber-500' : 'text-gray-400'}`}>{isRunning ? timeToJackpot : '--'}</p>
+                    </div>
+                    <button onClick={resetSimulation} className="text-red-500 hover:bg-red-500/10 p-2 rounded-lg transition-colors" title="Reset Simulation">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+                    </button>
                   </div>
               </div>
               <div className="space-y-6">
@@ -340,8 +365,8 @@ export default function NumberPicker({
                     </div>
                   </div>
                 </div>
-              )
-            ))}
+              ))
+            )}
           </div>
         </div>
       </div>
