@@ -46,7 +46,7 @@ export default function SimulatorContent() {
     const { currentWins, error } = handleCheckAllResults(allLines);
     if (error) { toast.error(error); return; }
     
-    await saveTurboState(game, stats);
+    await saveTurboState(game, stats, []);
     localStorage.removeItem(`turbo_save_${game}`);
     toast.success("Turbo Session Saved");
 
