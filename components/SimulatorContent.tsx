@@ -10,6 +10,7 @@ import Confetti from 'react-confetti';
 import Navbar from './Navbar';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
+import type { DrawResult } from '../types/lotto';
 
 // Custom Hooks
 import { useSimulator } from '../hooks/useSimulator';
