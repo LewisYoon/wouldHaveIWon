@@ -145,11 +145,11 @@ export default function SimulatorContent() {
                     </div>
                 </div>
                 <div className="flex flex-wrap gap-3 sm:gap-4 justify-center">
-                    {activeResult.numbers.map((n: number, i) => (
+                    {activeResult.numbers.map((n: number, i: number) => (
                     <span key={i} className={`w-12 h-12 rounded-full text-white flex items-center justify-center font-black shadow-lg border-b-[4px] border-black/20 ${brandStyles.bg}`}>{n}</span>
                     ))}
                     <div className="w-px h-12 bg-gray-200 dark:bg-white/10 mx-2" />
-                    {activeResult.bonus.map((n: number, i) => (
+                    {activeResult.bonus.map((n: number, i: number) => (
                     <span key={`b-${i}`} className="w-12 h-12 rounded-full bg-amber-400 text-amber-950 flex items-center justify-center font-black shadow-lg border-b-[4px] border-amber-600">{n}</span>
                     ))}
                 </div>
