@@ -41,7 +41,9 @@ const jsonLd = {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <SimulatorContent />
+      <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading Simulator...</div>}>
+        <SimulatorContent />
+      </Suspense>
       
       <section className="mt-20 p-8 bg-white dark:bg-gray-900 rounded-3xl max-w-4xl mx-auto border border-gray-100 dark:border-white/5 mb-20">
         <h2 className="text-2xl font-black mb-4 uppercase tracking-tighter">How the Australian Lotto Simulator Works</h2>
