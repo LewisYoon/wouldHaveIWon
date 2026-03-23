@@ -21,12 +21,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/blog/mathematics-of-powerball/',
     '/blog/history-of-oz-lotto/',
     '/blog/benefits-of-simulation/'
-  ].map((route) => ({
+  ];
+
+  return routes.map((route) => ({
     url: `${baseUrl}${route}`,
     lastModified: new Date().toISOString().split('T')[0],
     changeFrequency: 'daily' as const,
-    priority: route === '/' ? 1 : 0.8,
+    priority: route === '/' || route === '/luck/' ? 1.0 : route === '/simulator/' ? 0.9 : 0.7,
   }));
-
-  return routes;
 }
