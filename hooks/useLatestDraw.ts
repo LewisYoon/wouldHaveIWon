@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
-import { DrawResult, generateQuickPick } from '../lib/lotto-utils';
+import { generateQuickPick } from '../lib/lotto-utils';
+import type { DrawResult } from '../types/lotto';
 
 export function useLatestDraw(game: string, drawMode: 'official' | 'random' | 'manual') {
   const [officialResult, setOfficialResult] = useState<DrawResult | null>(null);
