@@ -2,6 +2,7 @@
 
 import type { DrawResult, ComparisonResult } from '../types/lotto';
 
+
 export const TICKET_COST = 1.45;
 
 export interface Ticket {
@@ -117,8 +118,6 @@ export function generateRandomDraw(game: 'Oz Lotto' | 'Powerball' | 'Tatts Lotto
     };
   }
 }
-
-
 
 /**
  * Comparison logic for all games
