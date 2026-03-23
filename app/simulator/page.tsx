@@ -2,34 +2,38 @@
 import { Metadata } from 'next';
 import SimulatorContent from '../../components/SimulatorContent';
 
-export const metadata: Metadata = {
-  title: "Australian Lotto Simulator: Test Powerball & Oz Lotto Odds",
-  description: "Run millions of lotto draws in seconds. Test your lucky numbers against official Australian history for free. See the real probability of winning Division 1.",
-  keywords: ["Lotto Simulator Australia", "Powerball Odds Calculator", "Oz Lotto Simulation", "Lotto Probability Tool"],
+export const metadata = {
+  title: "Free Lotto Simulator Australia | Test Your Winning Odds Instantly",
+  description:
+    "Simulate Powerball, Oz Lotto and Tatts Lotto instantly. See your real chances of winning and test your numbers for free.",
+  keywords: [
+    "lotto simulator australia",
+    "powerball simulator",
+    "oz lotto odds",
+    "lotto probability calculator",
+    "what if lotto"
+  ],
   alternates: {
-    canonical: 'https://whatiflotto.com/simulator',
+    canonical: "https://whatiflotto.com/simulator",
   },
 };
 
 export default function SimulatorPage() {
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "SoftwareApplication",
-    "name": "WhatIFLotto Turbo Simulator",
-    "applicationCategory": "GameApplication",
-    "operatingSystem": "Web",
-    "offers": {
-      "@type": "Offer",
-      "price": "0",
-      "priceCurrency": "AUD"
-    },
-    "aggregateRating": {
-      "@type": "AggregateRating",
-      "ratingValue": "4.9",
-      "ratingCount": "1284"
-    },
-    "description": "High-speed Australian lotto simulation engine to test winning probability for Powerball, Oz Lotto, and Tatts Lotto."
-  };
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "WhatIFLotto Simulator",
+  "url": "https://whatiflotto.com/simulator",
+  "applicationCategory": "GameApplication",
+  "operatingSystem": "Web",
+  "description":
+    "Free Australian lotto simulator. Test your Powerball, Oz Lotto and Tatts Lotto numbers and see your real winning probability.",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "AUD"
+  }
+};
 
   return (
     <>
