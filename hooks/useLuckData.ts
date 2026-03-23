@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
-import { DrawResult, Ticket, compareNumbers } from '../lib/lotto-utils';
-
+import { Ticket, compareNumbers } from '../lib/lotto-utils';
+import { DrawResult } from '../types/lotto'
 export function useLuckData(game: string, myTickets: Ticket[]) {
   const [drawResultsList, setDrawResultsList] = useState<DrawResult[]>([]);
   const [upcomingLedger, setUpcomingLedger] = useState<any[]>([]);
