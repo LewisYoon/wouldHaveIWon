@@ -1,4 +1,5 @@
 // app/simulator/page.tsx
+import { Suspense } from 'react';
 import { Metadata } from 'next';
 import SimulatorContent from '../../components/SimulatorContent';
 
