@@ -205,12 +205,21 @@ export default function NumberPicker({
     if (!isRunning || ticketsPerSec === 0) return null;
     const remainingTickets = jackpotOdds - totalDrawsRef.current;
     if (remainingTickets <= 0) return "Any second now!";
-    const seconds = remainingTickets / ticketsPerSec;
-    const years = Math.floor(seconds / (365 * 24 * 3600));
-    const days = Math.floor((seconds % (365 * 24 * 3600)) / (24 * 3600));
-    if (years > 1000) return "> 1,000 years";
+    const totalSeconds = remainingTickets / ticketsPerSec;
+    
+    if (totalSeconds > 1000 * 365 * 24 * 3600) return "> 1,000 years";
+    
+    const years = Math.floor(totalSeconds / (365 * 24 * 3600));
+    const days = Math.floor((totalSeconds % (365 * 24 * 3600)) / (24 * 3600));
+    const hours = Math.floor((totalSeconds % (24 * 3600)) / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const secs = Math.floor(totalSeconds % 60);
+
     if (years > 0) return `${years}y ${days}d`;
-    return `${days}d`;
+    if (days > 0) return `${days}d ${hours}h`;
+    if (hours > 0) return `${hours}h ${minutes}m`;
+    if (minutes > 0) return `${minutes}m ${secs}s`;
+    return `${secs}s`;
   }, [isRunning, ticketsPerSec, jackpotOdds, stats.draws]);
 
   const SimpleLineChart = ({ data }: { data: {spent: number, won: number}[] }) => {
