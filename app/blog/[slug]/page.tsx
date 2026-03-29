@@ -14,9 +14,6 @@ const postData: Record<string, any> = {
       
       <h3>Why Does This Matter?</h3>
       <p>Visualizing 134 million is nearly impossible for the human brain. If you were to lay 134 million $1 coins side by side, they would stretch from Sydney to Perth and halfway back again. Only one of those coins is the winner.</p>
-      
-      <h3>Probability vs. Possibility</h3>
-      <p>Many players fall into the "Gambler's Fallacy"—the belief that because a number hasn't come up recently, it is "due." In reality, every draw is an independent event. The machine doesn't remember the previous week. Our simulation engine helps players witness this randomness first-hand, without the financial burden of learning the hard way.</p>
     `
   },
   'history-of-oz-lotto': {
@@ -28,9 +25,6 @@ const postData: Record<string, any> = {
       
       <h3>The Emerald Evolution</h3>
       <p>The addition of the 7th number wasn't just for show—it drastically increased the odds of winning Division 1, which in turn allowed jackpots to roll over more frequently and reach higher totals. This change created the "Big Jackpot" identity that Oz Lotto is famous for today.</p>
-      
-      <h3>The 2022 Update</h3>
-      <p>In May 2022, the game evolved again. The ball pool was expanded from 45 to 47. While this made the odds of winning harder (moving from 1 in 45 million to 1 in 62 million), it also allowed for even larger prize pools and more winners in the lower divisions.</p>
     `
   },
   'benefits-of-simulation': {
@@ -42,9 +36,76 @@ const postData: Record<string, any> = {
       
       <h3>Witnessing the House Edge</h3>
       <p>When you use our "Turbo Simulator" to play 1,000 years of lotto in 10 seconds, you see more than just numbers. You see the rapid depletion of your virtual "bankroll." For most players, the simulation ends with a net loss of hundreds of thousands of virtual dollars.</p>
-      
-      <h3>The Psychological Pivot</h3>
-      <p>By shifting the focus from "winning money" to "testing math," players can enjoy the thrill of the draw without the risk. Many of our users report that after using our Luck Tracker, their urge to participate in real-money games decreases as they gain a more grounded perspective on the reality of the odds.</p>
+    `
+  },
+  'the-gamblers-fallacy-explained': {
+    title: "The Gambler's Fallacy: Why 'Due' Numbers Don't Exist",
+    category: 'Psychology',
+    date: 'March 10, 2026',
+    content: `
+      <p>The Gambler's Fallacy is the mistaken belief that if an event happens more frequently than normal during a given period, it will happen less frequently in the future. In lottery terms, this often leads players to choose "cold" numbers, thinking they are "due" to be drawn.</p>
+      <h3>Independence of Trials</h3>
+      <p>Each Australian Powerball or Oz Lotto draw is a completely independent event. The physical balls used in the machine have no memory of previous weeks. The probability of any specific number appearing remains identical in every single draw, regardless of its past history.</p>
+    `
+  },
+  'system-entries-vs-standard': {
+    title: 'System Entries vs. Standard Games: Is it Worth the Cost?',
+    category: 'Analysis',
+    date: 'March 12, 2026',
+    content: `
+      <p>System entries allow you to choose more than the standard amount of numbers in a single game. For example, a System 7 entry in Saturday Lotto allows you to pick 7 numbers instead of 6, creating 7 different combinations.</p>
+      <h3>The Cost Factor</h3>
+      <p>While System entries increase your chances of winning across multiple divisions, the cost increases proportionally. Our simulator helps you visualize whether the increased probability justifies the significantly higher entry fee for your specific budget.</p>
+    `
+  },
+  'quick-pick-vs-manual-selection': {
+    title: 'Quick Pick vs. Manual Selection: The Statistical Verdict',
+    category: 'Statistics',
+    date: 'March 15, 2026',
+    content: `
+      <p>One of the oldest debates in the lottery community is whether manually selected "lucky numbers" perform better than computer-generated Quick Picks. Statistics show that neither has a mathematical advantage.</p>
+      <h3>Randomness is Random</h3>
+      <p>Because the draw itself is random, any set of numbers—whether chosen by a human or a random number generator—has the exact same chance of matching. The only advantage of Quick Picks is the elimination of human bias, which often leads to many people picking the same numbers (like birthdays), resulting in shared prizes.</p>
+    `
+  },
+  'history-of-lottery-australia': {
+    title: 'A Brief History of the Lottery in Australia',
+    category: 'History',
+    date: 'March 18, 2026',
+    content: `
+      <p>Lotteries have a long and storied history in Australia, dating back to the late 19th century. Initially used to fund public works and hospitals, they have become a staple of national entertainment.</p>
+      <h3>Evolution of the Games</h3>
+      <p>From the early days of state-run sweeps to the modern national Powerball and Oz Lotto games we see today, the industry has evolved with technology. Today, platforms like WhatIFLotto allow players to interact with these historical mechanics in a purely digital, risk-free environment.</p>
+    `
+  },
+  'understanding-house-edge': {
+    title: 'Understanding the House Edge in Lottery Games',
+    category: 'Economics',
+    date: 'March 20, 2026',
+    content: `
+      <p>The "House Edge" is the mathematical advantage that the game provider has over the player. In lottery games, this edge is typically much higher than in casino games like Blackjack or Roulette.</p>
+      <h3>Where the Money Goes</h3>
+      <p>A significant portion of lottery ticket sales goes toward government taxes, commissions, and charitable funding. This means only a fraction of the total pool is returned as prizes. Our simulation tools clearly illustrate how this edge affects your virtual balance over time.</p>
+    `
+  },
+  'how-to-read-lotto-stats': {
+    title: 'How to Read and Interpret Lottery Statistics',
+    category: 'Guide',
+    date: 'March 22, 2026',
+    content: `
+      <p>Statistics like "frequency of draw" or "most overdue numbers" are popular among players. But how should you actually interpret them? It's important to distinguish between descriptive statistics (what happened) and predictive statistics (what will happen).</p>
+      <h3>Descriptive vs. Predictive</h3>
+      <p>While history can tell us which numbers have been lucky in the past, it cannot predict the future. Use our tracker to analyze historical data for fun, but always remember the fundamental law of probability: past results do not influence future outcomes.</p>
+    `
+  },
+  'responsible-play-guide': {
+    title: 'A Guide to Responsible Play and Entertainment',
+    category: 'Education',
+    date: 'March 24, 2026',
+    content: `
+      <p>Lottery simulation should be viewed as a form of entertainment and an educational tool. At WhatIFLotto, we are committed to promoting responsible habits.</p>
+      <h3>Setting Boundaries</h3>
+      <p>The best way to enjoy any game of chance is to set clear boundaries. Use our simulator to satisfy the "What If" curiosity without financial commitment. If you find yourself thinking about the lottery more than usual, take a break and use our tool to remind yourself of the staggering odds involved.</p>
     `
   }
 };

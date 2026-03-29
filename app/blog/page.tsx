@@ -36,6 +36,69 @@ const posts = [
     category: 'Education',
     color: 'text-purple-600',
     bg: 'bg-purple-50 dark:bg-purple-500/10'
+  },
+  {
+    slug: 'the-gamblers-fallacy-explained',
+    title: "The Gambler's Fallacy: Why 'Due' Numbers Don't Exist",
+    excerpt: 'Understand why past draw history has no influence on future results and how to avoid the common psychological traps of lottery play.',
+    date: 'March 10, 2026',
+    category: 'Psychology',
+    color: 'text-rose-600',
+    bg: 'bg-rose-50 dark:bg-rose-500/10'
+  },
+  {
+    slug: 'system-entries-vs-standard',
+    title: 'System Entries vs. Standard Games: Is it Worth the Cost?',
+    excerpt: 'A comprehensive cost-benefit analysis of Australian System entries. Does the increased probability justify the exponential price hike?',
+    date: 'March 12, 2026',
+    category: 'Analysis',
+    color: 'text-amber-600',
+    bg: 'bg-amber-50 dark:bg-amber-500/10'
+  },
+  {
+    slug: 'quick-pick-vs-manual-selection',
+    title: 'Quick Pick vs. Manual Selection: The Statistical Verdict',
+    excerpt: 'Do human-chosen lucky numbers perform better than machine-generated sets? We look at the statistics and the impact of human bias.',
+    date: 'March 15, 2026',
+    category: 'Statistics',
+    color: 'text-blue-600',
+    bg: 'bg-blue-50 dark:bg-blue-500/10'
+  },
+  {
+    slug: 'history-of-lottery-australia',
+    title: 'A Brief History of the Lottery in Australia',
+    excerpt: 'From funding colonial hospitals to modern multi-million dollar digital draws, discover the cultural impact of lotteries in Australia.',
+    date: 'March 18, 2026',
+    category: 'History',
+    color: 'text-emerald-600',
+    bg: 'bg-emerald-50 dark:bg-emerald-500/10'
+  },
+  {
+    slug: 'understanding-house-edge',
+    title: 'Understanding the House Edge in Lottery Games',
+    excerpt: 'Learn how the "House Always Wins" applies to the lottery and where your ticket money actually goes in the Australian system.',
+    date: 'March 20, 2026',
+    category: 'Economics',
+    color: 'text-slate-600',
+    bg: 'bg-slate-50 dark:bg-slate-500/10'
+  },
+  {
+    slug: 'how-to-read-lotto-stats',
+    title: 'How to Read and Interpret Lottery Statistics',
+    excerpt: 'Frequency charts, overdue numbers, and standard deviations. A guide to making sense of lottery data without falling for the myths.',
+    date: 'March 22, 2026',
+    category: 'Guide',
+    color: 'text-indigo-600',
+    bg: 'bg-indigo-50 dark:bg-indigo-500/10'
+  },
+  {
+    slug: 'responsible-play-guide',
+    title: 'A Guide to Responsible Play and Entertainment',
+    excerpt: 'Strategies for keeping lottery play fun and risk-free. Learn how to set boundaries and use simulation as a tool for responsible habits.',
+    date: 'March 24, 2026',
+    category: 'Education',
+    color: 'text-teal-600',
+    bg: 'bg-teal-50 dark:bg-teal-500/10'
   }
 ];
 

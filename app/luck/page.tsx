@@ -518,6 +518,73 @@ function LuckContent() {
         </div>
       </main>
 
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 mt-32 mb-32">
+        <div className="bg-white dark:bg-gray-900 rounded-[3.5rem] p-10 sm:p-16 border border-gray-100 dark:border-white/5 shadow-2xl text-left">
+          <h2 className="text-3xl font-black mb-10 uppercase tracking-tighter italic border-b-4 border-indigo-500 inline-block">Maximizing Your Luck Tracking</h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
+            <div className="space-y-8">
+              <div>
+                <h3 className="text-xl font-black text-gray-900 dark:text-white uppercase mb-4">Real-Time Data Verification</h3>
+                <p className="text-gray-600 dark:text-gray-400 font-medium leading-relaxed">
+                  Our <strong>Luck Tracker</strong> synchronizes with official Australian lottery databases to provide instantaneous results for <strong>Powerball</strong>, <strong>Oz Lotto</strong>, and <strong>Tatts Lotto</strong>. By entering your sequences before the draw, you create a digital verifiable record, allowing you to visualize your "Total Missed Prizes" and identify how close you came to the Division 1 jackpot.
+                </p>
+              </div>
+
+              <div>
+                <h3 className="text-xl font-black text-gray-900 dark:text-white uppercase mb-4">Official Australian Draw Schedule</h3>
+                <div className="overflow-hidden rounded-2xl border border-gray-100 dark:border-white/5">
+                  <table className="w-full text-sm text-left">
+                    <thead className="bg-gray-50 dark:bg-white/5 text-[10px] font-black uppercase tracking-widest text-gray-400">
+                      <tr>
+                        <th className="px-6 py-4">Game</th>
+                        <th className="px-6 py-4">Draw Day</th>
+                        <th className="px-6 py-4">Closing Time (AEST)</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 dark:divide-white/5 font-bold">
+                      <tr>
+                        <td className="px-6 py-4">Oz Lotto</td>
+                        <td className="px-6 py-4 text-emerald-500">Tuesday</td>
+                        <td className="px-6 py-4 uppercase">7:30 PM</td>
+                      </tr>
+                      <tr>
+                        <td className="px-6 py-4">Powerball</td>
+                        <td className="px-6 py-4 text-indigo-500">Thursday</td>
+                        <td className="px-6 py-4 uppercase">7:30 PM</td>
+                      </tr>
+                      <tr>
+                        <td className="px-6 py-4">Tatts Lotto</td>
+                        <td className="px-6 py-4 text-red-500">Saturday</td>
+                        <td className="px-6 py-4 uppercase">7:30 PM</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-8">
+              <div>
+                <h3 className="text-xl font-black text-gray-900 dark:text-white uppercase mb-4">The Statistics of "Lucky" Numbers</h3>
+                <p className="text-gray-600 dark:text-gray-400 font-medium leading-relaxed">
+                  Many Australian players use "Lucky Numbers" based on birthdays or significant dates. Statistically, every combination from 1 to 45 (or 47) has the exact same mathematical probability of being drawn. However, tracking your numbers over time helps you visualize the <strong>House Edge</strong> and understand the cost-to-win ratio, which is vital for maintaining a responsible and healthy relationship with lottery play.
+                </p>
+              </div>
+
+              <div className="bg-gray-50 dark:bg-white/5 p-8 rounded-3xl border border-gray-100 dark:border-white/5">
+                <h3 className="text-lg font-black text-gray-900 dark:text-white uppercase mb-4 italic">Tracking Tips</h3>
+                <ul className="space-y-4 text-sm font-medium text-gray-500 dark:text-gray-400">
+                  <li className="flex gap-3"><span className="text-indigo-500">01.</span> <span>Save multiple ticket sets to compare different selection strategies.</span></li>
+                  <li className="flex gap-3"><span className="text-indigo-500">02.</span> <span>Use the <strong>Quick Pick Burst</strong> feature to simulate a high-volume entry scenario.</span></li>
+                  <li className="flex gap-3"><span className="text-indigo-500">03.</span> <span>Review your history regularly to see how much money you "saved" by tracking instead of buying.</span></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <DivisionRules game={game} isOpen={isRulesModalOpen} onClose={() => setIsRulesModalOpen(false)} />
       <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
     </div>
