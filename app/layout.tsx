@@ -5,6 +5,7 @@ import { AuthProvider } from "../context/AuthContext";
 import { Toaster } from 'sonner';
 import Link from 'next/link';
 import Logo from "../components/Logo";
+import ResultsTicker from "../components/ResultsTicker";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -94,6 +95,7 @@ export default function RootLayout({
         />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-white dark:bg-gray-950 transition-colors duration-500`}>
+        <ResultsTicker />
         <Toaster position="top-center" richColors />
         <AuthProvider>
           <div className="flex flex-col min-h-screen">
@@ -121,6 +123,8 @@ export default function RootLayout({
                   <div>
                     <h4 className="font-black text-gray-900 dark:text-white uppercase tracking-widest text-xs mb-6">Information</h4>
                     <ul className="space-y-4 text-sm font-bold text-gray-400 uppercase tracking-tighter">
+                      <li><Link href="/about" className="hover:text-indigo-600 transition-colors">About Us</Link></li>
+                      <li><Link href="/faq" className="hover:text-indigo-600 transition-colors">FAQ</Link></li>
                       <li><Link href="/how-it-works" className="hover:text-indigo-600 transition-colors">How It Works</Link></li>
                       <li><Link href="/contact" className="hover:text-indigo-600 transition-colors">Contact Us</Link></li>
                       <li><Link href="/responsible-play" className="hover:text-indigo-600 transition-colors">Responsible Play</Link></li>

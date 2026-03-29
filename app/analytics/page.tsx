@@ -3,7 +3,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import Navbar from '../../components/Navbar';
 import { supabase } from '../../lib/supabase';
-import { Metadata } from 'next';
 
 type GameType = 'Oz Lotto' | 'Powerball' | 'Tatts Lotto';
 
@@ -31,6 +30,7 @@ export default function AnalyticsPage() {
     if (results.length === 0) return null;
 
     const freqMap: Record<number, number> = {};
+    const pairMap: Record<string, number> = {};
     const lastSeenMap: Record<number, string> = {};
     const totalDraws = results.length;
 
@@ -43,18 +43,34 @@ export default function AnalyticsPage() {
       lastSeenMap[i] = 'Never';
     }
 
-    results.forEach((draw, index) => {
-      draw.numbers.forEach((n: number) => {
+    results.forEach((draw) => {
+      const nums = [...draw.numbers].sort((a, b) => a - b);
+      
+      // Frequency & Last Seen
+      nums.forEach((n: number) => {
         freqMap[n]++;
         if (lastSeenMap[n] === 'Never') {
           lastSeenMap[n] = draw.draw_date;
         }
       });
+
+      // Pairs
+      for (let i = 0; i < nums.length; i++) {
+        for (let j = i + 1; j < nums.length; j++) {
+          const pair = `${nums[i]},${nums[j]}`;
+          pairMap[pair] = (pairMap[pair] || 0) + 1;
+        }
+      }
     });
 
     const sortedFreq = Object.entries(freqMap)
       .map(([num, count]) => ({ num: parseInt(num), count, percent: (count / totalDraws) * 100 }))
       .sort((a, b) => b.count - a.count);
+
+    const sortedPairs = Object.entries(pairMap)
+      .map(([pair, count]) => ({ pair: pair.split(',').map(Number), count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
 
     const hotNumbers = sortedFreq.slice(0, 6);
     const coldNumbers = [...sortedFreq].reverse().slice(0, 6);
@@ -62,7 +78,7 @@ export default function AnalyticsPage() {
     const startDate = results[results.length - 1]?.draw_date;
     const endDate = results[0]?.draw_date;
 
-    return { hotNumbers, coldNumbers, sortedFreq, totalDraws, lastSeenMap, startDate, endDate };
+    return { hotNumbers, coldNumbers, sortedFreq, sortedPairs, totalDraws, lastSeenMap, startDate, endDate };
   }, [results, game]);
 
   const brandColor = game === 'Oz Lotto' ? 'emerald' : game === 'Tatts Lotto' ? 'red' : 'indigo';
@@ -118,7 +134,7 @@ export default function AnalyticsPage() {
             {/* Summary Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 sm:gap-12">
               {/* Hot Numbers */}
-              <section className="bg-white dark:bg-gray-900 p-8 sm:p-12 rounded-[2.5rem] sm:rounded-[4rem] border border-gray-100 dark:border-white/5 shadow-2xl relative overflow-hidden">
+              <section className="bg-white dark:bg-gray-900 p-8 sm:p-12 rounded-[2.5rem] sm:rounded-[4rem] border border-gray-100 dark:border-white/5 shadow-2xl relative overflow-hidden text-left">
                 <div className={`absolute top-0 right-0 w-32 h-32 bg-${brandColor}-500/5 rounded-full -mr-16 -mt-16`} />
                 <h2 className="text-2xl sm:text-3xl font-black mb-8 sm:mb-10 tracking-tight uppercase italic flex items-center gap-3">
                   <span className="text-orange-500 text-3xl">🔥</span> Hot Numbers
@@ -131,11 +147,10 @@ export default function AnalyticsPage() {
                     </div>
                   ))}
                 </div>
-                <p className="mt-8 text-[10px] sm:text-xs text-gray-400 font-medium italic text-center">Numbers that appeared most frequently in the last {stats.totalDraws} draws.</p>
               </section>
 
               {/* Cold Numbers */}
-              <section className="bg-white dark:bg-gray-900 p-8 sm:p-12 rounded-[2.5rem] sm:rounded-[4rem] border border-gray-100 dark:border-white/5 shadow-2xl relative overflow-hidden">
+              <section className="bg-white dark:bg-gray-900 p-8 sm:p-12 rounded-[2.5rem] sm:rounded-[4rem] border border-gray-100 dark:border-white/5 shadow-2xl relative overflow-hidden text-left">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full -mr-16 -mt-16" />
                 <h2 className="text-2xl sm:text-3xl font-black mb-8 sm:mb-10 tracking-tight uppercase italic flex items-center gap-3">
                   <span className="text-blue-400 text-3xl">❄️</span> Cold Numbers
@@ -148,14 +163,33 @@ export default function AnalyticsPage() {
                     </div>
                   ))}
                 </div>
-                <p className="mt-8 text-[10px] sm:text-xs text-gray-400 font-medium italic text-center">Numbers that have been absent for the longest period.</p>
               </section>
             </div>
 
-            {/* Frequency Chart (Simplified) */}
+            {/* Frequent Pairs */}
+            <section className="bg-white dark:bg-gray-900 p-8 sm:p-12 rounded-[2.5rem] sm:rounded-[4rem] border border-gray-100 dark:border-white/5 shadow-2xl text-left">
+                <h2 className="text-2xl sm:text-3xl font-black mb-10 tracking-tight uppercase italic flex items-center gap-3">
+                    <span className="text-indigo-500 text-3xl">👯</span> Frequent Pairs
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
+                    {stats.sortedPairs.map((item, i) => (
+                        <div key={i} className="p-6 bg-gray-50 dark:bg-white/5 rounded-[2rem] border border-gray-100 dark:border-white/5 flex flex-col items-center">
+                            <div className="flex gap-2 mb-4">
+                                {item.pair.map(n => (
+                                    <span key={n} className={`w-10 h-10 rounded-full ${n % 2 === 0 ? 'bg-indigo-600' : 'bg-indigo-400'} text-white flex items-center justify-center font-black shadow-md`}>{n}</span>
+                                ))}
+                            </div>
+                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{item.count} Shared Draws</p>
+                        </div>
+                    ))}
+                </div>
+                <p className="mt-8 text-xs text-gray-400 font-medium italic text-center">Pairs of numbers that have appeared together in the same draw most often.</p>
+            </section>
+
+            {/* Frequency Chart */}
             <section className="bg-gray-950 p-8 sm:p-12 md:p-20 rounded-[2.5rem] sm:rounded-[4rem] text-white shadow-2xl relative overflow-hidden border border-white/5">
               <div className="absolute top-0 left-0 w-full h-full opacity-5 bg-[radial-gradient(#fff_1px,transparent_1px)] bg-[size:24px_24px]" />
-              <h2 className="text-3xl sm:text-4xl font-black mb-12 sm:mb-16 tracking-tight uppercase italic text-center relative z-10 leading-tight">All Number Frequency (%)</h2>
+              <h2 className="text-3xl sm:text-4xl font-black mb-12 sm:mb-16 tracking-tight uppercase italic text-center relative z-10 leading-tight">Number Distribution (%)</h2>
               <div className="flex flex-wrap justify-center gap-2 sm:gap-3 relative z-10">
                 {stats.sortedFreq.sort((a,b) => a.num - b.num).map((item) => {
                   const intensity = Math.min(1, item.percent / 20);
@@ -204,7 +238,7 @@ export default function AnalyticsPage() {
           </div>
         ) : (
           <div className="py-40 text-center bg-gray-50 dark:bg-white/5 rounded-[4rem] border-2 border-dashed border-gray-100 dark:border-white/10">
-            <p className="text-gray-400 font-bold italic uppercase tracking-widest">No draw data available for analysis yet.</p>
+            <p className="text-gray-400 font-bold italic uppercase tracking-widest text-sm">No draw data available for analysis yet.</p>
           </div>
         )}
       </main>

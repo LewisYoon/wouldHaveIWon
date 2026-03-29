@@ -25,21 +25,25 @@ export function getNextDrawDates(count: number = 5, game: 'Oz Lotto' | 'Powerbal
   if (game === 'Powerball') targetDay = 4; // Thursday
   if (game === 'Tatts Lotto') targetDay = 6; // Saturday
   
-  let lastDraw = new Date(today);
-  lastDraw.setHours(0, 0, 0, 0);
+  // Find the next upcoming draw date
+  let nextDraw = new Date(today);
+  nextDraw.setHours(0, 0, 0, 0);
   
-  let diffToLast = (today.getDay() - targetDay + 7) % 7;
+  // Calculate days until next draw
+  // If today is draw day and before 8:30 PM, it's today. 
+  // But usually for "Luck Tracking", people track upcoming ones.
+  // To be safe and avoid "past" dates, we find the first draw >= today.
+  let diff = (targetDay - today.getDay() + 7) % 7;
   
   const isDrawDay = today.getDay() === targetDay;
   const isPastDrawTime = today.getHours() > 20 || (today.getHours() === 20 && today.getMinutes() >= 30);
   
-  if (isDrawDay && !isPastDrawTime) {
-    diffToLast = 7;
-  } else if (diffToLast === 0 && isPastDrawTime) {
-    diffToLast = 0;
+  // If it's draw day but already past 8:30 PM, the next draw is next week.
+  if (isDrawDay && isPastDrawTime) {
+    diff = 7;
   }
 
-  lastDraw.setDate(today.getDate() - diffToLast);
+  nextDraw.setDate(today.getDate() + diff);
   
   const formatDate = (d: Date) => {
     const year = d.getFullYear();
@@ -48,10 +52,7 @@ export function getNextDrawDates(count: number = 5, game: 'Oz Lotto' | 'Powerbal
     return `${year}-${month}-${day}`;
   };
 
-  dates.push(formatDate(lastDraw));
-
-  let nextDraw = new Date(lastDraw);
-  for (let i = 1; i <= count; i++) {
+  for (let i = 0; i < count; i++) {
     const d = new Date(nextDraw);
     d.setDate(nextDraw.getDate() + (i * 7));
     dates.push(formatDate(d));

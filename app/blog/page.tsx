@@ -1,13 +1,8 @@
+'use client';
+
+import { useState } from 'react';
 import Navbar from '../../components/Navbar';
 import Link from 'next/link';
-import { Metadata } from 'next';
-
-export const dynamic = 'force-static';
-
-export const metadata: Metadata = {
-  title: 'Lotto Simulator Knowledge Base | WhatIFLotto',
-  description: 'In-depth analysis, historical archives, and mathematical guides to the Australian lottery landscape.',
-};
 
 const posts = [
   {
@@ -103,6 +98,14 @@ const posts = [
 ];
 
 export default function BlogPage() {
+  const [activeCategory, setActiveCategory] = useState('All');
+  
+  const categories = ['All', ...Array.from(new Set(posts.map(p => p.category)))];
+  
+  const filteredPosts = activeCategory === 'All' 
+    ? posts 
+    : posts.filter(p => p.category === activeCategory);
+
   return (
     <div className="bg-white dark:bg-gray-950 min-h-screen text-gray-900 dark:text-gray-100 selection:bg-indigo-500 selection:text-white">
       <Navbar />
@@ -117,13 +120,30 @@ export default function BlogPage() {
           </p>
         </header>
 
+        {/* Category Filters */}
+        <div className="flex flex-wrap justify-center gap-2 sm:gap-4 mb-12 sm:mb-20">
+          {categories.map((category) => (
+            <button
+              key={category}
+              onClick={() => setActiveCategory(category)}
+              className={`px-6 py-2.5 sm:px-8 sm:py-3 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${
+                activeCategory === category 
+                  ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-500/20 scale-105' 
+                  : 'bg-gray-100 dark:bg-white/5 text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10'
+              }`}
+            >
+              {category}
+            </button>
+          ))}
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 sm:gap-12">
-          {posts.map((post) => (
+          {filteredPosts.map((post) => (
             <article key={post.slug} className="group flex flex-col bg-white dark:bg-gray-900 rounded-[2.5rem] sm:rounded-[3rem] border border-gray-100 dark:border-white/5 shadow-xl overflow-hidden hover:-translate-y-2 transition-all duration-500 text-left">
               <div className={`h-48 sm:h-64 ${post.bg} flex items-center justify-center relative overflow-hidden`}>
                 <div className="absolute inset-0 opacity-10 group-hover:scale-110 transition-transform duration-1000 bg-[radial-gradient(#000_1px,transparent_1px)] dark:bg-[radial-gradient(#fff_1px,transparent_1px)] bg-[size:20px_20px]" />
                 <span className="text-5xl sm:text-6xl group-hover:rotate-12 transition-transform duration-500">
-                    {post.category === 'Analysis' ? '📊' : post.category === 'History' ? '🇦🇺' : '🛡️'}
+                    {post.category === 'Analysis' ? '📊' : post.category === 'History' ? '🇦🇺' : post.category === 'Education' ? '🛡️' : post.category === 'Statistics' ? '🔢' : post.category === 'Psychology' ? '🧠' : '🏷️'}
                 </span>
               </div>
               <div className="p-8 sm:p-10 flex-grow flex flex-col text-left">
@@ -145,6 +165,12 @@ export default function BlogPage() {
             </article>
           ))}
         </div>
+
+        {filteredPosts.length === 0 && (
+          <div className="py-20 text-center bg-gray-50 dark:bg-white/5 rounded-[3rem] border-2 border-dashed border-gray-100 dark:border-white/10">
+            <p className="text-gray-400 font-black italic uppercase tracking-widest">No articles found in this category.</p>
+          </div>
+        )}
 
         <section className="mt-24 sm:mt-40 bg-gray-950 rounded-[2.5rem] sm:rounded-[4rem] p-8 sm:p-12 md:p-20 text-white shadow-2xl relative overflow-hidden border border-white/5 mx-2">
             <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-600/10 rounded-full blur-[100px] -mr-48 -mt-48" />

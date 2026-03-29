@@ -1,12 +1,12 @@
 import { MetadataRoute } from 'next';
 
-export const runtime = 'edge';
+export const dynamic = 'force-static';
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = 'https://whatiflotto.com';
   
-  const routes = [
-    '/',
+  const mainRoutes = [
+    '',
     '/luck/',
     '/simulator/',
     '/how-it-works/',
@@ -17,16 +17,39 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/login/',
     '/stats/',
     '/analytics/',
-    '/blog/',
-    '/blog/mathematics-of-powerball/',
-    '/blog/history-of-oz-lotto/',
-    '/blog/benefits-of-simulation/'
+    '/analyzer/',
+    '/leaderboard/',
+    '/premium/',
+    '/contact/',
+    '/refund-policy/',
   ];
 
-  return routes.map((route) => ({
+  const blogSlugs = [
+    'mathematics-of-powerball',
+    'history-of-oz-lotto',
+    'benefits-of-simulation',
+    'the-gamblers-fallacy-explained',
+    'system-entries-vs-standard',
+    'quick-pick-vs-manual-selection',
+    'history-of-lottery-australia',
+    'understanding-house-edge',
+    'how-to-read-lotto-stats',
+    'responsible-play-guide',
+  ];
+
+  const routes = mainRoutes.map((route) => ({
     url: `${baseUrl}${route}`,
     lastModified: new Date().toISOString().split('T')[0],
     changeFrequency: 'daily' as const,
-    priority: route === '/' || route === '/luck/' ? 1.0 : route === '/simulator/' ? 0.9 : 0.7,
+    priority: route === '' ? 1 : 0.8,
   }));
+
+  const blogRoutes = blogSlugs.map((slug) => ({
+    url: `${baseUrl}/blog/${slug}/`,
+    lastModified: new Date().toISOString().split('T')[0],
+    changeFrequency: 'weekly' as const,
+    priority: 0.6,
+  }));
+
+  return [...routes, ...blogRoutes];
 }
