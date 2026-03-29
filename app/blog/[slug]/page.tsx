@@ -1,5 +1,6 @@
 import Navbar from '../../../components/Navbar';
 import Link from 'next/link';
+import MiniCalculator from '../../../components/MiniCalculator';
 
 const postData: Record<string, any> = {
   'mathematics-of-powerball': {
@@ -136,6 +137,10 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
           </div>
           <h1 className="text-3xl sm:text-4xl md:text-6xl font-black tracking-tighter leading-[1.1] sm:leading-tight">{post.title}</h1>
         </header>
+
+        {/* Interactive Tool Injection */}
+        {slug === 'mathematics-of-powerball' && <MiniCalculator type="odds" />}
+        {(slug === 'understanding-house-edge' || slug === 'benefits-of-simulation') && <MiniCalculator type="savings" />}
 
         <div 
           className="prose prose-base sm:prose-lg prose-indigo dark:prose-invert max-w-none text-gray-600 dark:text-gray-300 font-medium leading-relaxed"

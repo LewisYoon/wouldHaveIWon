@@ -8,7 +8,7 @@ import LottoLinePicker from '../../components/LottoLinePicker';
 import DivisionRules from '../../components/DivisionRules';
 import Countdown from '../../components/Countdown';
 import SettingsModal from '../../components/SettingsModal';
-import { getNextDrawDates, compareNumbers, Ticket } from '../../lib/lotto-utils';
+import { getNextDrawDates, compareNumbers, Ticket, TICKET_COST } from '../../lib/lotto-utils';
 import { supabase } from '../../lib/supabase';
 import { toast } from 'sonner';
 import Link from 'next/link';
@@ -19,7 +19,6 @@ import { useLuckData } from '../../hooks/useLuckData';
 import { useUserTickets } from '../../hooks/useUserTickets';
 import { useUserPreferences } from '../../hooks/useUserPreferences';
 
-const TICKET_COST = 1.45;
 const FREE_TICKET_LIMIT = 25;
 
 function LuckContent() {
@@ -41,6 +40,10 @@ function LuckContent() {
   // Picker State
   const [currentNumbers, setCurrentNumbers] = useState<number[]>([]);
   const [quickPickQty, setQuickPickQuantity] = useState(10);
+
+  // History Check State
+  const [historicalWins, setHistoricalWins] = useState<{date: string, tier: string, prize: number}[]>([]);
+  const [isCheckingHistory, setIsCheckingHistory] = useState(false);
   
   // Custom Hooks
   const { 
@@ -77,6 +80,7 @@ function LuckContent() {
   useEffect(() => {
     setSelectedDate(upcomingDates[0]);
     setCurrentNumbers([]);
+    setHistoricalWins([]);
   }, [game, upcomingDates]);
 
   useEffect(() => {
@@ -152,6 +156,27 @@ function LuckContent() {
     const { error } = await deleteSingleTicket(id);
     if (!error) toast.success('Ticket deleted');
     else toast.error('Failed to delete ticket');
+  };
+
+  const checkHistory = () => {
+    const required = game === 'Powerball' ? 8 : game === 'Oz Lotto' ? 7 : 6;
+    if (currentNumbers.filter(n => n > 0).length < required) {
+      toast.error(`Select ${required} numbers first.`); return;
+    }
+    
+    setIsCheckingHistory(true);
+    const wins: {date: string, tier: string, prize: number}[] = [];
+    
+    drawResultsList.filter(r => r.game === game).forEach(res => {
+      const c = compareNumbers(currentNumbers, res.numbers, res.bonus, game as any);
+      if (c.prizeTier !== 'No Prize') {
+        wins.push({ date: res.drawDate, tier: c.prizeTier, prize: res.prizes[c.prizeTier] || 0 });
+      }
+    });
+    
+    setHistoricalWins(wins.sort((a,b) => b.date.localeCompare(a.date)));
+    setIsCheckingHistory(false);
+    if (wins.length === 0) toast.info("No historical wins found for this sequence.");
   };
 
   const formatCurrency = (val: number) => new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(val);
@@ -319,7 +344,28 @@ function LuckContent() {
               <div className="space-y-4">
                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] px-2 text-left">2. Pick Your Numbers</p>
                 <LottoLinePicker lineId="luck-picker" displayIndex={1} selectedNumbers={currentNumbers} onNumbersChange={(_, numbers) => setCurrentNumbers(numbers)} onDeleteLine={() => setCurrentNumbers([])} game={game} />
+                <button 
+                  onClick={checkHistory}
+                  disabled={isCheckingHistory}
+                  className="w-full py-3 bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 font-black rounded-xl text-[10px] uppercase tracking-widest hover:bg-gray-200 dark:hover:bg-white/10 transition-all"
+                >
+                  {isCheckingHistory ? 'Scanning History...' : 'Check Historical Wins'}
+                </button>
               </div>
+
+              {historicalWins.length > 0 && (
+                <div className="mt-6 p-6 bg-indigo-50 dark:bg-indigo-950/20 rounded-3xl border border-indigo-100 dark:border-indigo-500/20 animate-in fade-in slide-in-from-top-4">
+                  <p className="text-[9px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest mb-4">Historical Results ({historicalWins.length})</p>
+                  <div className="space-y-3 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
+                    {historicalWins.map((win, i) => (
+                      <div key={i} className="flex justify-between items-center text-xs">
+                        <span className="font-bold text-gray-500">{win.date}</span>
+                        <span className={`font-black ${win.tier === 'Division 1' ? 'text-amber-500' : 'text-indigo-600 dark:text-indigo-400'}`}>{win.tier}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               
               <div className="pt-4 space-y-4">
                 <button onClick={handleSaveTicket} className={`w-full py-5 text-white font-black rounded-[1.5rem] transition-all uppercase tracking-[0.2em] text-sm active:scale-95 shadow-xl hover:brightness-110 ${brandStyles.bg} ${brandStyles.shadow}`}>Save This Ticket</button>
