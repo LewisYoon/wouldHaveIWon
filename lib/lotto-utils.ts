@@ -155,7 +155,14 @@ export function compareNumbers(
     else if (mainMatchesCount === 4) prizeTier = "Division 6";
     else if (mainMatchesCount === 3 && bonusMatchesCount >= 1) prizeTier = "Division 7";
 
-    return { mainMatchesCount, bonusMatchesCount, matchedBonusNumbers: matchedBonusNumbers.sort((a, b) => a - b), prizeTier };
+    return { 
+      mainMatchesCount, 
+      bonusMatchesCount, 
+      matchedBonusNumbers: matchedBonusNumbers.sort((a, b) => a - b), 
+      prizeTier,
+      userNumbers,
+      userBonus: matchedBonusNumbers 
+    };
   } else if (game === 'Tatts Lotto') {
     const bonusSet = new Set(bonusNumbers);
     const matchedBonusNumbers: number[] = [];
@@ -174,7 +181,14 @@ export function compareNumbers(
     else if (mainMatchesCount === 3 && bonusMatchesCount >= 1) prizeTier = "Division 5";
     else if (mainMatchesCount === 3) prizeTier = "Division 6";
 
-    return { mainMatchesCount, bonusMatchesCount, matchedBonusNumbers: matchedBonusNumbers.sort((a, b) => a - b), prizeTier };
+    return { 
+      mainMatchesCount, 
+      bonusMatchesCount, 
+      matchedBonusNumbers: matchedBonusNumbers.sort((a, b) => a - b), 
+      prizeTier,
+      userNumbers,
+      userBonus: matchedBonusNumbers
+    };
   } else {
     // Powerball
     const userPB = userNumbers[7];
@@ -192,7 +206,15 @@ export function compareNumbers(
     else if (mainMatchesCount === 3 && isPowerballMatched) prizeTier = "Division 8";
     else if (mainMatchesCount === 2 && isPowerballMatched) prizeTier = "Division 9";
 
-    return { mainMatchesCount, bonusMatchesCount: isPowerballMatched ? 1 : 0, matchedBonusNumbers: isPowerballMatched ? [userPB] : [], prizeTier, isPowerballMatched };
+    return { 
+      mainMatchesCount, 
+      bonusMatchesCount: isPowerballMatched ? 1 : 0, 
+      matchedBonusNumbers: isPowerballMatched ? [userPB] : [], 
+      prizeTier, 
+      isPowerballMatched,
+      userNumbers: userNumbers.slice(0, 7),
+      userBonus: [userPB]
+    };
   }
 }
 

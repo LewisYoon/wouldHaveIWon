@@ -139,7 +139,8 @@ export function useSimulator(game: string, activeResult: DrawResult | null) {
     // 1. Identify "Lucky Numbers" (Frequent numbers in winning tickets)
     const numberFreq: Record<number, number> = {};
     allComparisonResults.filter(r => r.prizeTier !== "No Prize").forEach(r => {
-      r.userNumbers?.forEach(n => {
+      const numsToTrack = r.userNumbers || [];
+      numsToTrack.forEach(n => {
         numberFreq[n] = (numberFreq[n] || 0) + 1;
       });
     });

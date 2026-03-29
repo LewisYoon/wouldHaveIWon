@@ -29,4 +29,6 @@ export interface ComparisonResult {
   matchedBonusNumbers: number[];
   prizeTier: string;
   isPowerballMatched?: boolean;
+  userNumbers?: number[];
+  userBonus?: number[];
 }
