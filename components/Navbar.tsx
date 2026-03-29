@@ -17,7 +17,8 @@ export default function Navbar() {
   const navLinks = [
     { name: 'Luck', href: '/luck/' },
     { name: 'Simulator', href: '/simulator/' },
-    { name: 'Analytics', href: '/analytics/' },
+    { name: 'Analyzer', href: '/analyzer/' },
+    { name: 'Odds', href: '/odds/' },
     { name: 'Hall of Fame', href: '/leaderboard/' },
     { name: 'Stats', href: '/stats/', authOnly: true },
     { name: 'Guides', href: '/blog/' },
