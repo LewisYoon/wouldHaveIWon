@@ -36,7 +36,7 @@ export default function SimulatorContent() {
   const resultsRef = useRef<HTMLDivElement>(null);
 
   const { activeResult, setCustomResult, generateRandomResult } = useLatestDraw(game, drawMode);
-  const { allComparisonResults, stats, handleCheckAllResults, clearResults, luckNarrative, realWorldValue, saveTurboState, loadTurboState, setStatsFromSession } = useSimulator(game, activeResult);
+  const { allComparisonResults, stats, advancedStats, handleCheckAllResults, clearResults, luckNarrative, realWorldValue, saveTurboState, loadTurboState, setStatsFromSession } = useSimulator(game, activeResult);
 
   const clearAllSimulatorData = () => {
     clearResults();
@@ -170,8 +170,8 @@ export default function SimulatorContent() {
         <div ref={resultsRef} className="scroll-mt-20 space-y-12">
             {allComparisonResults && (
                 <>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
-                        <div className="bg-white dark:bg-gray-900 p-8 rounded-3xl border border-gray-100 shadow-xl dark:border-white/5">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 text-left">
+                        <div className="bg-white dark:bg-gray-900 p-8 rounded-3xl border border-gray-100 shadow-xl dark:border-white/5 lg:col-span-1">
                             <h3 className="text-sm font-black uppercase tracking-widest mb-6">Simulation Summary</h3>
                             <p className="text-2xl font-black italic mb-8">"{luckNarrative}"</p>
                             
@@ -181,14 +181,44 @@ export default function SimulatorContent() {
                                 <div><p className="text-[10px] text-gray-400 uppercase tracking-widest">ROI</p><p className={`font-black text-sm tabular-nums ${stats.roi >= 100 ? 'text-emerald-500' : 'text-rose-500'}`}>{stats.roi.toFixed(1)}%</p></div>
                             </div>
                         </div>
-                        <div className="bg-white dark:bg-gray-900 p-8 rounded-3xl border border-gray-100 shadow-xl dark:border-white/5">
-                            <h3 className="text-sm font-black uppercase tracking-widest mb-6">{realWorldValue.label}</h3>
-                            <div className="space-y-3">
-                                {realWorldValue.items.map((item, i) => (
-                                    <div key={i} className="flex justify-between py-2 border-b border-gray-50 dark:border-white/5 last:border-0"><span className="text-gray-600 dark:text-gray-400 font-medium">{item.name}</span><span className="font-black tabular-nums text-gray-900 dark:text-white">{item.qty.toLocaleString()}x</span></div>
-                                ))}
+
+                        {advancedStats && (
+                            <div className="bg-gray-950 p-8 rounded-3xl border border-white/10 shadow-2xl lg:col-span-2 text-white relative overflow-hidden">
+                                <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600/20 rounded-full blur-[100px] -mr-32 -mt-32" />
+                                <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-10">
+                                    <div className="space-y-6">
+                                        <h3 className="text-xs font-black uppercase tracking-[0.2em] text-indigo-400">Deep Analysis</h3>
+                                        <div>
+                                            <p className="text-[10px] text-gray-500 uppercase font-black mb-3">Lucky Balls in Your Wins</p>
+                                            <div className="flex gap-3">
+                                                {advancedStats.topNumbers.map((n, i) => (
+                                                    <div key={i} className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center font-black text-lg text-indigo-300 shadow-inner">{n}</div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] text-gray-500 uppercase font-black mb-1">Statistical Edge</p>
+                                            <p className={`text-xl font-black ${advancedStats.performanceVsExpectation >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                                {advancedStats.performanceVsExpectation >= 0 ? '+' : ''}{advancedStats.performanceVsExpectation.toFixed(1)}% <span className="text-xs font-medium text-gray-500 ml-1">vs Expected Value</span>
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="bg-white/5 p-6 rounded-2xl border border-white/5 space-y-4">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-2 h-2 rounded-full bg-amber-500" />
+                                            <h4 className="text-[10px] font-black uppercase tracking-widest text-amber-500">The Opportunity Cost</h4>
+                                        </div>
+                                        <p className="text-sm text-gray-400 leading-relaxed font-medium">
+                                            If you had invested <span className="text-white font-bold">{formatCurrency(stats.totalSpent)}</span> in the S&P 500 over the simulated <span className="text-white font-bold">{advancedStats.simulatedYears.toFixed(1)} years</span>, you would likely have:
+                                        </p>
+                                        <p className="text-3xl font-black text-amber-400 tracking-tighter">
+                                            +{formatCurrency(advancedStats.opportunityCost)}
+                                        </p>
+                                        <p className="text-[9px] text-gray-500 italic">Based on 8% average annual market return.</p>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
+                        )}
                     </div>
 
                     <div className="bg-white dark:bg-gray-900 p-8 rounded-3xl border border-gray-100 shadow-xl dark:border-white/5 text-left">

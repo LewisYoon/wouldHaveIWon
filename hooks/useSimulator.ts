@@ -133,9 +133,40 @@ export function useSimulator(game: string, activeResult: DrawResult | null) {
     setStats(savedStats);
   }, []);
 
+  const advancedStats = useMemo(() => {
+    if (!allComparisonResults || allComparisonResults.length === 0) return null;
+
+    // 1. Identify "Lucky Numbers" (Frequent numbers in winning tickets)
+    const numberFreq: Record<number, number> = {};
+    allComparisonResults.filter(r => r.prizeTier !== "No Prize").forEach(r => {
+      r.userNumbers?.forEach(n => {
+        numberFreq[n] = (numberFreq[n] || 0) + 1;
+      });
+    });
+    const topNumbers = Object.entries(numberFreq)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 3)
+      .map(([num]) => parseInt(num));
+
+    // 2. Investment Opportunity Cost (Compound interest at 8% over simulated years)
+    // Assume each 52 draws = 1 year
+    const simulatedYears = Math.max(1, stats.totalSpent / (TICKET_COST * 52));
+    const annualRate = 0.08;
+    const futureValue = stats.totalSpent * Math.pow(1 + annualRate, simulatedYears);
+    const opportunityCost = futureValue - stats.totalSpent;
+
+    // 3. Luck Rating vs Expected Value
+    // Powerball ROI is roughly 45-60% theoretically
+    const expectedROI = 55; 
+    const performanceVsExpectation = stats.roi - expectedROI;
+
+    return { topNumbers, opportunityCost, performanceVsExpectation, simulatedYears };
+  }, [allComparisonResults, stats.totalSpent, stats.roi]);
+
   return { 
     allComparisonResults, 
     stats, 
+    advancedStats,
     handleCheckAllResults, 
     clearResults, 
     luckNarrative, 
