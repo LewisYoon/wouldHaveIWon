@@ -225,11 +225,25 @@ async function notifyUsers(game: string, drawDate: string, winningNumbers: numbe
   // Populate public leaderboard for winners
   for (const [userId, res] of userResults.entries()) {
     if (res.won && res.prize > 0) {
-      const names = ["LuckyPanda", "WealthyKoala", "DreamChaser", "LottoWizard", "GoldenKangaroo", "FortuneSeeker", "JackpotHunter"];
-      const nickname = names[Math.floor(Math.random() * names.length)] + "****";
+      // Fetch actual user email using admin API
+      const { data: userRecord, error: userError } = await supabase.auth.admin.getUserById(userId);
+      
+      let displayIdentifier = 'user_' + userId.substring(0, 4) + '****';
+      
+      if (!userError && userRecord?.user?.email) {
+        const email = userRecord.user.email;
+        const prefix = email.split('@')[0];
+        // If prefix is long enough, take 4 chars, else take what's available
+        const maskedPrefix = prefix.length >= 4 ? prefix.substring(0, 4) : prefix;
+        displayIdentifier = maskedPrefix.toLowerCase() + '****';
+        console.log(`Found real winner: ${email} -> ${displayIdentifier}`);
+      } else {
+        console.warn(`Could not fetch email for user ${userId}:`, userError?.message);
+      }
 
       await supabase.from('leaderboard').insert({
-        user_nickname: nickname,
+        user_id: userId, // Link to actual user
+        user_nickname: displayIdentifier,
         prize: res.prize,
         draw_date: drawDate,
         game: game,
